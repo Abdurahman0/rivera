@@ -1,0 +1,325 @@
+{
+  "app": {
+    "name": "Rivera Textile",
+    "shortName": "Rivera",
+    "module": "Текстильная CRM",
+    "workspace": "Рабочее пространство",
+    "company": "Rivera Textile Factory",
+    "demoUser": "Дильноза Акрамова",
+    "demoRole": "Операционный директор"
+  },
+  "common": {
+    "language": "Язык",
+    "languages": {
+      "uz": "O'zbekcha",
+      "ru": "Русский"
+    },
+    "design": "Дизайн",
+    "designs": {
+      "classic": "Классика",
+      "nova": "Nova"
+    },
+    "login": "Войти",
+    "logout": "Выйти",
+    "email": "Email",
+    "password": "Пароль",
+    "remember": "Запомнить",
+    "refresh": "Обновить",
+    "notifications": "Уведомления",
+    "create": "Создать",
+    "export": "Экспорт",
+    "viewAll": "Все",
+    "report": "Отчет",
+    "analytics": "Аналитика",
+    "filters": "Фильтры",
+    "search": "Поиск",
+    "view": "Просмотр",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "close": "Закрыть",
+    "openNavigation": "Открыть навигацию",
+    "closeNavigation": "Закрыть навигацию",
+    "actions": "Действия",
+    "notRequired": "Не обязательно",
+    "sum": "сум",
+    "pcs": "шт",
+    "meters": "метр",
+    "kg": "кг"
+  },
+  "deleteDialog": {
+    "eyebrow": "Подтверждение",
+    "title": "Подтвердить удаление?",
+    "description": "{{item}} будет удален. Это действие нельзя отменить."
+  },
+  "theme": {
+    "toggle": "Переключить тему",
+    "light": "Светлая",
+    "dark": "Темная"
+  },
+  "customize": {
+    "button": "Настройка",
+    "title": "Настройка",
+    "subtitle": "Подберите акцент фона для рабочего пространства.",
+    "colorSection": "Цвет фона",
+    "reset": "Сбросить",
+    "save": "Сохранить",
+    "presets": {
+      "indigo": "Индиго",
+      "teal": "Тёмная бирюза",
+      "emerald": "Изумруд",
+      "fuchsia": "Фуксия",
+      "amber": "Янтарный",
+      "slate": "Сланец"
+    }
+  },
+  "login": {
+    "eyebrow": "Текстильные операции",
+    "title": "Производство, клиенты и склад в одном месте.",
+    "description": "Rivera Textile CRM — демо для управления заказами, приходом и уходом сотрудников, запасами ткани и аналитикой продукции.",
+    "cardTitle": "Вход в систему",
+    "cardSubtitle": "Откройте панель с демо-данными.",
+    "emailPlaceholder": "admin@rivera.uz",
+    "passwordPlaceholder": "Пароль",
+    "submit": "Войти в CRM",
+    "hint": "Демо-режим: можно войти с любым email и паролем.",
+    "metricOrders": "Активные заказы",
+    "metricStock": "Ткань на складе",
+    "metricOutput": "Месячный выпуск"
+  },
+  "navigation": {
+    "group": "Разделы",
+    "dashboard": {
+      "label": "Dashboard",
+      "caption": "Общий контроль"
+    },
+    "clients": {
+      "label": "Клиенты",
+      "caption": "Заказчики и сделки"
+    },
+    "staff": {
+      "label": "Сотрудники",
+      "caption": "Приход и уход"
+    },
+    "products": {
+      "label": "Продукты",
+      "caption": "Склад и аналитика"
+    }
+  },
+  "dashboard": {
+    "eyebrow": "Живые операции",
+    "title": "Панель управления текстилем",
+    "description": "Клиентские заказы, посещаемость сотрудников, остатки ткани и продажи готовой продукции в одном интерфейсе.",
+    "metrics": {
+      "pipeline": "Стоимость заказов",
+      "pipelineCaption": "+14% за месяц",
+      "clients": "Активные клиенты",
+      "clientsCaption": "3 сделки с высоким шансом",
+      "staff": "Сотрудники на смене",
+      "staffCaption": "2 предупреждения сегодня",
+      "stock": "Остаток склада",
+      "stockCaption": "{{count}} позиции с низким запасом"
+    },
+    "revenueTitle": "Выручка и заказы",
+    "priorityTitle": "Приоритетные клиенты",
+    "productionTitle": "Недельное производство"
+  },
+  "clients": {
+    "eyebrow": "CRM pipeline",
+    "title": "Клиенты",
+    "description": "Контролируйте текстильных заказчиков, потребность в ткани, ответственного менеджера и стоимость сделки.",
+    "searchPlaceholder": "Поиск по клиенту, телефону или статусу...",
+    "create": "Добавить клиента",
+    "columns": {
+      "client": "Клиент",
+      "source": "Источник",
+      "status": "Статус",
+      "manager": "Менеджер",
+      "value": "Стоимость",
+      "lastContact": "Последний контакт",
+      "fabric": "Потребность"
+    },
+    "filters": {
+      "status": "Статус",
+      "source": "Источник",
+      "sort": "Сортировка",
+      "allStatuses": "Все статусы",
+      "allSources": "Все источники",
+      "valueDesc": "Стоимость: убыв.",
+      "valueAsc": "Стоимость: возр.",
+      "nameAsc": "Имя: А-Я",
+      "nameDesc": "Имя: Я-А"
+    },
+    "modal": {
+      "viewTitle": "Карточка клиента",
+      "createTitle": "Новый клиент",
+      "editTitle": "Редактировать клиента",
+      "summary": "Потребность клиента, ответственный менеджер и состояние pipeline.",
+      "nextStep": "Следующий шаг: подтвердить образец ткани и согласовать срок поставки."
+    }
+  },
+  "staff": {
+    "eyebrow": "Посещаемость",
+    "title": "Приход и уход сотрудников",
+    "description": "Смена, время прихода, время ухода, опоздания и процент посещаемости.",
+    "create": "Добавить сотрудника",
+    "metrics": {
+      "onTime": "Пришли вовремя",
+      "onTimeCaption": "60% команды",
+      "late": "Опоздания",
+      "lateCaption": "До 12 минут",
+      "attendance": "Средняя посещаемость",
+      "attendanceCaption": "+2.1% за неделю"
+    },
+    "flowTitle": "Недельный поток сотрудников",
+    "columns": {
+      "staff": "Сотрудник",
+      "shift": "Смена",
+      "arrival": "Приход",
+      "leaving": "Уход",
+      "status": "Статус",
+      "attendance": "Посещаемость"
+    },
+    "modal": {
+      "viewTitle": "Профиль сотрудника",
+      "createTitle": "Новый сотрудник",
+      "editTitle": "Редактировать сотрудника",
+      "summary": "Смена сотрудника, посещаемость и сегодняшнее состояние прихода/ухода.",
+      "nextStep": "Следующий шаг: проверить график смены и добавить HR-комментарий."
+    }
+  },
+  "products": {
+    "eyebrow": "Продукты",
+    "title": "Склад и аналитика продукции",
+    "description": "Рулоны ткани, пряжа, готовая одежда и предупреждения о низких запасах для производства.",
+    "create": "Добавить продукт",
+    "createCategory": "Добавить категорию",
+    "metrics": {
+      "revenue": "Выручка продуктов",
+      "revenueCaption": "+12% к прошлому месяцу",
+      "stock": "Единицы на складе",
+      "stockCaption": "По 4 категориям",
+      "lowStock": "Низкий запас",
+      "lowStockCaption": "Нужен повторный заказ"
+    },
+    "categoryTitle": "Доля категорий",
+    "tabs": {
+      "products": "Продукты",
+      "categories": "Категории"
+    },
+    "columns": {
+      "product": "Продукт",
+      "sku": "SKU",
+      "category": "Категория",
+      "stock": "Остаток",
+      "sold": "Продано",
+      "revenue": "Выручка",
+      "trend": "Тренд"
+    },
+    "categoryColumns": {
+      "category": "Категория",
+      "code": "Код",
+      "description": "Описание",
+      "products": "Продукты",
+      "sortOrder": "Порядок"
+    },
+    "categoryModal": {
+      "modal": {
+        "viewTitle": "Карточка категории",
+        "createTitle": "Новая категория",
+        "editTitle": "Редактировать категорию",
+        "summary": "Категория продукта, код, описание и порядок в таблице.",
+        "nextStep": "Следующий шаг: проверьте название категории и привяжите продукты к этой группе."
+      },
+      "form": {
+        "details": "Детали категории",
+        "detailsHint": "Код автоматически создается из названия в стиле Solar."
+      }
+    },
+    "modal": {
+      "viewTitle": "Карточка продукта",
+      "createTitle": "Новый продукт",
+      "editTitle": "Редактировать продукт",
+      "summary": "Остаток склада, минимальный запас, продажи и движение в производстве.",
+      "nextStep": "Следующий шаг: проверить низкие остатки и подготовить заказ поставщику."
+    },
+    "form": {
+      "details": "Детали продукта",
+      "detailsHint": "Изображения, категория и складские данные в стиле Solar.",
+      "categories": "Категории",
+      "categoriesHint": "Выберите категорию или добавьте новую.",
+      "categoryPlaceholder": "Название новой категории",
+      "addCategory": "Добавить категорию",
+      "customCategory": "Категория добавлена вручную",
+      "description": "Описание",
+      "supplier": "Поставщик",
+      "warehouse": "Зона склада",
+      "color": "Цвет",
+      "composition": "Состав",
+      "gsm": "GSM",
+      "width": "Ширина",
+      "price": "Цена",
+      "minStock": "Минимальный запас",
+      "isActive": "Активный продукт",
+      "isRecommended": "Рекомендуемый",
+      "subsidyEnabled": "Подходит для субсидии",
+      "active": "Активен",
+      "newSku": "RV-NEW-001",
+      "newProduct": "Новый продукт",
+      "gallery": "Галерея",
+      "primaryImage": "Основное фото",
+      "addGallery": "Добавить галерею",
+      "removeImage": "Убрать фото",
+      "imageHint": "Основное изображение и галерея соответствуют потоку редактирования продуктов Solar."
+    }
+  },
+  "statuses": {
+    "newLead": "Новый лид",
+    "sample": "Образец отправлен",
+    "contract": "Контракт",
+    "followUp": "Повторный контакт",
+    "won": "Выиграно",
+    "onTime": "Вовремя",
+    "late": "Опоздал",
+    "leftEarly": "Ушел рано",
+    "remote": "Удаленно"
+  },
+  "mock": {
+    "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
+    "weekDays": ["Пн", "Вт", "Ср", "Чт", "Пт"],
+    "clients": [
+      { "id": 1, "name": "Atlas Home Textile", "phone": "+998 90 441 22 18", "source": "Выставка", "status": "Новый лид", "statusKey": "newLead", "manager": "Малика", "value": 128000000, "lastContact": "Сегодня, 10:20", "fabric": "Хлопковый сатин, 4 000 м" },
+      { "id": 2, "name": "Samarkand Uniform", "phone": "+998 97 118 40 02", "source": "Рекомендация", "status": "Образец отправлен", "statusKey": "sample", "manager": "Азиз", "value": 540000000, "lastContact": "Сегодня, 09:45", "fabric": "Габардин, 12 000 м" },
+      { "id": 3, "name": "Bukhara Export Group", "phone": "+998 91 603 44 70", "source": "Website", "status": "Контракт", "statusKey": "contract", "manager": "Нодира", "value": 870000000, "lastContact": "Вчера", "fabric": "Трикотаж, 22 000 кг" },
+      { "id": 4, "name": "Nur Kids Wear", "phone": "+998 93 772 19 44", "source": "Telegram", "status": "Повторный контакт", "statusKey": "followUp", "manager": "Малика", "value": 93000000, "lastContact": "19-Июн", "fabric": "Интерлок, 3 600 кг" },
+      { "id": 5, "name": "Orion Retail", "phone": "+998 99 802 31 65", "source": "Showroom", "status": "Выиграно", "statusKey": "won", "manager": "Азиз", "value": 1210000000, "lastContact": "18-Июн", "fabric": "Готовая футболка, 18 000 шт" }
+    ],
+    "staff": [
+      { "id": 1, "name": "Малика Тошпулатова", "role": "Менеджер клиентов", "shift": "09:00 - 18:00", "arrival": "08:54", "leaving": "18:08", "status": "Вовремя", "statusKey": "onTime", "attendance": 98 },
+      { "id": 2, "name": "Азиз Хамроев", "role": "Руководитель продаж", "shift": "09:00 - 18:00", "arrival": "09:12", "leaving": "18:00", "status": "Опоздал", "statusKey": "late", "attendance": 91 },
+      { "id": 3, "name": "Нодира Саидова", "role": "Администратор склада", "shift": "08:30 - 17:30", "arrival": "08:26", "leaving": "17:36", "status": "Вовремя", "statusKey": "onTime", "attendance": 96 },
+      { "id": 4, "name": "Бекзод Нурматов", "role": "Продуктовый аналитик", "shift": "10:00 - 19:00", "arrival": "Удаленно", "leaving": "Удаленно", "status": "Удаленно", "statusKey": "remote", "attendance": 94 },
+      { "id": 5, "name": "Зарина Умарова", "role": "HR контролер", "shift": "09:00 - 18:00", "arrival": "08:58", "leaving": "17:20", "status": "Ушел рано", "statusKey": "leftEarly", "attendance": 88 }
+    ],
+    "productCategories": [
+      { "id": "fabric-rolls", "name": "Рулоны ткани", "code": "FABRIC", "description": "Окрашенные и готовые рулонные ткани.", "sortOrder": 1 },
+      { "id": "yarn", "name": "Пряжа", "code": "YARN", "description": "Хлопковая и смесовая пряжа.", "sortOrder": 2 },
+      { "id": "knitwear", "name": "Трикотаж", "code": "KNIT", "description": "Интерлок, рибана и кулирные полотна.", "sortOrder": 3 },
+      { "id": "finished-goods", "name": "Готовая продукция", "code": "READY", "description": "Готовая одежда и домашний текстиль.", "sortOrder": 4 }
+    ],
+    "products": [
+      { "id": 1, "name": "Хлопковый сатин 120 GSM", "description": "Мягкий хлопковый сатин для премиального домашнего текстиля и постельных комплектов.", "category": "Рулоны ткани", "categoryId": "fabric-rolls", "sku": "RV-TEX-001", "supplier": "Fergana Cotton Mill", "warehouse": "A-12 / Рулоны", "color": "Ivory белый", "composition": "100% хлопок", "gsm": 120, "width": "240 cm", "price": 35000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=80"], "status": "Активен", "isActive": true, "isRecommended": true, "subsidyEnabled": false, "stock": 12600, "minStock": 4000, "unit": "m", "sold": 31200, "revenue": 1092000000, "trend": 18 },
+      { "id": 2, "name": "Габардин для формы", "description": "Плотный габардин для школьной формы и корпоративной униформы.", "category": "Рулоны ткани", "categoryId": "fabric-rolls", "sku": "RV-TEX-014", "supplier": "Namangan Weave", "warehouse": "B-04 / Униформа", "color": "Темно-синий", "composition": "65% полиэстер, 35% вискоза", "gsm": 180, "width": "150 cm", "price": 34000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=900&q=80"], "status": "Низкий запас", "isActive": true, "isRecommended": false, "subsidyEnabled": true, "stock": 3600, "minStock": 4500, "unit": "m", "sold": 20500, "revenue": 697000000, "trend": -4 },
+      { "id": 3, "name": "Ring spun пряжа 30/1", "description": "Пряжа ring spun со стабильной круткой для трикотажной линии.", "category": "Пряжа", "categoryId": "yarn", "sku": "RV-YRN-208", "supplier": "Andijan Yarn House", "warehouse": "Y-02 / Пряжа", "color": "Сырой белый", "composition": "100% хлопок", "gsm": 0, "width": "30/1 Ne", "price": 40000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1615800002234-05c4d488696c?auto=format&fit=crop&w=900&q=80"], "status": "Активен", "isActive": true, "isRecommended": true, "subsidyEnabled": true, "stock": 4400, "minStock": 1200, "unit": "kg", "sold": 9800, "revenue": 392000000, "trend": 9 },
+      { "id": 4, "name": "Интерлок трикотаж", "description": "Мягкий эластичный интерлок для детской одежды.", "category": "Трикотаж", "categoryId": "knitwear", "sku": "RV-KNT-102", "supplier": "Tashkent Knit Lab", "warehouse": "K-08 / Трикотаж", "color": "Серый меланж", "composition": "95% хлопок, 5% эластан", "gsm": 210, "width": "185 cm", "price": 29000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=900&q=80"], "status": "Низкий запас", "isActive": true, "isRecommended": false, "subsidyEnabled": false, "stock": 5800, "minStock": 6000, "unit": "kg", "sold": 16600, "revenue": 481400000, "trend": 6 },
+      { "id": 5, "name": "Базовая белая футболка", "description": "Готовая basic футболка для retail и B2B заказов.", "category": "Готовая продукция", "categoryId": "finished-goods", "sku": "RV-FIN-330", "supplier": "Rivera Sewing Line", "warehouse": "F-01 / Готовая продукция", "color": "Белый", "composition": "100% хлопковый jersey", "gsm": 160, "width": "S-XXL", "price": 42000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=900&q=80"], "status": "Активен", "isActive": true, "isRecommended": true, "subsidyEnabled": false, "stock": 14000, "minStock": 10000, "unit": "pcs", "sold": 28000, "revenue": 1176000000, "trend": 22 }
+    ],
+    "categoryAnalytics": [
+      { "name": "Рулоны ткани", "value": 42, "color": "#0f766e" },
+      { "name": "Пряжа", "value": 25, "color": "#0ea5e9" },
+      { "name": "Трикотаж", "value": 18, "color": "#f59e0b" },
+      { "name": "Готовая продукция", "value": 15, "color": "#7c3aed" }
+    ]
+  }
+}

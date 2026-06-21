@@ -1,0 +1,325 @@
+{
+  "app": {
+    "name": "Rivera Textile",
+    "shortName": "Rivera",
+    "module": "To'qimachilik CRM",
+    "workspace": "Ish maydoni",
+    "company": "Rivera Textile Factory",
+    "demoUser": "Dilnoza Akramova",
+    "demoRole": "Operatsion direktor"
+  },
+  "common": {
+    "language": "Til",
+    "languages": {
+      "uz": "O'zbekcha",
+      "ru": "Русский"
+    },
+    "design": "Dizayn",
+    "designs": {
+      "classic": "Klassik",
+      "nova": "Nova"
+    },
+    "login": "Kirish",
+    "logout": "Chiqish",
+    "email": "Email",
+    "password": "Parol",
+    "remember": "Eslab qolish",
+    "refresh": "Yangilash",
+    "notifications": "Bildirishnomalar",
+    "create": "Yaratish",
+    "export": "Eksport",
+    "viewAll": "Hammasi",
+    "report": "Hisobot",
+    "analytics": "Analitika",
+    "filters": "Filtrlar",
+    "search": "Qidirish",
+    "view": "Ko'rish",
+    "edit": "Tahrirlash",
+    "delete": "O'chirish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "close": "Yopish",
+    "openNavigation": "Navigatsiyani ochish",
+    "closeNavigation": "Navigatsiyani yopish",
+    "actions": "Amallar",
+    "notRequired": "Majburiy emas",
+    "sum": "so'm",
+    "pcs": "dona",
+    "meters": "metr",
+    "kg": "kg"
+  },
+  "deleteDialog": {
+    "eyebrow": "Tasdiqlash",
+    "title": "O'chirishni tasdiqlaysizmi?",
+    "description": "{{item}} o'chiriladi. Bu amalni bekor qilib bo'lmaydi."
+  },
+  "theme": {
+    "toggle": "Mavzuni almashtirish",
+    "light": "Yorug'",
+    "dark": "Qorong'i"
+  },
+  "customize": {
+    "button": "Moslash",
+    "title": "Moslash",
+    "subtitle": "Ish maydoni fon aksentini tanlang.",
+    "colorSection": "Fon rangi",
+    "reset": "Standartga qaytarish",
+    "save": "Saqlash",
+    "presets": {
+      "indigo": "Indigo",
+      "teal": "Teal",
+      "emerald": "Zumrad",
+      "fuchsia": "Fuksiya",
+      "amber": "Amber",
+      "slate": "Slate"
+    }
+  },
+  "login": {
+    "eyebrow": "To'qimachilik operatsiyalari",
+    "title": "Ishlab chiqarish, mijozlar va sklad bir joyda.",
+    "description": "Rivera Textile CRM buyurtmalar, xodimlar kelib-ketishi, mato zaxiralari va mahsulot analitikasini boshqarish uchun tayyor demo.",
+    "cardTitle": "Tizimga kirish",
+    "cardSubtitle": "Demo ma'lumotlari bilan panelni oching.",
+    "emailPlaceholder": "admin@rivera.uz",
+    "passwordPlaceholder": "Parol",
+    "submit": "CRM ga kirish",
+    "hint": "Demo rejim: istalgan email va parol bilan kirishingiz mumkin.",
+    "metricOrders": "Faol buyurtmalar",
+    "metricStock": "Skladdagi mato",
+    "metricOutput": "Oylik ishlab chiqarish"
+  },
+  "navigation": {
+    "group": "Bo'limlar",
+    "dashboard": {
+      "label": "Dashboard",
+      "caption": "Umumiy nazorat"
+    },
+    "clients": {
+      "label": "Mijozlar",
+      "caption": "Buyurtmachilar va bitimlar"
+    },
+    "staff": {
+      "label": "Xodimlar",
+      "caption": "Kelib-ketish nazorati"
+    },
+    "products": {
+      "label": "Mahsulotlar",
+      "caption": "Sklad va analitika"
+    }
+  },
+  "dashboard": {
+    "eyebrow": "Jonli operatsiyalar",
+    "title": "To'qimachilik boshqaruv paneli",
+    "description": "Mijozlar buyurtmalari, xodimlar davomati, mato zaxirasi va tayyor mahsulot savdosi bir joyda.",
+    "metrics": {
+      "pipeline": "Buyurtmalar qiymati",
+      "pipelineCaption": "Oy bo'yicha +14%",
+      "clients": "Faol mijozlar",
+      "clientsCaption": "3 ta yuqori ehtimolli bitim",
+      "staff": "Ishdagi xodimlar",
+      "staffCaption": "Bugun 2 ta ogohlantirish",
+      "stock": "Sklad qoldig'i",
+      "stockCaption": "{{count}} ta kam zaxira"
+    },
+    "revenueTitle": "Daromad va buyurtmalar",
+    "priorityTitle": "Ustuvor mijozlar",
+    "productionTitle": "Haftalik ishlab chiqarish"
+  },
+  "clients": {
+    "eyebrow": "CRM pipeline",
+    "title": "Mijozlar",
+    "description": "To'qimachilik buyurtmachilari, mato talabi, mas'ul menejer va kelishuv qiymatini kuzating.",
+    "searchPlaceholder": "Mijoz, telefon yoki status bo'yicha qidirish...",
+    "create": "Mijoz qo'shish",
+    "columns": {
+      "client": "Mijoz",
+      "source": "Manba",
+      "status": "Status",
+      "manager": "Menejer",
+      "value": "Qiymat",
+      "lastContact": "Oxirgi aloqa",
+      "fabric": "Mato talabi"
+    },
+    "filters": {
+      "status": "Status",
+      "source": "Manba",
+      "sort": "Saralash",
+      "allStatuses": "Barcha statuslar",
+      "allSources": "Barcha manbalar",
+      "valueDesc": "Qiymat: yuqoridan",
+      "valueAsc": "Qiymat: pastdan",
+      "nameAsc": "Nomi: A-Z",
+      "nameDesc": "Nomi: Z-A"
+    },
+    "modal": {
+      "viewTitle": "Mijoz kartasi",
+      "createTitle": "Yangi mijoz",
+      "editTitle": "Mijozni tahrirlash",
+      "summary": "Mijozning buyurtma ehtiyoji, mas'ul menejeri va pipeline holati.",
+      "nextStep": "Keyingi qadam: namuna matoni tasdiqlash va yetkazib berish muddatini kelishish."
+    }
+  },
+  "staff": {
+    "eyebrow": "Davomat",
+    "title": "Xodimlarning kelishi va ketishi",
+    "description": "Smena, kelish vaqti, ketish vaqti, kechikishlar va davomat foizi.",
+    "create": "Xodim qo'shish",
+    "metrics": {
+      "onTime": "Vaqtida kelgan",
+      "onTimeCaption": "Jamoaning 60%",
+      "late": "Kechikkanlar",
+      "lateCaption": "12 daqiqagacha",
+      "attendance": "O'rtacha davomat",
+      "attendanceCaption": "Haftalik +2.1%"
+    },
+    "flowTitle": "Haftalik kelib-ketish",
+    "columns": {
+      "staff": "Xodim",
+      "shift": "Smena",
+      "arrival": "Kelish",
+      "leaving": "Ketish",
+      "status": "Status",
+      "attendance": "Davomat"
+    },
+    "modal": {
+      "viewTitle": "Xodim profili",
+      "createTitle": "Yangi xodim",
+      "editTitle": "Xodimni tahrirlash",
+      "summary": "Xodimning smenasi, davomati va bugungi kelib-ketish holati.",
+      "nextStep": "Keyingi qadam: smena jadvalini tekshirish va HR izohini qo'shish."
+    }
+  },
+  "products": {
+    "eyebrow": "Mahsulotlar",
+    "title": "Sklad va mahsulot analitikasi",
+    "description": "Mato rulonlari, ip-kalava, tayyor kiyim va ishlab chiqarish uchun kam zaxira ogohlantirishlari.",
+    "create": "Mahsulot qo'shish",
+    "createCategory": "Kategoriya qo'shish",
+    "metrics": {
+      "revenue": "Mahsulot daromadi",
+      "revenueCaption": "O'tgan oyga nisbatan +12%",
+      "stock": "Sklad birliklari",
+      "stockCaption": "4 kategoriya bo'yicha",
+      "lowStock": "Kam zaxira",
+      "lowStockCaption": "Qayta buyurtma kerak"
+    },
+    "categoryTitle": "Kategoriya ulushi",
+    "tabs": {
+      "products": "Mahsulotlar",
+      "categories": "Kategoriyalar"
+    },
+    "columns": {
+      "product": "Mahsulot",
+      "sku": "SKU",
+      "category": "Kategoriya",
+      "stock": "Qoldiq",
+      "sold": "Sotildi",
+      "revenue": "Daromad",
+      "trend": "Trend"
+    },
+    "categoryColumns": {
+      "category": "Kategoriya",
+      "code": "Kod",
+      "description": "Tavsif",
+      "products": "Mahsulotlar",
+      "sortOrder": "Tartib"
+    },
+    "categoryModal": {
+      "modal": {
+        "viewTitle": "Kategoriya kartasi",
+        "createTitle": "Yangi kategoriya",
+        "editTitle": "Kategoriyani tahrirlash",
+        "summary": "Mahsulot kategoriyasi, kodi, tavsifi va jadvaldagi tartibi.",
+        "nextStep": "Keyingi qadam: kategoriya nomini tekshiring va mahsulotlarni shu guruhga bog'lang."
+      },
+      "form": {
+        "details": "Kategoriya tafsilotlari",
+        "detailsHint": "Solar uslubida nomdan kod avtomatik yaratiladi."
+      }
+    },
+    "modal": {
+      "viewTitle": "Mahsulot kartasi",
+      "createTitle": "Yangi mahsulot",
+      "editTitle": "Mahsulotni tahrirlash",
+      "summary": "Sklad qoldig'i, minimal zaxira, savdo va ishlab chiqarishdagi harakat.",
+      "nextStep": "Keyingi qadam: kam zaxirani tekshirish va ta'minotchiga buyurtma tayyorlash."
+    },
+    "form": {
+      "details": "Mahsulot tafsilotlari",
+      "detailsHint": "Solar uslubidagi rasm, kategoriya va sklad ma'lumotlari.",
+      "categories": "Kategoriyalar",
+      "categoriesHint": "Kategoriya tanlang yoki yangi kategoriya qo'shing.",
+      "categoryPlaceholder": "Yangi kategoriya nomi",
+      "addCategory": "Kategoriya qo'shish",
+      "customCategory": "Qo'lda qo'shilgan kategoriya",
+      "description": "Tavsif",
+      "supplier": "Ta'minotchi",
+      "warehouse": "Sklad zonasi",
+      "color": "Rang",
+      "composition": "Tarkib",
+      "gsm": "GSM",
+      "width": "Eni",
+      "price": "Narx",
+      "minStock": "Minimal zaxira",
+      "isActive": "Faol mahsulot",
+      "isRecommended": "Tavsiya etilgan",
+      "subsidyEnabled": "Subsidiyaga mos",
+      "active": "Faol",
+      "newSku": "RV-NEW-001",
+      "newProduct": "Yangi mahsulot",
+      "gallery": "Galereya",
+      "primaryImage": "Asosiy rasm",
+      "addGallery": "Galereya qo'shish",
+      "removeImage": "Rasmni olib tashlash",
+      "imageHint": "Asosiy rasm va galereya Solar mahsulot tahrirlash oqimiga mos."
+    }
+  },
+  "statuses": {
+    "newLead": "Yangi lead",
+    "sample": "Namuna yuborildi",
+    "contract": "Shartnoma",
+    "followUp": "Qayta aloqa",
+    "won": "Yutildi",
+    "onTime": "Vaqtida",
+    "late": "Kechikdi",
+    "leftEarly": "Erta ketdi",
+    "remote": "Masofadan"
+  },
+  "mock": {
+    "months": ["Yan", "Fev", "Mar", "Apr", "May", "Iyun"],
+    "weekDays": ["Du", "Se", "Chor", "Pay", "Ju"],
+    "clients": [
+      { "id": 1, "name": "Atlas Home Textile", "phone": "+998 90 441 22 18", "source": "Ko'rgazma", "status": "Yangi lead", "statusKey": "newLead", "manager": "Malika", "value": 128000000, "lastContact": "Bugun, 10:20", "fabric": "Paxta satin, 4 000 m" },
+      { "id": 2, "name": "Samarkand Uniform", "phone": "+998 97 118 40 02", "source": "Tavsiya", "status": "Namuna yuborildi", "statusKey": "sample", "manager": "Aziz", "value": 540000000, "lastContact": "Bugun, 09:45", "fabric": "Gabardin, 12 000 m" },
+      { "id": 3, "name": "Bukhara Export Group", "phone": "+998 91 603 44 70", "source": "Website", "status": "Shartnoma", "statusKey": "contract", "manager": "Nodira", "value": 870000000, "lastContact": "Kecha", "fabric": "Trikotaj, 22 000 kg" },
+      { "id": 4, "name": "Nur Kids Wear", "phone": "+998 93 772 19 44", "source": "Telegram", "status": "Qayta aloqa", "statusKey": "followUp", "manager": "Malika", "value": 93000000, "lastContact": "19-Iyun", "fabric": "Interlok, 3 600 kg" },
+      { "id": 5, "name": "Orion Retail", "phone": "+998 99 802 31 65", "source": "Showroom", "status": "Yutildi", "statusKey": "won", "manager": "Aziz", "value": 1210000000, "lastContact": "18-Iyun", "fabric": "Tayyor futbolka, 18 000 dona" }
+    ],
+    "staff": [
+      { "id": 1, "name": "Malika Toshpo'latova", "role": "Mijozlar menejeri", "shift": "09:00 - 18:00", "arrival": "08:54", "leaving": "18:08", "status": "Vaqtida", "statusKey": "onTime", "attendance": 98 },
+      { "id": 2, "name": "Aziz Hamroyev", "role": "Savdo rahbari", "shift": "09:00 - 18:00", "arrival": "09:12", "leaving": "18:00", "status": "Kechikdi", "statusKey": "late", "attendance": 91 },
+      { "id": 3, "name": "Nodira Saidova", "role": "Sklad administratori", "shift": "08:30 - 17:30", "arrival": "08:26", "leaving": "17:36", "status": "Vaqtida", "statusKey": "onTime", "attendance": 96 },
+      { "id": 4, "name": "Bekzod Nurmatov", "role": "Mahsulot analitigi", "shift": "10:00 - 19:00", "arrival": "Masofadan", "leaving": "Masofadan", "status": "Masofadan", "statusKey": "remote", "attendance": 94 },
+      { "id": 5, "name": "Zarina Umarova", "role": "HR nazoratchi", "shift": "09:00 - 18:00", "arrival": "08:58", "leaving": "17:20", "status": "Erta ketdi", "statusKey": "leftEarly", "attendance": 88 }
+    ],
+    "productCategories": [
+      { "id": "fabric-rolls", "name": "Mato rulonlari", "code": "FABRIC", "description": "Bo'yalgan va tayyor rulon matolar.", "sortOrder": 1 },
+      { "id": "yarn", "name": "Ip-kalava", "code": "YARN", "description": "Paxta va aralash ip-kalavalar.", "sortOrder": 2 },
+      { "id": "knitwear", "name": "Trikotaj", "code": "KNIT", "description": "Interlok, ribana va kulir trikotaj matolar.", "sortOrder": 3 },
+      { "id": "finished-goods", "name": "Tayyor mahsulot", "code": "READY", "description": "Tayyor tikilgan kiyim va uy tekstili.", "sortOrder": 4 }
+    ],
+    "products": [
+      { "id": 1, "name": "Paxta satin 120 GSM", "description": "Premium uy tekstili va ko'rpa-to'shak komplektlari uchun yumshoq paxta satin.", "category": "Mato rulonlari", "categoryId": "fabric-rolls", "sku": "RV-TEX-001", "supplier": "Fergana Cotton Mill", "warehouse": "A-12 / Rulonlar", "color": "Ivory oq", "composition": "100% paxta", "gsm": 120, "width": "240 cm", "price": 35000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=80"], "status": "Faol", "isActive": true, "isRecommended": true, "subsidyEnabled": false, "stock": 12600, "minStock": 4000, "unit": "m", "sold": 31200, "revenue": 1092000000, "trend": 18 },
+      { "id": 2, "name": "Gabardin forma matosi", "description": "Maktab formasi va korporativ uniformalar uchun zich gabardin.", "category": "Mato rulonlari", "categoryId": "fabric-rolls", "sku": "RV-TEX-014", "supplier": "Namangan Weave", "warehouse": "B-04 / Uniforma", "color": "To'q ko'k", "composition": "65% poliester, 35% viskoza", "gsm": 180, "width": "150 cm", "price": 34000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=900&q=80"], "status": "Kam zaxira", "isActive": true, "isRecommended": false, "subsidyEnabled": true, "stock": 3600, "minStock": 4500, "unit": "m", "sold": 20500, "revenue": 697000000, "trend": -4 },
+      { "id": 3, "name": "Ring spun ip 30/1", "description": "Trikotaj liniyasi uchun barqaror buramdagi ring spun ip.", "category": "Ip-kalava", "categoryId": "yarn", "sku": "RV-YRN-208", "supplier": "Andijan Yarn House", "warehouse": "Y-02 / Kalava", "color": "Xom oq", "composition": "100% paxta", "gsm": 0, "width": "30/1 Ne", "price": 40000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1615800002234-05c4d488696c?auto=format&fit=crop&w=900&q=80"], "status": "Faol", "isActive": true, "isRecommended": true, "subsidyEnabled": true, "stock": 4400, "minStock": 1200, "unit": "kg", "sold": 9800, "revenue": 392000000, "trend": 9 },
+      { "id": 4, "name": "Interlok trikotaj", "description": "Bolalar kiyimi uchun yumshoq, elastik interlok trikotaj.", "category": "Trikotaj", "categoryId": "knitwear", "sku": "RV-KNT-102", "supplier": "Tashkent Knit Lab", "warehouse": "K-08 / Trikotaj", "color": "Melanj kulrang", "composition": "95% paxta, 5% elastan", "gsm": 210, "width": "185 cm", "price": 29000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=900&q=80"], "status": "Kam zaxira", "isActive": true, "isRecommended": false, "subsidyEnabled": false, "stock": 5800, "minStock": 6000, "unit": "kg", "sold": 16600, "revenue": 481400000, "trend": 6 },
+      { "id": 5, "name": "Basic oq futbolka", "description": "Retail va B2B buyurtmalar uchun tayyor tikilgan basic futbolka.", "category": "Tayyor mahsulot", "categoryId": "finished-goods", "sku": "RV-FIN-330", "supplier": "Rivera Sewing Line", "warehouse": "F-01 / Tayyor mahsulot", "color": "Oq", "composition": "100% paxta jersey", "gsm": 160, "width": "S-XXL", "price": 42000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=900&q=80"], "status": "Faol", "isActive": true, "isRecommended": true, "subsidyEnabled": false, "stock": 14000, "minStock": 10000, "unit": "pcs", "sold": 28000, "revenue": 1176000000, "trend": 22 }
+    ],
+    "categoryAnalytics": [
+      { "name": "Mato rulonlari", "value": 42, "color": "#0f766e" },
+      { "name": "Ip-kalava", "value": 25, "color": "#0ea5e9" },
+      { "name": "Trikotaj", "value": 18, "color": "#f59e0b" },
+      { "name": "Tayyor mahsulot", "value": 15, "color": "#7c3aed" }
+    ]
+  }
+}
