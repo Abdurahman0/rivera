@@ -26,6 +26,8 @@
     "remember": "Запомнить",
     "refresh": "Обновить",
     "notifications": "Уведомления",
+    "noNotifications": "Новых уведомлений нет.",
+    "loading": "Загрузка...",
     "create": "Создать",
     "export": "Экспорт",
     "viewAll": "Все",
@@ -98,6 +100,10 @@
       "label": "Клиенты",
       "caption": "Заказчики и сделки"
     },
+    "orders": {
+      "label": "Заказы",
+      "caption": "Производственный поток"
+    },
     "staff": {
       "label": "Сотрудники",
       "caption": "Приход и уход"
@@ -105,6 +111,18 @@
     "products": {
       "label": "Продукты",
       "caption": "Склад и аналитика"
+    },
+    "suppliers": {
+      "label": "Поставщики",
+      "caption": "Поставки и закупки"
+    },
+    "finance": {
+      "label": "Финансы",
+      "caption": "Денежный поток"
+    },
+    "reports": {
+      "label": "Отчеты",
+      "caption": "Экспорт и аналитика"
     }
   },
   "dashboard": {
@@ -175,10 +193,18 @@
     "flowTitle": "Недельный поток сотрудников",
     "columns": {
       "staff": "Сотрудник",
+      "position": "Должность",
+      "phone": "Телефон",
+      "salary": "Зарплата",
+      "hireDate": "Дата найма",
       "shift": "Смена",
       "arrival": "Приход",
       "leaving": "Уход",
       "status": "Статус",
+      "attendance": "Посещаемость"
+    },
+    "tabs": {
+      "employees": "Сотрудники",
       "attendance": "Посещаемость"
     },
     "modal": {
@@ -206,7 +232,19 @@
     "categoryTitle": "Доля категорий",
     "tabs": {
       "products": "Продукты",
-      "categories": "Категории"
+      "categories": "Категории",
+      "stockIn": "Приход склада",
+      "stockOut": "Расход склада",
+      "history": "История движений"
+    },
+    "movementTitle": "История движений",
+    "stockColumns": {
+      "date": "Дата",
+      "product": "Продукт",
+      "quantity": "Количество",
+      "supplier": "Поставщик",
+      "client": "Клиент",
+      "employee": "Сотрудник склада"
     },
     "columns": {
       "product": "Продукт",
@@ -271,7 +309,123 @@
       "primaryImage": "Основное фото",
       "addGallery": "Добавить галерею",
       "removeImage": "Убрать фото",
+      "galleryAction": "В демо-режиме загрузка галереи не подключена к backend.",
+      "removeImageAction": "В демо-режиме удаление фото не сохраняется.",
       "imageHint": "Основное изображение и галерея соответствуют потоку редактирования продуктов Solar."
+    }
+  },
+  "orders": {
+    "eyebrow": "Заказы",
+    "title": "Управление заказами",
+    "description": "Клиентские заказы, состояние производства, менеджер и сроки доставки.",
+    "create": "Создать заказ",
+    "metrics": {
+      "total": "Всего заказов",
+      "totalCaption": "Активный pipeline",
+      "pending": "Ожидают",
+      "pendingCaption": "Ждут подтверждения",
+      "production": "В производстве",
+      "productionCaption": "По сменам",
+      "delivered": "Доставлены",
+      "deliveredCaption": "За месяц"
+    },
+    "columns": {
+      "orderId": "ID заказа",
+      "client": "Клиент",
+      "product": "Продукт",
+      "quantity": "Количество",
+      "total": "Итоговая сумма",
+      "manager": "Менеджер",
+      "deliveryDate": "Дата доставки",
+      "status": "Статус"
+    },
+    "form": {
+      "unitPrice": "Цена за единицу",
+      "notes": "Заметки"
+    },
+    "modal": {
+      "viewTitle": "Карточка заказа",
+      "createTitle": "Новый заказ",
+      "editTitle": "Редактировать заказ",
+      "summary": "Управление клиентом, продуктом, количеством, ценой и планом доставки.",
+      "nextStep": "Следующий шаг: проверить производственный план и остаток склада."
+    }
+  },
+  "suppliers": {
+    "eyebrow": "Поставщики",
+    "title": "Поставщики",
+    "description": "Контроль закупок у поставщиков ткани, пряжи и аксессуаров.",
+    "create": "Добавить поставщика",
+    "metrics": {
+      "total": "Всего поставщиков",
+      "totalCaption": "Складская сеть",
+      "active": "Активные поставщики",
+      "activeCaption": "Надежные поставки",
+      "purchases": "Закупки месяца",
+      "purchasesCaption": "Текущий месяц",
+      "outstanding": "Задолженность",
+      "outstandingCaption": "Ожидает оплаты"
+    },
+    "columns": {
+      "name": "Поставщик",
+      "contact": "Контактное лицо",
+      "phone": "Телефон",
+      "email": "Email",
+      "products": "Поставляемые продукты",
+      "purchases": "Всего закупок",
+      "status": "Статус"
+    },
+    "sections": {
+      "general": "Общая информация",
+      "purchaseHistory": "История закупок",
+      "productsSupplied": "Поставляемые продукты",
+      "recentDeliveries": "Последние поставки"
+    },
+    "modal": {
+      "viewTitle": "Карточка поставщика",
+      "createTitle": "Новый поставщик",
+      "editTitle": "Редактировать поставщика",
+      "summary": "Контакты, закупки, поставляемые продукты и задолженность.",
+      "nextStep": "Следующий шаг: проверить последнюю поставку и состояние оплаты."
+    }
+  },
+  "finance": {
+    "eyebrow": "Финансы",
+    "title": "Финансы",
+    "description": "Анализ выручки, расходов, чистой прибыли и долгов.",
+    "metrics": {
+      "revenue": "Выручка",
+      "revenueCaption": "Поступления месяца",
+      "expenses": "Расходы",
+      "expensesCaption": "Материалы и операции",
+      "profit": "Чистая прибыль",
+      "profitCaption": "Выручка минус расходы",
+      "debts": "Долги",
+      "debtsCaption": "Ожидаемые платежи"
+    },
+    "revenueTable": "Таблица выручки",
+    "expensesTable": "Таблица расходов",
+    "profitAnalysis": "Анализ прибыли",
+    "columns": {
+      "date": "Дата",
+      "client": "Клиент",
+      "order": "Заказ",
+      "category": "Категория",
+      "description": "Описание",
+      "amount": "Сумма"
+    }
+  },
+  "reports": {
+    "eyebrow": "Отчеты",
+    "title": "Центр отчетов",
+    "description": "Готовые к экспорту отчеты по продажам, складу, клиентам, employees и финансам.",
+    "cardCaption": "Готово к просмотру с фильтрами и экспорту.",
+    "types": {
+      "sales": "Отчет по продажам",
+      "inventory": "Складской отчет",
+      "clients": "Отчет по клиентам",
+      "employees": "Отчет по сотрудникам",
+      "finance": "Финансовый отчет"
     }
   },
   "statuses": {
@@ -296,11 +450,22 @@
       { "id": 5, "name": "Orion Retail", "phone": "+998 99 802 31 65", "source": "Showroom", "status": "Выиграно", "statusKey": "won", "manager": "Азиз", "value": 1210000000, "lastContact": "18-Июн", "fabric": "Готовая футболка, 18 000 шт" }
     ],
     "staff": [
-      { "id": 1, "name": "Малика Тошпулатова", "role": "Менеджер клиентов", "shift": "09:00 - 18:00", "arrival": "08:54", "leaving": "18:08", "status": "Вовремя", "statusKey": "onTime", "attendance": 98 },
-      { "id": 2, "name": "Азиз Хамроев", "role": "Руководитель продаж", "shift": "09:00 - 18:00", "arrival": "09:12", "leaving": "18:00", "status": "Опоздал", "statusKey": "late", "attendance": 91 },
-      { "id": 3, "name": "Нодира Саидова", "role": "Администратор склада", "shift": "08:30 - 17:30", "arrival": "08:26", "leaving": "17:36", "status": "Вовремя", "statusKey": "onTime", "attendance": 96 },
-      { "id": 4, "name": "Бекзод Нурматов", "role": "Продуктовый аналитик", "shift": "10:00 - 19:00", "arrival": "Удаленно", "leaving": "Удаленно", "status": "Удаленно", "statusKey": "remote", "attendance": 94 },
-      { "id": 5, "name": "Зарина Умарова", "role": "HR контролер", "shift": "09:00 - 18:00", "arrival": "08:58", "leaving": "17:20", "status": "Ушел рано", "statusKey": "leftEarly", "attendance": 88 }
+      { "id": 1, "name": "Малика Тошпулатова", "role": "Менеджер клиентов", "phone": "+998 90 188 10 20", "salary": 8500000, "hireDate": "12-Янв-2024", "shift": "09:00 - 18:00", "arrival": "08:54", "leaving": "18:08", "status": "Вовремя", "statusKey": "onTime", "attendance": 98 },
+      { "id": 2, "name": "Азиз Хамроев", "role": "Руководитель продаж", "phone": "+998 97 244 31 18", "salary": 12000000, "hireDate": "03-Мар-2023", "shift": "09:00 - 18:00", "arrival": "09:12", "leaving": "18:00", "status": "Опоздал", "statusKey": "late", "attendance": 91 },
+      { "id": 3, "name": "Нодира Саидова", "role": "Администратор склада", "phone": "+998 91 506 77 40", "salary": 7200000, "hireDate": "18-Авг-2022", "shift": "08:30 - 17:30", "arrival": "08:26", "leaving": "17:36", "status": "Вовремя", "statusKey": "onTime", "attendance": 96 },
+      { "id": 4, "name": "Бекзод Нурматов", "role": "Продуктовый аналитик", "phone": "+998 93 402 55 91", "salary": 9300000, "hireDate": "21-Май-2024", "shift": "10:00 - 19:00", "arrival": "Удаленно", "leaving": "Удаленно", "status": "Удаленно", "statusKey": "remote", "attendance": 94 },
+      { "id": 5, "name": "Зарина Умарова", "role": "HR контролер", "phone": "+998 99 710 45 13", "salary": 7600000, "hireDate": "09-Ноя-2023", "shift": "09:00 - 18:00", "arrival": "08:58", "leaving": "17:20", "status": "Ушел рано", "statusKey": "leftEarly", "attendance": 88 }
+    ],
+    "orders": [
+      { "id": 1, "orderId": "ORD-2406-018", "client": "Atlas Home Textile", "product": "Хлопковый сатин 120 GSM", "quantity": "4 000 м", "unitPrice": 35000, "totalAmount": 140000000, "manager": "Малика", "deliveryDate": "28-Июн", "status": "Ожидает", "statusKey": "pending", "notes": "Образец подтвержден" },
+      { "id": 2, "orderId": "ORD-2406-021", "client": "Samarkand Uniform", "product": "Габардин для формы", "quantity": "12 000 м", "unitPrice": 34000, "totalAmount": 408000000, "manager": "Азиз", "deliveryDate": "05-Июл", "status": "В производстве", "statusKey": "production", "notes": "На линии окраски" },
+      { "id": 3, "orderId": "ORD-2406-026", "client": "Orion Retail", "product": "Базовая белая футболка", "quantity": "18 000 шт", "unitPrice": 42000, "totalAmount": 756000000, "manager": "Азиз", "deliveryDate": "01-Июл", "status": "Подтвержден", "statusKey": "confirmed", "notes": "Передано в швейный цех" },
+      { "id": 4, "orderId": "ORD-2406-030", "client": "Nur Kids Wear", "product": "Интерлок трикотаж", "quantity": "3 600 кг", "unitPrice": 29000, "totalAmount": 104400000, "manager": "Малика", "deliveryDate": "30-Июн", "status": "Доставлен", "statusKey": "delivered", "notes": "Доставлено" }
+    ],
+    "suppliers": [
+      { "id": 1, "name": "Fergana Cotton Mill", "contactPerson": "Шахбоз Каримов", "phone": "+998 73 220 14 44", "email": "sales@fercotton.uz", "productsSupplied": "Хлопковый сатин, суровая ткань", "totalPurchases": 680000000, "outstandingPayments": 80000000, "status": "Активен", "statusKey": "active", "recentDelivery": "2 000м сатина, 20-Июн" },
+      { "id": 2, "name": "Namangan Weave", "contactPerson": "Дилшод Эргашев", "phone": "+998 69 241 88 11", "email": "orders@namweave.uz", "productsSupplied": "Габардин, костюмная ткань", "totalPurchases": 520000000, "outstandingPayments": 46000000, "status": "Активен", "statusKey": "active", "recentDelivery": "1 500м габардина, 19-Июн" },
+      { "id": 3, "name": "Andijan Yarn House", "contactPerson": "Мадина Юлдошева", "phone": "+998 74 225 70 60", "email": "supply@yarnhouse.uz", "productsSupplied": "Ring spun пряжа", "totalPurchases": 390000000, "outstandingPayments": 30000000, "status": "На проверке", "statusKey": "pending", "recentDelivery": "900кг пряжи, 17-Июн" }
     ],
     "productCategories": [
       { "id": "fabric-rolls", "name": "Рулоны ткани", "code": "FABRIC", "description": "Окрашенные и готовые рулонные ткани.", "sortOrder": 1 },
@@ -320,6 +485,31 @@
       { "name": "Пряжа", "value": 25, "color": "#0ea5e9" },
       { "name": "Трикотаж", "value": 18, "color": "#f59e0b" },
       { "name": "Готовая продукция", "value": 15, "color": "#7c3aed" }
+    ],
+    "stockIn": [
+      { "id": 1, "date": "20-Июн", "product": "Хлопковый сатин 120 GSM", "quantity": "+2 000 м", "supplier": "Fergana Cotton Mill", "employee": "Нодира Саидова", "type": "in", "note": "2 000м Cotton Satin принято" },
+      { "id": 2, "date": "19-Июн", "product": "Габардин для формы", "quantity": "+1 500 м", "supplier": "Namangan Weave", "employee": "Нодира Саидова", "type": "in", "note": "Рулоны габардина размещены в зоне A" },
+      { "id": 3, "date": "17-Июн", "product": "Ring spun пряжа 30/1", "quantity": "+900 кг", "supplier": "Andijan Yarn House", "employee": "Бекзод Нурматов", "type": "in", "note": "Партия пряжи проверена" }
+    ],
+    "stockOut": [
+      { "id": 1, "date": "21-Июн", "product": "Хлопковый сатин 120 GSM", "quantity": "-500 м", "client": "Atlas Home Textile", "employee": "Нодира Саидова", "type": "out", "note": "500м Cotton Satin отгружено" },
+      { "id": 2, "date": "20-Июн", "product": "Базовая белая футболка", "quantity": "-2 400 шт", "client": "Orion Retail", "employee": "Бекзод Нурматов", "type": "out", "note": "Retail заказ вышел со склада" },
+      { "id": 3, "date": "18-Июн", "product": "Интерлок трикотаж", "quantity": "-420 кг", "client": "Nur Kids Wear", "employee": "Нодира Саидова", "type": "out", "note": "Трикотаж передан в производство" }
+    ],
+    "movementHistory": [
+      { "id": 1, "date": "21-Июн", "product": "Хлопковый сатин 120 GSM", "quantity": "-500 м", "client": "Atlas Home Textile", "employee": "Нодира Саидова", "type": "out", "note": "500m Cotton Satin shipped" },
+      { "id": 2, "date": "20-Июн", "product": "Хлопковый сатин 120 GSM", "quantity": "+2 000 м", "supplier": "Fergana Cotton Mill", "employee": "Нодира Саидова", "type": "in", "note": "+ 2,000m Cotton Satin received" },
+      { "id": 3, "date": "20-Июн", "product": "Базовая белая футболка", "quantity": "-2 400 шт", "client": "Orion Retail", "employee": "Бекзод Нурматов", "type": "out", "note": "2 400 футболок отгружено" }
+    ],
+    "revenueEntries": [
+      { "id": 1, "date": "21-Июн", "client": "Orion Retail", "order": "ORD-2406-026", "amount": 756000000 },
+      { "id": 2, "date": "20-Июн", "client": "Samarkand Uniform", "order": "ORD-2406-021", "amount": 408000000 },
+      { "id": 3, "date": "19-Июн", "client": "Atlas Home Textile", "order": "ORD-2406-018", "amount": 140000000 }
+    ],
+    "expenseEntries": [
+      { "id": 1, "date": "21-Июн", "category": "Сырье", "description": "Закупка хлопкового сатина", "amount": 210000000 },
+      { "id": 2, "date": "20-Июн", "category": "Логистика", "description": "Расходы доставки", "amount": 24000000 },
+      { "id": 3, "date": "19-Июн", "category": "Зарплата", "description": "Смена швейного цеха", "amount": 86000000 }
     ]
   }
 }

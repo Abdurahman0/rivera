@@ -26,6 +26,8 @@
     "remember": "Eslab qolish",
     "refresh": "Yangilash",
     "notifications": "Bildirishnomalar",
+    "noNotifications": "Yangi bildirishnomalar yo'q.",
+    "loading": "Yuklanmoqda...",
     "create": "Yaratish",
     "export": "Eksport",
     "viewAll": "Hammasi",
@@ -98,6 +100,10 @@
       "label": "Mijozlar",
       "caption": "Buyurtmachilar va bitimlar"
     },
+    "orders": {
+      "label": "Buyurtmalar",
+      "caption": "Ishlab chiqarish oqimi"
+    },
     "staff": {
       "label": "Xodimlar",
       "caption": "Kelib-ketish nazorati"
@@ -105,6 +111,18 @@
     "products": {
       "label": "Mahsulotlar",
       "caption": "Sklad va analitika"
+    },
+    "suppliers": {
+      "label": "Ta'minotchilar",
+      "caption": "Yetkazib beruvchilar"
+    },
+    "finance": {
+      "label": "Moliya",
+      "caption": "Pul oqimi"
+    },
+    "reports": {
+      "label": "Hisobotlar",
+      "caption": "Eksport va tahlil"
     }
   },
   "dashboard": {
@@ -175,10 +193,18 @@
     "flowTitle": "Haftalik kelib-ketish",
     "columns": {
       "staff": "Xodim",
+      "position": "Lavozim",
+      "phone": "Telefon",
+      "salary": "Oylik",
+      "hireDate": "Ishga olingan sana",
       "shift": "Smena",
       "arrival": "Kelish",
       "leaving": "Ketish",
       "status": "Status",
+      "attendance": "Davomat"
+    },
+    "tabs": {
+      "employees": "Xodimlar",
       "attendance": "Davomat"
     },
     "modal": {
@@ -206,7 +232,19 @@
     "categoryTitle": "Kategoriya ulushi",
     "tabs": {
       "products": "Mahsulotlar",
-      "categories": "Kategoriyalar"
+      "categories": "Kategoriyalar",
+      "stockIn": "Sklad kirimi",
+      "stockOut": "Sklad chiqimi",
+      "history": "Harakat tarixi"
+    },
+    "movementTitle": "Harakat tarixi",
+    "stockColumns": {
+      "date": "Sana",
+      "product": "Mahsulot",
+      "quantity": "Miqdor",
+      "supplier": "Ta'minotchi",
+      "client": "Mijoz",
+      "employee": "Sklad xodimi"
     },
     "columns": {
       "product": "Mahsulot",
@@ -271,7 +309,123 @@
       "primaryImage": "Asosiy rasm",
       "addGallery": "Galereya qo'shish",
       "removeImage": "Rasmni olib tashlash",
+      "galleryAction": "Demo rejimda galereya yuklash backendga ulanmagan.",
+      "removeImageAction": "Demo rejimda rasmni o'chirish saqlanmaydi.",
       "imageHint": "Asosiy rasm va galereya Solar mahsulot tahrirlash oqimiga mos."
+    }
+  },
+  "orders": {
+    "eyebrow": "Buyurtmalar",
+    "title": "Buyurtmalar boshqaruvi",
+    "description": "Mijoz buyurtmalari, ishlab chiqarish holati, menejer va yetkazib berish muddatlari.",
+    "create": "Buyurtma yaratish",
+    "metrics": {
+      "total": "Jami buyurtmalar",
+      "totalCaption": "Faol pipeline",
+      "pending": "Kutilmoqda",
+      "pendingCaption": "Tasdiq kutmoqda",
+      "production": "Ishlab chiqarishda",
+      "productionCaption": "Smena bo'yicha",
+      "delivered": "Yetkazildi",
+      "deliveredCaption": "Oy bo'yicha"
+    },
+    "columns": {
+      "orderId": "Buyurtma ID",
+      "client": "Mijoz",
+      "product": "Mahsulot",
+      "quantity": "Miqdor",
+      "total": "Jami summa",
+      "manager": "Menejer",
+      "deliveryDate": "Yetkazish sanasi",
+      "status": "Status"
+    },
+    "form": {
+      "unitPrice": "Birlik narxi",
+      "notes": "Izohlar"
+    },
+    "modal": {
+      "viewTitle": "Buyurtma kartasi",
+      "createTitle": "Yangi buyurtma",
+      "editTitle": "Buyurtmani tahrirlash",
+      "summary": "Mijoz, mahsulot, miqdor, narx va yetkazib berish rejasini boshqarish.",
+      "nextStep": "Keyingi qadam: ishlab chiqarish rejasi va sklad qoldig'ini tekshirish."
+    }
+  },
+  "suppliers": {
+    "eyebrow": "Ta'minotchilar",
+    "title": "Ta'minotchilar",
+    "description": "Mato, ip-kalava va aksessuar yetkazib beruvchilari bilan xaridlar nazorati.",
+    "create": "Ta'minotchi qo'shish",
+    "metrics": {
+      "total": "Jami ta'minotchilar",
+      "totalCaption": "Sklad tarmog'i",
+      "active": "Faol ta'minotchilar",
+      "activeCaption": "Ishonchli yetkazuvchilar",
+      "purchases": "Oylik xaridlar",
+      "purchasesCaption": "Joriy oy",
+      "outstanding": "Qarzlar",
+      "outstandingCaption": "To'lov kutmoqda"
+    },
+    "columns": {
+      "name": "Ta'minotchi",
+      "contact": "Mas'ul shaxs",
+      "phone": "Telefon",
+      "email": "Email",
+      "products": "Yetkazadigan mahsulotlar",
+      "purchases": "Jami xaridlar",
+      "status": "Status"
+    },
+    "sections": {
+      "general": "Umumiy ma'lumot",
+      "purchaseHistory": "Xaridlar tarixi",
+      "productsSupplied": "Yetkazadigan mahsulotlar",
+      "recentDeliveries": "Oxirgi yetkazib berish"
+    },
+    "modal": {
+      "viewTitle": "Ta'minotchi kartasi",
+      "createTitle": "Yangi ta'minotchi",
+      "editTitle": "Ta'minotchini tahrirlash",
+      "summary": "Kontaktlar, xaridlar, yetkazadigan mahsulotlar va qarzlarni kuzatish.",
+      "nextStep": "Keyingi qadam: oxirgi yetkazib berish va to'lov holatini tekshirish."
+    }
+  },
+  "finance": {
+    "eyebrow": "Moliya",
+    "title": "Moliya",
+    "description": "Daromad, xarajat, sof foyda va qarzdorlik tahlili.",
+    "metrics": {
+      "revenue": "Daromad",
+      "revenueCaption": "Joriy oy tushumi",
+      "expenses": "Xarajatlar",
+      "expensesCaption": "Material va operatsiya",
+      "profit": "Sof foyda",
+      "profitCaption": "Daromad minus xarajat",
+      "debts": "Qarzlar",
+      "debtsCaption": "Kutilayotgan to'lovlar"
+    },
+    "revenueTable": "Daromad jadvali",
+    "expensesTable": "Xarajatlar jadvali",
+    "profitAnalysis": "Foyda tahlili",
+    "columns": {
+      "date": "Sana",
+      "client": "Mijoz",
+      "order": "Buyurtma",
+      "category": "Kategoriya",
+      "description": "Tavsif",
+      "amount": "Summa"
+    }
+  },
+  "reports": {
+    "eyebrow": "Hisobotlar",
+    "title": "Hisobot markazi",
+    "description": "Sotuv, sklad, mijozlar, employees va moliya bo'yicha eksportga tayyor hisobotlar.",
+    "cardCaption": "Filtrlar bilan ko'rish va eksport qilish uchun tayyor.",
+    "types": {
+      "sales": "Sotuv hisoboti",
+      "inventory": "Sklad hisoboti",
+      "clients": "Mijozlar hisoboti",
+      "employees": "Xodimlar hisoboti",
+      "finance": "Moliya hisoboti"
     }
   },
   "statuses": {
@@ -296,11 +450,22 @@
       { "id": 5, "name": "Orion Retail", "phone": "+998 99 802 31 65", "source": "Showroom", "status": "Yutildi", "statusKey": "won", "manager": "Aziz", "value": 1210000000, "lastContact": "18-Iyun", "fabric": "Tayyor futbolka, 18 000 dona" }
     ],
     "staff": [
-      { "id": 1, "name": "Malika Toshpo'latova", "role": "Mijozlar menejeri", "shift": "09:00 - 18:00", "arrival": "08:54", "leaving": "18:08", "status": "Vaqtida", "statusKey": "onTime", "attendance": 98 },
-      { "id": 2, "name": "Aziz Hamroyev", "role": "Savdo rahbari", "shift": "09:00 - 18:00", "arrival": "09:12", "leaving": "18:00", "status": "Kechikdi", "statusKey": "late", "attendance": 91 },
-      { "id": 3, "name": "Nodira Saidova", "role": "Sklad administratori", "shift": "08:30 - 17:30", "arrival": "08:26", "leaving": "17:36", "status": "Vaqtida", "statusKey": "onTime", "attendance": 96 },
-      { "id": 4, "name": "Bekzod Nurmatov", "role": "Mahsulot analitigi", "shift": "10:00 - 19:00", "arrival": "Masofadan", "leaving": "Masofadan", "status": "Masofadan", "statusKey": "remote", "attendance": 94 },
-      { "id": 5, "name": "Zarina Umarova", "role": "HR nazoratchi", "shift": "09:00 - 18:00", "arrival": "08:58", "leaving": "17:20", "status": "Erta ketdi", "statusKey": "leftEarly", "attendance": 88 }
+      { "id": 1, "name": "Malika Toshpo'latova", "role": "Mijozlar menejeri", "phone": "+998 90 188 10 20", "salary": 8500000, "hireDate": "12-Jan-2024", "shift": "09:00 - 18:00", "arrival": "08:54", "leaving": "18:08", "status": "Vaqtida", "statusKey": "onTime", "attendance": 98 },
+      { "id": 2, "name": "Aziz Hamroyev", "role": "Savdo rahbari", "phone": "+998 97 244 31 18", "salary": 12000000, "hireDate": "03-Mar-2023", "shift": "09:00 - 18:00", "arrival": "09:12", "leaving": "18:00", "status": "Kechikdi", "statusKey": "late", "attendance": 91 },
+      { "id": 3, "name": "Nodira Saidova", "role": "Sklad administratori", "phone": "+998 91 506 77 40", "salary": 7200000, "hireDate": "18-Aug-2022", "shift": "08:30 - 17:30", "arrival": "08:26", "leaving": "17:36", "status": "Vaqtida", "statusKey": "onTime", "attendance": 96 },
+      { "id": 4, "name": "Bekzod Nurmatov", "role": "Mahsulot analitigi", "phone": "+998 93 402 55 91", "salary": 9300000, "hireDate": "21-May-2024", "shift": "10:00 - 19:00", "arrival": "Masofadan", "leaving": "Masofadan", "status": "Masofadan", "statusKey": "remote", "attendance": 94 },
+      { "id": 5, "name": "Zarina Umarova", "role": "HR nazoratchi", "phone": "+998 99 710 45 13", "salary": 7600000, "hireDate": "09-Nov-2023", "shift": "09:00 - 18:00", "arrival": "08:58", "leaving": "17:20", "status": "Erta ketdi", "statusKey": "leftEarly", "attendance": 88 }
+    ],
+    "orders": [
+      { "id": 1, "orderId": "ORD-2406-018", "client": "Atlas Home Textile", "product": "Paxta satin 120 GSM", "quantity": "4 000 m", "unitPrice": 35000, "totalAmount": 140000000, "manager": "Malika", "deliveryDate": "28-Iyun", "status": "Kutilmoqda", "statusKey": "pending", "notes": "Namuna tasdiqlangan" },
+      { "id": 2, "orderId": "ORD-2406-021", "client": "Samarkand Uniform", "product": "Gabardin forma matosi", "quantity": "12 000 m", "unitPrice": 34000, "totalAmount": 408000000, "manager": "Aziz", "deliveryDate": "05-Iyul", "status": "Ishlab chiqarishda", "statusKey": "production", "notes": "Bo'yash liniyasida" },
+      { "id": 3, "orderId": "ORD-2406-026", "client": "Orion Retail", "product": "Basic oq futbolka", "quantity": "18 000 dona", "unitPrice": 42000, "totalAmount": 756000000, "manager": "Aziz", "deliveryDate": "01-Iyul", "status": "Tasdiqlangan", "statusKey": "confirmed", "notes": "Tikuv sexiga berildi" },
+      { "id": 4, "orderId": "ORD-2406-030", "client": "Nur Kids Wear", "product": "Interlok trikotaj", "quantity": "3 600 kg", "unitPrice": 29000, "totalAmount": 104400000, "manager": "Malika", "deliveryDate": "30-Iyun", "status": "Yetkazildi", "statusKey": "delivered", "notes": "Yetkazildi" }
+    ],
+    "suppliers": [
+      { "id": 1, "name": "Fergana Cotton Mill", "contactPerson": "Shahboz Karimov", "phone": "+998 73 220 14 44", "email": "sales@fercotton.uz", "productsSupplied": "Paxta satin, xom mato", "totalPurchases": 680000000, "outstandingPayments": 80000000, "status": "Faol", "statusKey": "active", "recentDelivery": "2 000m satin, 20-Iyun" },
+      { "id": 2, "name": "Namangan Weave", "contactPerson": "Dilshod Ergashev", "phone": "+998 69 241 88 11", "email": "orders@namweave.uz", "productsSupplied": "Gabardin, kostyum matosi", "totalPurchases": 520000000, "outstandingPayments": 46000000, "status": "Faol", "statusKey": "active", "recentDelivery": "1 500m gabardin, 19-Iyun" },
+      { "id": 3, "name": "Andijan Yarn House", "contactPerson": "Madina Yo'ldosheva", "phone": "+998 74 225 70 60", "email": "supply@yarnhouse.uz", "productsSupplied": "Ring spun ip", "totalPurchases": 390000000, "outstandingPayments": 30000000, "status": "Tekshiruvda", "statusKey": "pending", "recentDelivery": "900kg ip, 17-Iyun" }
     ],
     "productCategories": [
       { "id": "fabric-rolls", "name": "Mato rulonlari", "code": "FABRIC", "description": "Bo'yalgan va tayyor rulon matolar.", "sortOrder": 1 },
@@ -320,6 +485,31 @@
       { "name": "Ip-kalava", "value": 25, "color": "#0ea5e9" },
       { "name": "Trikotaj", "value": 18, "color": "#f59e0b" },
       { "name": "Tayyor mahsulot", "value": 15, "color": "#7c3aed" }
+    ],
+    "stockIn": [
+      { "id": 1, "date": "20-Iyun", "product": "Paxta satin 120 GSM", "quantity": "+2 000 m", "supplier": "Fergana Cotton Mill", "employee": "Nodira Saidova", "type": "in", "note": "2 000m Cotton Satin qabul qilindi" },
+      { "id": 2, "date": "19-Iyun", "product": "Gabardin forma matosi", "quantity": "+1 500 m", "supplier": "Namangan Weave", "employee": "Nodira Saidova", "type": "in", "note": "Gabardin rulonlari A-zonaga joylandi" },
+      { "id": 3, "date": "17-Iyun", "product": "Ring spun ip 30/1", "quantity": "+900 kg", "supplier": "Andijan Yarn House", "employee": "Bekzod Nurmatov", "type": "in", "note": "Ip-kalava partiyasi tekshirildi" }
+    ],
+    "stockOut": [
+      { "id": 1, "date": "21-Iyun", "product": "Paxta satin 120 GSM", "quantity": "-500 m", "client": "Atlas Home Textile", "employee": "Nodira Saidova", "type": "out", "note": "500m Cotton Satin jo'natildi" },
+      { "id": 2, "date": "20-Iyun", "product": "Basic oq futbolka", "quantity": "-2 400 dona", "client": "Orion Retail", "employee": "Bekzod Nurmatov", "type": "out", "note": "Retail buyurtma ombordan chiqdi" },
+      { "id": 3, "date": "18-Iyun", "product": "Interlok trikotaj", "quantity": "-420 kg", "client": "Nur Kids Wear", "employee": "Nodira Saidova", "type": "out", "note": "Trikotaj ishlab chiqarishga berildi" }
+    ],
+    "movementHistory": [
+      { "id": 1, "date": "21-Iyun", "product": "Paxta satin 120 GSM", "quantity": "-500 m", "client": "Atlas Home Textile", "employee": "Nodira Saidova", "type": "out", "note": "500m Cotton Satin shipped" },
+      { "id": 2, "date": "20-Iyun", "product": "Paxta satin 120 GSM", "quantity": "+2 000 m", "supplier": "Fergana Cotton Mill", "employee": "Nodira Saidova", "type": "in", "note": "+ 2,000m Cotton Satin received" },
+      { "id": 3, "date": "20-Iyun", "product": "Basic oq futbolka", "quantity": "-2 400 dona", "client": "Orion Retail", "employee": "Bekzod Nurmatov", "type": "out", "note": "2 400 dona futbolka jo'natildi" }
+    ],
+    "revenueEntries": [
+      { "id": 1, "date": "21-Iyun", "client": "Orion Retail", "order": "ORD-2406-026", "amount": 756000000 },
+      { "id": 2, "date": "20-Iyun", "client": "Samarkand Uniform", "order": "ORD-2406-021", "amount": 408000000 },
+      { "id": 3, "date": "19-Iyun", "client": "Atlas Home Textile", "order": "ORD-2406-018", "amount": 140000000 }
+    ],
+    "expenseEntries": [
+      { "id": 1, "date": "21-Iyun", "category": "Xomashyo", "description": "Paxta satin xaridi", "amount": 210000000 },
+      { "id": 2, "date": "20-Iyun", "category": "Logistika", "description": "Yetkazib berish xarajati", "amount": 24000000 },
+      { "id": 3, "date": "19-Iyun", "category": "Ish haqi", "description": "Tikuv sexi smenasi", "amount": 86000000 }
     ]
   }
 }
