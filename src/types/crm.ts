@@ -1,7 +1,7 @@
-export type PageId = 'dashboard' | 'clients' | 'orders' | 'products' | 'suppliers' | 'staff' | 'finance' | 'reports';
+export type PageId = 'dashboard' | 'clients' | 'orders' | 'products' | 'warehouse' | 'staff' | 'finance';
 export type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 export type ModalMode = 'view' | 'create' | 'edit';
-export type EntityKind = 'client' | 'staff' | 'product' | 'category' | 'order' | 'supplier';
+export type EntityKind = 'client' | 'staff' | 'product' | 'category' | 'order';
 export type EntityId = number | string;
 
 export interface Client {
@@ -90,20 +90,6 @@ export interface Order {
   notes: string;
 }
 
-export interface Supplier {
-  id: number;
-  name: string;
-  contactPerson: string;
-  phone: string;
-  email: string;
-  productsSupplied: string;
-  totalPurchases: number;
-  outstandingPayments: number;
-  status: string;
-  statusKey: string;
-  recentDelivery: string;
-}
-
 export interface StockMovement {
   id: number;
   date: string;
@@ -129,5 +115,5 @@ export interface FinanceEntry {
 export interface ModalState {
   mode: ModalMode;
   kind: EntityKind;
-  item?: Client | StaffMember | Product | ProductCategory | Order | Supplier;
+  item?: Client | StaffMember | Product | ProductCategory | Order;
 }

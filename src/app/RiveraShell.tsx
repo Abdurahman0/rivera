@@ -14,7 +14,6 @@ import {
   FiEdit2,
   FiEye,
   FiEyeOff,
-  FiFileText,
   FiGrid,
   FiLock,
   FiLogOut,
@@ -27,7 +26,6 @@ import {
   FiShoppingBag,
   FiSliders,
   FiSun,
-  FiTruck,
   FiTrash2,
   FiUser,
   FiUsers,
@@ -79,11 +77,9 @@ import type {
   StaffMember,
   StatusTone,
   StockMovement,
-  Supplier,
 } from '../types/crm';
 import {
   calculateInventory,
-  exportCsv,
   getPageFromPath,
   hexToRgba,
   normalizeCategoryCode,
@@ -106,9 +102,8 @@ const ClientsPage = lazy(() => import('../pages/CrmPages').then(module => ({ def
 const OrdersPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.OrdersPage })));
 const StaffPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.StaffPage })));
 const ProductsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ProductsPage })));
-const SuppliersPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.SuppliersPage })));
+const WarehousePage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.WarehousePage })));
 const FinancePage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.FinancePage })));
-const ReportsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ReportsPage })));
 
 function getPageFromLocation(): PageId {
   if (typeof window === 'undefined') return 'dashboard';
@@ -152,14 +147,12 @@ function App() {
     product: [],
     category: [],
     order: [],
-    supplier: [],
   });
 
   const rawClients = readObjects<Client>(t, 'mock.clients');
   const rawStaff = readObjects<StaffMember>(t, 'mock.staff');
   const rawProducts = readObjects<Product>(t, 'mock.products');
   const rawOrders = readObjects<Order>(t, 'mock.orders');
-  const rawSuppliers = readObjects<Supplier>(t, 'mock.suppliers');
   const rawProductCategories = readObjects<ProductCategory>(t, 'mock.productCategories');
   const stockIn = readObjects<StockMovement>(t, 'mock.stockIn');
   const stockOut = readObjects<StockMovement>(t, 'mock.stockOut');
@@ -172,7 +165,6 @@ function App() {
   const clients = rawClients.filter(client => !deletedItems.client.includes(client.id));
   const staff = rawStaff.filter(member => !deletedItems.staff.includes(member.id));
   const orders = rawOrders.filter(order => !deletedItems.order.includes(order.id));
-  const suppliers = rawSuppliers.filter(supplier => !deletedItems.supplier.includes(supplier.id));
   const productCategories = mergedProductCategories.filter(category => !deletedItems.category.includes(category.id));
   const inventoryByProduct = calculateInventory(stockIn, stockOut);
   const products = rawProducts
@@ -301,9 +293,7 @@ function App() {
           ? 'product'
           : activePage === 'orders'
             ? 'order'
-            : activePage === 'suppliers'
-              ? 'supplier'
-              : 'client';
+            : 'client';
     setModal({ kind, mode: 'create' });
   }
 
@@ -497,9 +487,6 @@ function App() {
                 products={products}
                 categoryAnalytics={categoryAnalytics}
                 categories={productCategories}
-                stockIn={stockIn}
-                stockOut={stockOut}
-                movementHistory={movementHistory}
                 totalStock={totalStock}
                 lowStockCount={lowStockCount}
                 formatMoney={formatMoney}
@@ -507,14 +494,19 @@ function App() {
                 openDelete={setPendingDelete}
               />
             )}
-            {activePage === 'suppliers' && (
-              <SuppliersPage suppliers={suppliers} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
+            {activePage === 'warehouse' && (
+              <WarehousePage
+                products={products}
+                stockIn={stockIn}
+                stockOut={stockOut}
+                movementHistory={movementHistory}
+                totalStock={totalStock}
+                lowStockCount={lowStockCount}
+                formatMoney={formatMoney}
+              />
             )}
             {activePage === 'finance' && (
               <FinancePage revenueEntries={revenueEntries} expenseEntries={expenseEntries} revenueData={revenueData} formatMoney={formatMoney} />
-            )}
-            {activePage === 'reports' && (
-              <ReportsPage />
             )}
             </Suspense>
           </div>
@@ -800,9 +792,7 @@ function EntityModal({ modal, onClose, formatMoney, categories, onSaveCategory, 
           ? 'products.categoryModal'
           : modal.kind === 'order'
             ? 'orders'
-            : modal.kind === 'supplier'
-              ? 'suppliers'
-              : 'products';
+            : 'products';
   const title = t(`${namespace}.modal.${modal.mode}Title`);
   const summary = t(`${namespace}.modal.summary`);
   const nextStep = t(`${namespace}.modal.nextStep`);
@@ -919,9 +909,7 @@ function DeleteConfirmDialog({ modal, onCancel, onConfirm }: { modal: ModalState
           ? (modal.item as ProductCategory | undefined)?.name
           : modal.kind === 'order'
             ? (modal.item as Order | undefined)?.orderId
-            : modal.kind === 'supplier'
-              ? (modal.item as Supplier | undefined)?.name
-              : (modal.item as Product | undefined)?.name;
+            : (modal.item as Product | undefined)?.name;
 
   return (
     <div
@@ -1067,21 +1055,6 @@ function detailRows(modal: ModalState, formatMoney: (value: number) => string, t
     ];
   }
 
-  if (modal.kind === 'supplier') {
-    const item = modal.item as Supplier;
-    return [
-      { label: t('suppliers.columns.name'), value: item.name },
-      { label: t('suppliers.columns.contact'), value: item.contactPerson },
-      { label: t('suppliers.columns.phone'), value: item.phone },
-      { label: t('suppliers.columns.email'), value: item.email },
-      { label: t('suppliers.columns.products'), value: item.productsSupplied },
-      { label: t('suppliers.columns.purchases'), value: formatMoney(item.totalPurchases) },
-      { label: t('suppliers.metrics.outstanding'), value: formatMoney(item.outstandingPayments) },
-      { label: t('suppliers.columns.status'), value: item.status },
-      { label: t('suppliers.sections.recentDeliveries'), value: item.recentDelivery },
-    ];
-  }
-
   const item = modal.item as Product;
   return [
     { label: t('products.columns.product'), value: item.name },
@@ -1141,18 +1114,6 @@ function getFormRows(modal: ModalState, formatMoney: (value: number) => string, 
       { label: t('orders.form.unitPrice'), value: item ? String(item.unitPrice) : '' },
       { label: t('orders.columns.deliveryDate'), value: item?.deliveryDate ?? '' },
       { label: t('orders.form.notes'), value: item?.notes ?? '' },
-    ];
-  }
-
-  if (modal.kind === 'supplier') {
-    const item = modal.item as Supplier | undefined;
-    return [
-      { label: t('suppliers.columns.name'), value: item?.name ?? '' },
-      { label: t('suppliers.columns.contact'), value: item?.contactPerson ?? '' },
-      { label: t('suppliers.columns.phone'), value: item?.phone ?? '' },
-      { label: t('suppliers.columns.email'), value: item?.email ?? '' },
-      { label: t('suppliers.columns.products'), value: item?.productsSupplied ?? '' },
-      { label: t('suppliers.columns.purchases'), value: item ? String(item.totalPurchases) : '' },
     ];
   }
 

@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FiArchive, FiBriefcase, FiCheckCircle, FiChevronRight, FiClock, FiDollarSign, FiFileText, FiPackage, FiSettings, FiShoppingBag, FiTruck, FiUsers, FiSliders } from 'react-icons/fi';
+import { FiArchive, FiBriefcase, FiCheckCircle, FiChevronRight, FiClock, FiDollarSign, FiPackage, FiSettings, FiShoppingBag, FiUsers, FiSliders } from 'react-icons/fi';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { CategoryDatum, Client, FinanceEntry, ModalState, Order, Product, ProductCategory, StaffMember, StockMovement, Supplier } from '../types/crm';
-import { exportCsv, orderStatusTone, statusTone, unitLabel } from '../utils/crm';
+import type { CategoryDatum, Client, FinanceEntry, ModalState, Order, Product, ProductCategory, StaffMember, StockMovement } from '../types/crm';
+import { orderStatusTone, statusTone, unitLabel } from '../utils/crm';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
 
 export function DashboardPage({ clients, products, categoryAnalytics, revenueData, totalStock, lowStockCount, pipelineValue, onDutyCount, staffTotal, formatMoney, openModal }: {
@@ -239,45 +239,10 @@ export function OrdersPage({ orders, formatMoney, openModal, openDelete }: { ord
   );
 }
 
-export function SuppliersPage({ suppliers, formatMoney, openModal, openDelete }: { suppliers: Supplier[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
-  const { t } = useTranslation();
-  const purchases = suppliers.reduce((sum, supplier) => sum + supplier.totalPurchases, 0);
-  const outstanding = suppliers.reduce((sum, supplier) => sum + supplier.outstandingPayments, 0);
-
-  return (
-    <div className="grid gap-5">
-      <PageHeader eyebrow={t('suppliers.eyebrow')} title={t('suppliers.title')} description={t('suppliers.description')} createLabel={t('suppliers.create')} onCreate={() => openModal({ kind: 'supplier', mode: 'create' })} />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={<FiTruck />} label={t('suppliers.metrics.total')} value={suppliers.length.toString()} caption={t('suppliers.metrics.totalCaption')} tone="info" />
-        <MetricCard icon={<FiCheckCircle />} label={t('suppliers.metrics.active')} value={suppliers.filter(supplier => supplier.statusKey === 'active').length.toString()} caption={t('suppliers.metrics.activeCaption')} tone="success" />
-        <MetricCard icon={<FiArchive />} label={t('suppliers.metrics.purchases')} value={formatMoney(purchases)} caption={t('suppliers.metrics.purchasesCaption')} tone="neutral" />
-        <MetricCard icon={<FiDollarSign />} label={t('suppliers.metrics.outstanding')} value={formatMoney(outstanding)} caption={t('suppliers.metrics.outstandingCaption')} tone="warning" />
-      </div>
-      <DataTable
-        columns={[t('suppliers.columns.name'), t('suppliers.columns.contact'), t('suppliers.columns.phone'), t('suppliers.columns.email'), t('suppliers.columns.products'), t('suppliers.columns.purchases'), t('suppliers.columns.status'), t('common.actions')]}
-        rows={suppliers.map(supplier => [
-          <PrimaryCell title={supplier.name} subtitle={supplier.recentDelivery} />,
-          supplier.contactPerson,
-          supplier.phone,
-          supplier.email,
-          supplier.productsSupplied,
-          formatMoney(supplier.totalPurchases),
-          <StatusBadge tone={supplier.statusKey === 'active' ? 'success' : 'warning'}>{supplier.status}</StatusBadge>,
-          <RowActions onView={() => openModal({ kind: 'supplier', mode: 'view', item: supplier })} onEdit={() => openModal({ kind: 'supplier', mode: 'edit', item: supplier })} onDelete={() => openDelete({ kind: 'supplier', mode: 'view', item: supplier })} />,
-        ])}
-        onRowClick={(rowIndex) => openModal({ kind: 'supplier', mode: 'view', item: suppliers[rowIndex] })}
-      />
-    </div>
-  );
-}
-
-export function ProductsPage({ products, categoryAnalytics, categories, stockIn, stockOut, movementHistory, totalStock, lowStockCount, formatMoney, openModal, openDelete }: {
+export function ProductsPage({ products, categoryAnalytics, categories, totalStock, lowStockCount, formatMoney, openModal, openDelete }: {
   products: Product[];
   categoryAnalytics: CategoryDatum[];
   categories: ProductCategory[];
-  stockIn: StockMovement[];
-  stockOut: StockMovement[];
-  movementHistory: StockMovement[];
   totalStock: number;
   lowStockCount: number;
   formatMoney: (value: number) => string;
@@ -285,7 +250,7 @@ export function ProductsPage({ products, categoryAnalytics, categories, stockIn,
   openDelete: (modal: ModalState) => void;
 }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'stockIn' | 'stockOut' | 'history'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products');
   const totalRevenue = products.reduce((sum, product) => sum + product.revenue, 0);
 
   return (
@@ -304,7 +269,7 @@ export function ProductsPage({ products, categoryAnalytics, categories, stockIn,
       </div>
 
       <div className="flex flex-wrap gap-2 rounded-xl bg-surface-card p-2 shadow-sm ring-1 ring-border-soft/35">
-        {(['products', 'categories', 'stockIn', 'stockOut', 'history'] as const).map(tab => (
+        {(['products', 'categories'] as const).map(tab => (
           <button
             key={tab}
             type="button"
@@ -327,7 +292,7 @@ export function ProductsPage({ products, categoryAnalytics, categories, stockIn,
           columns={[t('products.columns.product'), t('products.columns.sku'), t('products.columns.category'), t('products.columns.stock'), t('products.columns.revenue'), t('common.actions')]}
           rows={products.map(product => [
             <ProductImageCell product={product} />,
-            product.sku,
+            <SkuCell sku={product.sku} />,
             categories.find(category => category.id === product.categoryId)?.name ?? product.category,
             <span className={product.stock <= product.minStock ? 'font-bold text-warning' : 'font-bold text-text-primary'}>{product.stock.toLocaleString()} {unitLabel(product.unit, t)}</span>,
             formatMoney(product.revenue),
@@ -335,14 +300,8 @@ export function ProductsPage({ products, categoryAnalytics, categories, stockIn,
           ])}
           onRowClick={(rowIndex) => openModal({ kind: 'product', mode: 'view', item: products[rowIndex] })}
         />
-      ) : activeTab === 'categories' ? (
-        <CategoriesTable categories={categories} products={products} openModal={openModal} openDelete={openDelete} />
-      ) : activeTab === 'stockIn' ? (
-        <StockTable rows={stockIn} direction="in" />
-      ) : activeTab === 'stockOut' ? (
-        <StockTable rows={stockOut} direction="out" />
       ) : (
-        <MovementTimeline rows={movementHistory} />
+        <CategoriesTable categories={categories} products={products} openModal={openModal} openDelete={openDelete} />
       )}
 
       <ProductsAnalyticsPanel products={products} categoryAnalytics={categoryAnalytics} formatMoney={formatMoney} />
@@ -411,14 +370,25 @@ export function ProductsAnalyticsPanel({ categoryAnalytics }: { products: Produc
 
 export function ProductImageCell({ product }: { product: Product }) {
   return (
-    <span className="flex min-w-[260px] items-center gap-3">
+    <span className="flex min-w-0 max-w-full items-center gap-3" title={product.name}>
       <span className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-muted ring-1 ring-border-soft/50">
         <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
       </span>
       <span className="block min-w-0">
-        <span className="block max-w-[280px] truncate text-sm font-extrabold text-text-primary">{product.name}</span>
-        <span className="mt-1 block max-w-[280px] truncate text-xs font-semibold text-text-muted">{product.color} · {product.composition}</span>
+        <span className="block max-w-[260px] truncate text-sm font-extrabold text-text-primary">{product.name}</span>
+        <span className="mt-1 block max-w-[260px] truncate text-xs font-semibold text-text-muted">{product.color} · {product.composition}</span>
       </span>
+    </span>
+  );
+}
+
+export function SkuCell({ sku }: { sku: string }) {
+  return (
+    <span
+      className="block max-w-[130px] truncate rounded-lg bg-surface-subtle px-2.5 py-1 text-xs font-extrabold text-text-primary ring-1 ring-border-soft/45"
+      title={sku}
+    >
+      {sku}
     </span>
   );
 }
@@ -460,7 +430,7 @@ export function StockTable({ rows, direction }: { rows: StockMovement[]; directi
         t('products.stockColumns.date'),
         t('products.stockColumns.product'),
         t('products.stockColumns.quantity'),
-        direction === 'in' ? t('products.stockColumns.supplier') : t('products.stockColumns.client'),
+        direction === 'in' ? t('products.stockColumns.source') : t('products.stockColumns.client'),
         t('products.stockColumns.employee'),
       ]}
       rows={rows.map(row => [
@@ -490,6 +460,71 @@ export function MovementTimeline({ rows }: { rows: StockMovement[] }) {
         ))}
       </div>
     </Panel>
+  );
+}
+
+export function WarehousePage({ products, stockIn, stockOut, movementHistory, totalStock, lowStockCount, formatMoney }: {
+  products: Product[];
+  stockIn: StockMovement[];
+  stockOut: StockMovement[];
+  movementHistory: StockMovement[];
+  totalStock: number;
+  lowStockCount: number;
+  formatMoney: (value: number) => string;
+}) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<'overview' | 'stockIn' | 'stockOut' | 'history'>('overview');
+  const [query, setQuery] = useState('');
+  const inventoryValue = products.reduce((sum, product) => sum + product.stock * product.price, 0);
+  const filteredHistory = movementHistory.filter(row =>
+    `${row.product} ${row.quantity} ${row.employee} ${row.note} ${row.client ?? ''} ${row.supplier ?? ''}`.toLowerCase().includes(query.toLowerCase()),
+  );
+
+  return (
+    <div className="grid gap-5">
+      <PageHeader eyebrow={t('warehouse.eyebrow')} title={t('warehouse.title')} description={t('warehouse.description')} />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard icon={<FiArchive />} label={t('warehouse.metrics.totalInventory')} value={totalStock.toLocaleString()} caption={t('warehouse.metrics.totalInventoryCaption')} tone="info" />
+        <MetricCard icon={<FiDollarSign />} label={t('warehouse.metrics.inventoryValue')} value={formatMoney(inventoryValue)} caption={t('warehouse.metrics.inventoryValueCaption')} tone="success" />
+        <MetricCard icon={<FiSliders />} label={t('warehouse.metrics.lowStock')} value={lowStockCount.toString()} caption={t('warehouse.metrics.lowStockCaption')} tone="warning" />
+        <MetricCard icon={<FiClock />} label={t('warehouse.metrics.recentMovements')} value={movementHistory.length.toString()} caption={t('warehouse.metrics.recentMovementsCaption')} tone="neutral" />
+      </div>
+      <SegmentTabs
+        tabs={[
+          { id: 'overview', label: t('warehouse.tabs.overview'), icon: <FiArchive className="h-4 w-4" /> },
+          { id: 'stockIn', label: t('warehouse.tabs.stockIn'), icon: <FiPackage className="h-4 w-4" /> },
+          { id: 'stockOut', label: t('warehouse.tabs.stockOut'), icon: <FiShoppingBag className="h-4 w-4" /> },
+          { id: 'history', label: t('warehouse.tabs.history'), icon: <FiClock className="h-4 w-4" /> },
+        ]}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
+      {activeTab === 'overview' ? (
+        <DataTable
+          columns={[t('warehouse.columns.product'), t('warehouse.columns.quantity'), t('warehouse.columns.value'), t('warehouse.columns.lowStock')]}
+          rows={products.map(product => [
+            <ProductImageCell product={product} />,
+            <span className={product.stock <= product.minStock ? 'font-bold text-warning' : 'font-bold text-text-primary'}>{product.stock.toLocaleString()} {unitLabel(product.unit, t)}</span>,
+            formatMoney(product.stock * product.price),
+            product.stock <= product.minStock ? <StatusBadge tone="warning">{t('warehouse.lowStockYes')}</StatusBadge> : <StatusBadge tone="success">{t('warehouse.lowStockNo')}</StatusBadge>,
+          ])}
+        />
+      ) : activeTab === 'stockIn' ? (
+        <StockTable rows={stockIn} direction="in" />
+      ) : activeTab === 'stockOut' ? (
+        <StockTable rows={stockOut} direction="out" />
+      ) : (
+        <div className="grid gap-4">
+          <input
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            placeholder={t('warehouse.searchPlaceholder')}
+            className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-4 text-sm font-medium text-text-primary placeholder:text-text-muted outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
+          />
+          <MovementTimeline rows={filteredHistory} />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -539,25 +574,3 @@ export function FinancePage({ revenueEntries, expenseEntries, revenueData, forma
     </div>
   );
 }
-
-export function ReportsPage() {
-  const { t } = useTranslation();
-  const reports = ['sales', 'inventory', 'clients', 'employees', 'finance'];
-  return (
-    <div className="grid gap-5">
-      <PageHeader eyebrow={t('reports.eyebrow')} title={t('reports.title')} description={t('reports.description')} />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {reports.map(report => (
-          <button key={report} type="button" className="app-card--nova group min-h-[150px] p-5 text-left transition duration-base hover:-translate-y-1 hover:shadow-[0_24px_50px_-34px_rgb(var(--color-primary)/0.5)]" onClick={() => exportCsv(t(`reports.types.${report}`), [[t(`reports.types.${report}`)], [t('reports.cardCaption')]])}>
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
-              <FiFileText className="h-5 w-5" />
-            </span>
-            <h3 className="mt-4 text-lg font-extrabold text-text-primary">{t(`reports.types.${report}`)}</h3>
-            <p className="mt-2 text-sm leading-6 text-text-secondary">{t('reports.cardCaption')}</p>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-

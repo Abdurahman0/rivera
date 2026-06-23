@@ -112,17 +112,13 @@
       "label": "Продукты",
       "caption": "Склад и аналитика"
     },
-    "suppliers": {
-      "label": "Поставщики",
-      "caption": "Поставки и закупки"
+    "warehouse": {
+      "label": "Склад",
+      "caption": "Приход, расход и остатки"
     },
     "finance": {
       "label": "Финансы",
       "caption": "Денежный поток"
-    },
-    "reports": {
-      "label": "Отчеты",
-      "caption": "Экспорт и аналитика"
     }
   },
   "dashboard": {
@@ -243,6 +239,7 @@
       "product": "Продукт",
       "quantity": "Количество",
       "supplier": "Поставщик",
+      "source": "Источник",
       "client": "Клиент",
       "employee": "Сотрудник склада"
     },
@@ -314,6 +311,36 @@
       "imageHint": "Основное изображение и галерея соответствуют потоку редактирования продуктов Solar."
     }
   },
+  "warehouse": {
+    "eyebrow": "Склад",
+    "title": "Управление складом",
+    "description": "Контроль остатков, стоимости, низких запасов и всех складских движений.",
+    "metrics": {
+      "totalInventory": "Общий остаток",
+      "totalInventoryCaption": "Приход минус расход",
+      "inventoryValue": "Стоимость склада",
+      "inventoryValueCaption": "Стоимость текущих остатков",
+      "lowStock": "Низкий запас",
+      "lowStockCaption": "Ниже минимального порога",
+      "recentMovements": "Последние движения",
+      "recentMovementsCaption": "Отслеживаемые записи"
+    },
+    "tabs": {
+      "overview": "Обзор",
+      "stockIn": "Приход склада",
+      "stockOut": "Расход склада",
+      "history": "История движений"
+    },
+    "columns": {
+      "product": "Продукт",
+      "quantity": "Остаток",
+      "value": "Стоимость",
+      "lowStock": "Низкий запас"
+    },
+    "lowStockYes": "Предупреждение",
+    "lowStockNo": "Достаточно",
+    "searchPlaceholder": "Поиск по продукту, сотруднику, клиенту или источнику..."
+  },
   "orders": {
     "eyebrow": "Заказы",
     "title": "Управление заказами",
@@ -351,44 +378,6 @@
       "nextStep": "Следующий шаг: проверить производственный план и остаток склада."
     }
   },
-  "suppliers": {
-    "eyebrow": "Поставщики",
-    "title": "Поставщики",
-    "description": "Контроль закупок у поставщиков ткани, пряжи и аксессуаров.",
-    "create": "Добавить поставщика",
-    "metrics": {
-      "total": "Всего поставщиков",
-      "totalCaption": "Складская сеть",
-      "active": "Активные поставщики",
-      "activeCaption": "Надежные поставки",
-      "purchases": "Закупки месяца",
-      "purchasesCaption": "Текущий месяц",
-      "outstanding": "Задолженность",
-      "outstandingCaption": "Ожидает оплаты"
-    },
-    "columns": {
-      "name": "Поставщик",
-      "contact": "Контактное лицо",
-      "phone": "Телефон",
-      "email": "Email",
-      "products": "Поставляемые продукты",
-      "purchases": "Всего закупок",
-      "status": "Статус"
-    },
-    "sections": {
-      "general": "Общая информация",
-      "purchaseHistory": "История закупок",
-      "productsSupplied": "Поставляемые продукты",
-      "recentDeliveries": "Последние поставки"
-    },
-    "modal": {
-      "viewTitle": "Карточка поставщика",
-      "createTitle": "Новый поставщик",
-      "editTitle": "Редактировать поставщика",
-      "summary": "Контакты, закупки, поставляемые продукты и задолженность.",
-      "nextStep": "Следующий шаг: проверить последнюю поставку и состояние оплаты."
-    }
-  },
   "finance": {
     "eyebrow": "Финансы",
     "title": "Финансы",
@@ -415,19 +404,6 @@
       "amount": "Сумма"
     }
   },
-  "reports": {
-    "eyebrow": "Отчеты",
-    "title": "Центр отчетов",
-    "description": "Готовые к экспорту отчеты по продажам, складу, клиентам, employees и финансам.",
-    "cardCaption": "Готово к просмотру с фильтрами и экспорту.",
-    "types": {
-      "sales": "Отчет по продажам",
-      "inventory": "Складской отчет",
-      "clients": "Отчет по клиентам",
-      "employees": "Отчет по сотрудникам",
-      "finance": "Финансовый отчет"
-    }
-  },
   "statuses": {
     "newLead": "Новый лид",
     "sample": "Образец отправлен",
@@ -440,76 +416,564 @@
     "remote": "Удаленно"
   },
   "mock": {
-    "months": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
-    "weekDays": ["Пн", "Вт", "Ср", "Чт", "Пт"],
+    "months": [
+      "Янв",
+      "Фев",
+      "Мар",
+      "Апр",
+      "Май",
+      "Июн"
+    ],
+    "weekDays": [
+      "Пн",
+      "Вт",
+      "Ср",
+      "Чт",
+      "Пт"
+    ],
     "clients": [
-      { "id": 1, "name": "Atlas Home Textile", "phone": "+998 90 441 22 18", "source": "Выставка", "status": "Новый лид", "statusKey": "newLead", "manager": "Малика", "value": 128000000, "lastContact": "Сегодня, 10:20", "fabric": "Хлопковый сатин, 4 000 м" },
-      { "id": 2, "name": "Samarkand Uniform", "phone": "+998 97 118 40 02", "source": "Рекомендация", "status": "Образец отправлен", "statusKey": "sample", "manager": "Азиз", "value": 540000000, "lastContact": "Сегодня, 09:45", "fabric": "Габардин, 12 000 м" },
-      { "id": 3, "name": "Bukhara Export Group", "phone": "+998 91 603 44 70", "source": "Website", "status": "Контракт", "statusKey": "contract", "manager": "Нодира", "value": 870000000, "lastContact": "Вчера", "fabric": "Трикотаж, 22 000 кг" },
-      { "id": 4, "name": "Nur Kids Wear", "phone": "+998 93 772 19 44", "source": "Telegram", "status": "Повторный контакт", "statusKey": "followUp", "manager": "Малика", "value": 93000000, "lastContact": "19-Июн", "fabric": "Интерлок, 3 600 кг" },
-      { "id": 5, "name": "Orion Retail", "phone": "+998 99 802 31 65", "source": "Showroom", "status": "Выиграно", "statusKey": "won", "manager": "Азиз", "value": 1210000000, "lastContact": "18-Июн", "fabric": "Готовая футболка, 18 000 шт" }
+      {
+        "id": 1,
+        "name": "Atlas Home Textile",
+        "phone": "+998 90 441 22 18",
+        "source": "Выставка",
+        "status": "Новый лид",
+        "statusKey": "newLead",
+        "manager": "Малика",
+        "value": 128000000,
+        "lastContact": "Сегодня, 10:20",
+        "fabric": "Хлопковый сатин, 4 000 м"
+      },
+      {
+        "id": 2,
+        "name": "Samarkand Uniform",
+        "phone": "+998 97 118 40 02",
+        "source": "Рекомендация",
+        "status": "Образец отправлен",
+        "statusKey": "sample",
+        "manager": "Азиз",
+        "value": 540000000,
+        "lastContact": "Сегодня, 09:45",
+        "fabric": "Габардин, 12 000 м"
+      },
+      {
+        "id": 3,
+        "name": "Bukhara Export Group",
+        "phone": "+998 91 603 44 70",
+        "source": "Website",
+        "status": "Контракт",
+        "statusKey": "contract",
+        "manager": "Нодира",
+        "value": 870000000,
+        "lastContact": "Вчера",
+        "fabric": "Трикотаж, 22 000 кг"
+      },
+      {
+        "id": 4,
+        "name": "Nur Kids Wear",
+        "phone": "+998 93 772 19 44",
+        "source": "Telegram",
+        "status": "Повторный контакт",
+        "statusKey": "followUp",
+        "manager": "Малика",
+        "value": 93000000,
+        "lastContact": "19-Июн",
+        "fabric": "Интерлок, 3 600 кг"
+      },
+      {
+        "id": 5,
+        "name": "Orion Retail",
+        "phone": "+998 99 802 31 65",
+        "source": "Showroom",
+        "status": "Выиграно",
+        "statusKey": "won",
+        "manager": "Азиз",
+        "value": 1210000000,
+        "lastContact": "18-Июн",
+        "fabric": "Готовая футболка, 18 000 шт"
+      }
     ],
     "staff": [
-      { "id": 1, "name": "Малика Тошпулатова", "role": "Менеджер клиентов", "phone": "+998 90 188 10 20", "salary": 8500000, "hireDate": "12-Янв-2024", "shift": "09:00 - 18:00", "arrival": "08:54", "leaving": "18:08", "status": "Вовремя", "statusKey": "onTime", "attendance": 98 },
-      { "id": 2, "name": "Азиз Хамроев", "role": "Руководитель продаж", "phone": "+998 97 244 31 18", "salary": 12000000, "hireDate": "03-Мар-2023", "shift": "09:00 - 18:00", "arrival": "09:12", "leaving": "18:00", "status": "Опоздал", "statusKey": "late", "attendance": 91 },
-      { "id": 3, "name": "Нодира Саидова", "role": "Администратор склада", "phone": "+998 91 506 77 40", "salary": 7200000, "hireDate": "18-Авг-2022", "shift": "08:30 - 17:30", "arrival": "08:26", "leaving": "17:36", "status": "Вовремя", "statusKey": "onTime", "attendance": 96 },
-      { "id": 4, "name": "Бекзод Нурматов", "role": "Продуктовый аналитик", "phone": "+998 93 402 55 91", "salary": 9300000, "hireDate": "21-Май-2024", "shift": "10:00 - 19:00", "arrival": "Удаленно", "leaving": "Удаленно", "status": "Удаленно", "statusKey": "remote", "attendance": 94 },
-      { "id": 5, "name": "Зарина Умарова", "role": "HR контролер", "phone": "+998 99 710 45 13", "salary": 7600000, "hireDate": "09-Ноя-2023", "shift": "09:00 - 18:00", "arrival": "08:58", "leaving": "17:20", "status": "Ушел рано", "statusKey": "leftEarly", "attendance": 88 }
+      {
+        "id": 1,
+        "name": "Малика Тошпулатова",
+        "role": "Менеджер клиентов",
+        "phone": "+998 90 188 10 20",
+        "salary": 8500000,
+        "hireDate": "12-Янв-2024",
+        "shift": "09:00 - 18:00",
+        "arrival": "08:54",
+        "leaving": "18:08",
+        "status": "Вовремя",
+        "statusKey": "onTime",
+        "attendance": 98
+      },
+      {
+        "id": 2,
+        "name": "Азиз Хамроев",
+        "role": "Руководитель продаж",
+        "phone": "+998 97 244 31 18",
+        "salary": 12000000,
+        "hireDate": "03-Мар-2023",
+        "shift": "09:00 - 18:00",
+        "arrival": "09:12",
+        "leaving": "18:00",
+        "status": "Опоздал",
+        "statusKey": "late",
+        "attendance": 91
+      },
+      {
+        "id": 3,
+        "name": "Нодира Саидова",
+        "role": "Администратор склада",
+        "phone": "+998 91 506 77 40",
+        "salary": 7200000,
+        "hireDate": "18-Авг-2022",
+        "shift": "08:30 - 17:30",
+        "arrival": "08:26",
+        "leaving": "17:36",
+        "status": "Вовремя",
+        "statusKey": "onTime",
+        "attendance": 96
+      },
+      {
+        "id": 4,
+        "name": "Бекзод Нурматов",
+        "role": "Продуктовый аналитик",
+        "phone": "+998 93 402 55 91",
+        "salary": 9300000,
+        "hireDate": "21-Май-2024",
+        "shift": "10:00 - 19:00",
+        "arrival": "Удаленно",
+        "leaving": "Удаленно",
+        "status": "Удаленно",
+        "statusKey": "remote",
+        "attendance": 94
+      },
+      {
+        "id": 5,
+        "name": "Зарина Умарова",
+        "role": "HR контролер",
+        "phone": "+998 99 710 45 13",
+        "salary": 7600000,
+        "hireDate": "09-Ноя-2023",
+        "shift": "09:00 - 18:00",
+        "arrival": "08:58",
+        "leaving": "17:20",
+        "status": "Ушел рано",
+        "statusKey": "leftEarly",
+        "attendance": 88
+      }
     ],
     "orders": [
-      { "id": 1, "orderId": "ORD-2406-018", "client": "Atlas Home Textile", "product": "Хлопковый сатин 120 GSM", "quantity": "4 000 м", "unitPrice": 35000, "totalAmount": 140000000, "manager": "Малика", "deliveryDate": "28-Июн", "status": "Ожидает", "statusKey": "pending", "notes": "Образец подтвержден" },
-      { "id": 2, "orderId": "ORD-2406-021", "client": "Samarkand Uniform", "product": "Габардин для формы", "quantity": "12 000 м", "unitPrice": 34000, "totalAmount": 408000000, "manager": "Азиз", "deliveryDate": "05-Июл", "status": "В производстве", "statusKey": "production", "notes": "На линии окраски" },
-      { "id": 3, "orderId": "ORD-2406-026", "client": "Orion Retail", "product": "Базовая белая футболка", "quantity": "18 000 шт", "unitPrice": 42000, "totalAmount": 756000000, "manager": "Азиз", "deliveryDate": "01-Июл", "status": "Подтвержден", "statusKey": "confirmed", "notes": "Передано в швейный цех" },
-      { "id": 4, "orderId": "ORD-2406-030", "client": "Nur Kids Wear", "product": "Интерлок трикотаж", "quantity": "3 600 кг", "unitPrice": 29000, "totalAmount": 104400000, "manager": "Малика", "deliveryDate": "30-Июн", "status": "Доставлен", "statusKey": "delivered", "notes": "Доставлено" }
-    ],
-    "suppliers": [
-      { "id": 1, "name": "Fergana Cotton Mill", "contactPerson": "Шахбоз Каримов", "phone": "+998 73 220 14 44", "email": "sales@fercotton.uz", "productsSupplied": "Хлопковый сатин, суровая ткань", "totalPurchases": 680000000, "outstandingPayments": 80000000, "status": "Активен", "statusKey": "active", "recentDelivery": "2 000м сатина, 20-Июн" },
-      { "id": 2, "name": "Namangan Weave", "contactPerson": "Дилшод Эргашев", "phone": "+998 69 241 88 11", "email": "orders@namweave.uz", "productsSupplied": "Габардин, костюмная ткань", "totalPurchases": 520000000, "outstandingPayments": 46000000, "status": "Активен", "statusKey": "active", "recentDelivery": "1 500м габардина, 19-Июн" },
-      { "id": 3, "name": "Andijan Yarn House", "contactPerson": "Мадина Юлдошева", "phone": "+998 74 225 70 60", "email": "supply@yarnhouse.uz", "productsSupplied": "Ring spun пряжа", "totalPurchases": 390000000, "outstandingPayments": 30000000, "status": "На проверке", "statusKey": "pending", "recentDelivery": "900кг пряжи, 17-Июн" }
+      {
+        "id": 1,
+        "orderId": "ORD-2406-018",
+        "client": "Atlas Home Textile",
+        "product": "Хлопковый сатин 120 GSM",
+        "quantity": "4 000 м",
+        "unitPrice": 35000,
+        "totalAmount": 140000000,
+        "manager": "Малика",
+        "deliveryDate": "28-Июн",
+        "status": "Ожидает",
+        "statusKey": "pending",
+        "notes": "Образец подтвержден"
+      },
+      {
+        "id": 2,
+        "orderId": "ORD-2406-021",
+        "client": "Samarkand Uniform",
+        "product": "Габардин для формы",
+        "quantity": "12 000 м",
+        "unitPrice": 34000,
+        "totalAmount": 408000000,
+        "manager": "Азиз",
+        "deliveryDate": "05-Июл",
+        "status": "В производстве",
+        "statusKey": "production",
+        "notes": "На линии окраски"
+      },
+      {
+        "id": 3,
+        "orderId": "ORD-2406-026",
+        "client": "Orion Retail",
+        "product": "Базовая белая футболка",
+        "quantity": "18 000 шт",
+        "unitPrice": 42000,
+        "totalAmount": 756000000,
+        "manager": "Азиз",
+        "deliveryDate": "01-Июл",
+        "status": "Подтвержден",
+        "statusKey": "confirmed",
+        "notes": "Передано в швейный цех"
+      },
+      {
+        "id": 4,
+        "orderId": "ORD-2406-030",
+        "client": "Nur Kids Wear",
+        "product": "Интерлок трикотаж",
+        "quantity": "3 600 кг",
+        "unitPrice": 29000,
+        "totalAmount": 104400000,
+        "manager": "Малика",
+        "deliveryDate": "30-Июн",
+        "status": "Доставлен",
+        "statusKey": "delivered",
+        "notes": "Доставлено"
+      }
     ],
     "productCategories": [
-      { "id": "fabric-rolls", "name": "Рулоны ткани", "code": "FABRIC", "description": "Окрашенные и готовые рулонные ткани.", "sortOrder": 1 },
-      { "id": "yarn", "name": "Пряжа", "code": "YARN", "description": "Хлопковая и смесовая пряжа.", "sortOrder": 2 },
-      { "id": "knitwear", "name": "Трикотаж", "code": "KNIT", "description": "Интерлок, рибана и кулирные полотна.", "sortOrder": 3 },
-      { "id": "finished-goods", "name": "Готовая продукция", "code": "READY", "description": "Готовая одежда и домашний текстиль.", "sortOrder": 4 }
+      {
+        "id": "fabric-rolls",
+        "name": "Рулоны ткани",
+        "code": "FABRIC",
+        "description": "Окрашенные и готовые рулонные ткани.",
+        "sortOrder": 1
+      },
+      {
+        "id": "yarn",
+        "name": "Пряжа",
+        "code": "YARN",
+        "description": "Хлопковая и смесовая пряжа.",
+        "sortOrder": 2
+      },
+      {
+        "id": "knitwear",
+        "name": "Трикотаж",
+        "code": "KNIT",
+        "description": "Интерлок, рибана и кулирные полотна.",
+        "sortOrder": 3
+      },
+      {
+        "id": "finished-goods",
+        "name": "Готовая продукция",
+        "code": "READY",
+        "description": "Готовая одежда и домашний текстиль.",
+        "sortOrder": 4
+      }
     ],
     "products": [
-      { "id": 1, "name": "Хлопковый сатин 120 GSM", "description": "Мягкий хлопковый сатин для премиального домашнего текстиля и постельных комплектов.", "category": "Рулоны ткани", "categoryId": "fabric-rolls", "sku": "RV-TEX-001", "supplier": "Fergana Cotton Mill", "warehouse": "A-12 / Рулоны", "color": "Ivory белый", "composition": "100% хлопок", "gsm": 120, "width": "240 cm", "price": 35000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=80"], "status": "Активен", "isActive": true, "isRecommended": true, "subsidyEnabled": false, "stock": 12600, "minStock": 4000, "unit": "m", "sold": 31200, "revenue": 1092000000, "trend": 18 },
-      { "id": 2, "name": "Габардин для формы", "description": "Плотный габардин для школьной формы и корпоративной униформы.", "category": "Рулоны ткани", "categoryId": "fabric-rolls", "sku": "RV-TEX-014", "supplier": "Namangan Weave", "warehouse": "B-04 / Униформа", "color": "Темно-синий", "composition": "65% полиэстер, 35% вискоза", "gsm": 180, "width": "150 cm", "price": 34000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=900&q=80"], "status": "Низкий запас", "isActive": true, "isRecommended": false, "subsidyEnabled": true, "stock": 3600, "minStock": 4500, "unit": "m", "sold": 20500, "revenue": 697000000, "trend": -4 },
-      { "id": 3, "name": "Ring spun пряжа 30/1", "description": "Пряжа ring spun со стабильной круткой для трикотажной линии.", "category": "Пряжа", "categoryId": "yarn", "sku": "RV-YRN-208", "supplier": "Andijan Yarn House", "warehouse": "Y-02 / Пряжа", "color": "Сырой белый", "composition": "100% хлопок", "gsm": 0, "width": "30/1 Ne", "price": 40000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1615800002234-05c4d488696c?auto=format&fit=crop&w=900&q=80"], "status": "Активен", "isActive": true, "isRecommended": true, "subsidyEnabled": true, "stock": 4400, "minStock": 1200, "unit": "kg", "sold": 9800, "revenue": 392000000, "trend": 9 },
-      { "id": 4, "name": "Интерлок трикотаж", "description": "Мягкий эластичный интерлок для детской одежды.", "category": "Трикотаж", "categoryId": "knitwear", "sku": "RV-KNT-102", "supplier": "Tashkent Knit Lab", "warehouse": "K-08 / Трикотаж", "color": "Серый меланж", "composition": "95% хлопок, 5% эластан", "gsm": 210, "width": "185 cm", "price": 29000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=900&q=80"], "status": "Низкий запас", "isActive": true, "isRecommended": false, "subsidyEnabled": false, "stock": 5800, "minStock": 6000, "unit": "kg", "sold": 16600, "revenue": 481400000, "trend": 6 },
-      { "id": 5, "name": "Базовая белая футболка", "description": "Готовая basic футболка для retail и B2B заказов.", "category": "Готовая продукция", "categoryId": "finished-goods", "sku": "RV-FIN-330", "supplier": "Rivera Sewing Line", "warehouse": "F-01 / Готовая продукция", "color": "Белый", "composition": "100% хлопковый jersey", "gsm": 160, "width": "S-XXL", "price": 42000, "currency": "UZS", "imageUrl": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80", "gallery": ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=900&q=80"], "status": "Активен", "isActive": true, "isRecommended": true, "subsidyEnabled": false, "stock": 14000, "minStock": 10000, "unit": "pcs", "sold": 28000, "revenue": 1176000000, "trend": 22 }
+      {
+        "id": 1,
+        "name": "Хлопковый сатин 120 GSM",
+        "description": "Мягкий хлопковый сатин для премиального домашнего текстиля и постельных комплектов.",
+        "category": "Рулоны ткани",
+        "categoryId": "fabric-rolls",
+        "sku": "RV-TEX-001",
+        "supplier": "Fergana Cotton Mill",
+        "warehouse": "A-12 / Рулоны",
+        "color": "Ivory белый",
+        "composition": "100% хлопок",
+        "gsm": 120,
+        "width": "240 cm",
+        "price": 35000,
+        "currency": "UZS",
+        "imageUrl": "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80",
+        "gallery": [
+          "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80",
+          "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=900&q=80",
+          "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=80"
+        ],
+        "status": "Активен",
+        "isActive": true,
+        "isRecommended": true,
+        "subsidyEnabled": false,
+        "stock": 12600,
+        "minStock": 4000,
+        "unit": "m",
+        "sold": 31200,
+        "revenue": 1092000000,
+        "trend": 18
+      },
+      {
+        "id": 2,
+        "name": "Габардин для формы",
+        "description": "Плотный габардин для школьной формы и корпоративной униформы.",
+        "category": "Рулоны ткани",
+        "categoryId": "fabric-rolls",
+        "sku": "RV-TEX-014",
+        "supplier": "Namangan Weave",
+        "warehouse": "B-04 / Униформа",
+        "color": "Темно-синий",
+        "composition": "65% полиэстер, 35% вискоза",
+        "gsm": 180,
+        "width": "150 cm",
+        "price": 34000,
+        "currency": "UZS",
+        "imageUrl": "https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&w=900&q=80",
+        "gallery": [
+          "https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&w=900&q=80",
+          "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=900&q=80"
+        ],
+        "status": "Низкий запас",
+        "isActive": true,
+        "isRecommended": false,
+        "subsidyEnabled": true,
+        "stock": 3600,
+        "minStock": 4500,
+        "unit": "m",
+        "sold": 20500,
+        "revenue": 697000000,
+        "trend": -4
+      },
+      {
+        "id": 3,
+        "name": "Ring spun пряжа 30/1",
+        "description": "Пряжа ring spun со стабильной круткой для трикотажной линии.",
+        "category": "Пряжа",
+        "categoryId": "yarn",
+        "sku": "RV-YRN-208",
+        "supplier": "Andijan Yarn House",
+        "warehouse": "Y-02 / Пряжа",
+        "color": "Сырой белый",
+        "composition": "100% хлопок",
+        "gsm": 0,
+        "width": "30/1 Ne",
+        "price": 40000,
+        "currency": "UZS",
+        "imageUrl": "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=900&q=80",
+        "gallery": [
+          "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=900&q=80",
+          "https://images.unsplash.com/photo-1615800002234-05c4d488696c?auto=format&fit=crop&w=900&q=80"
+        ],
+        "status": "Активен",
+        "isActive": true,
+        "isRecommended": true,
+        "subsidyEnabled": true,
+        "stock": 4400,
+        "minStock": 1200,
+        "unit": "kg",
+        "sold": 9800,
+        "revenue": 392000000,
+        "trend": 9
+      },
+      {
+        "id": 4,
+        "name": "Интерлок трикотаж",
+        "description": "Мягкий эластичный интерлок для детской одежды.",
+        "category": "Трикотаж",
+        "categoryId": "knitwear",
+        "sku": "RV-KNT-102",
+        "supplier": "Tashkent Knit Lab",
+        "warehouse": "K-08 / Трикотаж",
+        "color": "Серый меланж",
+        "composition": "95% хлопок, 5% эластан",
+        "gsm": 210,
+        "width": "185 cm",
+        "price": 29000,
+        "currency": "UZS",
+        "imageUrl": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80",
+        "gallery": [
+          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80",
+          "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=900&q=80"
+        ],
+        "status": "Низкий запас",
+        "isActive": true,
+        "isRecommended": false,
+        "subsidyEnabled": false,
+        "stock": 5800,
+        "minStock": 6000,
+        "unit": "kg",
+        "sold": 16600,
+        "revenue": 481400000,
+        "trend": 6
+      },
+      {
+        "id": 5,
+        "name": "Базовая белая футболка",
+        "description": "Готовая basic футболка для retail и B2B заказов.",
+        "category": "Готовая продукция",
+        "categoryId": "finished-goods",
+        "sku": "RV-FIN-330",
+        "supplier": "Rivera Sewing Line",
+        "warehouse": "F-01 / Готовая продукция",
+        "color": "Белый",
+        "composition": "100% хлопковый jersey",
+        "gsm": 160,
+        "width": "S-XXL",
+        "price": 42000,
+        "currency": "UZS",
+        "imageUrl": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80",
+        "gallery": [
+          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80",
+          "https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=900&q=80"
+        ],
+        "status": "Активен",
+        "isActive": true,
+        "isRecommended": true,
+        "subsidyEnabled": false,
+        "stock": 14000,
+        "minStock": 10000,
+        "unit": "pcs",
+        "sold": 28000,
+        "revenue": 1176000000,
+        "trend": 22
+      }
     ],
     "categoryAnalytics": [
-      { "name": "Рулоны ткани", "value": 42, "color": "#0f766e" },
-      { "name": "Пряжа", "value": 25, "color": "#0ea5e9" },
-      { "name": "Трикотаж", "value": 18, "color": "#f59e0b" },
-      { "name": "Готовая продукция", "value": 15, "color": "#7c3aed" }
+      {
+        "name": "Рулоны ткани",
+        "value": 42,
+        "color": "#0f766e"
+      },
+      {
+        "name": "Пряжа",
+        "value": 25,
+        "color": "#0ea5e9"
+      },
+      {
+        "name": "Трикотаж",
+        "value": 18,
+        "color": "#f59e0b"
+      },
+      {
+        "name": "Готовая продукция",
+        "value": 15,
+        "color": "#7c3aed"
+      }
     ],
     "stockIn": [
-      { "id": 1, "date": "20-Июн", "product": "Хлопковый сатин 120 GSM", "quantity": "+2 000 м", "supplier": "Fergana Cotton Mill", "employee": "Нодира Саидова", "type": "in", "note": "2 000м Cotton Satin принято" },
-      { "id": 2, "date": "19-Июн", "product": "Габардин для формы", "quantity": "+1 500 м", "supplier": "Namangan Weave", "employee": "Нодира Саидова", "type": "in", "note": "Рулоны габардина размещены в зоне A" },
-      { "id": 3, "date": "17-Июн", "product": "Ring spun пряжа 30/1", "quantity": "+900 кг", "supplier": "Andijan Yarn House", "employee": "Бекзод Нурматов", "type": "in", "note": "Партия пряжи проверена" }
+      {
+        "id": 1,
+        "date": "20-Июн",
+        "product": "Хлопковый сатин 120 GSM",
+        "quantity": "+2 000 м",
+        "supplier": "Fergana Cotton Mill",
+        "employee": "Нодира Саидова",
+        "type": "in",
+        "note": "2 000м Cotton Satin принято"
+      },
+      {
+        "id": 2,
+        "date": "19-Июн",
+        "product": "Габардин для формы",
+        "quantity": "+1 500 м",
+        "supplier": "Namangan Weave",
+        "employee": "Нодира Саидова",
+        "type": "in",
+        "note": "Рулоны габардина размещены в зоне A"
+      },
+      {
+        "id": 3,
+        "date": "17-Июн",
+        "product": "Ring spun пряжа 30/1",
+        "quantity": "+900 кг",
+        "supplier": "Andijan Yarn House",
+        "employee": "Бекзод Нурматов",
+        "type": "in",
+        "note": "Партия пряжи проверена"
+      }
     ],
     "stockOut": [
-      { "id": 1, "date": "21-Июн", "product": "Хлопковый сатин 120 GSM", "quantity": "-500 м", "client": "Atlas Home Textile", "employee": "Нодира Саидова", "type": "out", "note": "500м Cotton Satin отгружено" },
-      { "id": 2, "date": "20-Июн", "product": "Базовая белая футболка", "quantity": "-2 400 шт", "client": "Orion Retail", "employee": "Бекзод Нурматов", "type": "out", "note": "Retail заказ вышел со склада" },
-      { "id": 3, "date": "18-Июн", "product": "Интерлок трикотаж", "quantity": "-420 кг", "client": "Nur Kids Wear", "employee": "Нодира Саидова", "type": "out", "note": "Трикотаж передан в производство" }
+      {
+        "id": 1,
+        "date": "21-Июн",
+        "product": "Хлопковый сатин 120 GSM",
+        "quantity": "-500 м",
+        "client": "Atlas Home Textile",
+        "employee": "Нодира Саидова",
+        "type": "out",
+        "note": "500м Cotton Satin отгружено"
+      },
+      {
+        "id": 2,
+        "date": "20-Июн",
+        "product": "Базовая белая футболка",
+        "quantity": "-2 400 шт",
+        "client": "Orion Retail",
+        "employee": "Бекзод Нурматов",
+        "type": "out",
+        "note": "Retail заказ вышел со склада"
+      },
+      {
+        "id": 3,
+        "date": "18-Июн",
+        "product": "Интерлок трикотаж",
+        "quantity": "-420 кг",
+        "client": "Nur Kids Wear",
+        "employee": "Нодира Саидова",
+        "type": "out",
+        "note": "Трикотаж передан в производство"
+      }
     ],
     "movementHistory": [
-      { "id": 1, "date": "21-Июн", "product": "Хлопковый сатин 120 GSM", "quantity": "-500 м", "client": "Atlas Home Textile", "employee": "Нодира Саидова", "type": "out", "note": "500m Cotton Satin shipped" },
-      { "id": 2, "date": "20-Июн", "product": "Хлопковый сатин 120 GSM", "quantity": "+2 000 м", "supplier": "Fergana Cotton Mill", "employee": "Нодира Саидова", "type": "in", "note": "+ 2,000m Cotton Satin received" },
-      { "id": 3, "date": "20-Июн", "product": "Базовая белая футболка", "quantity": "-2 400 шт", "client": "Orion Retail", "employee": "Бекзод Нурматов", "type": "out", "note": "2 400 футболок отгружено" }
+      {
+        "id": 1,
+        "date": "21-Июн",
+        "product": "Хлопковый сатин 120 GSM",
+        "quantity": "-500 м",
+        "client": "Atlas Home Textile",
+        "employee": "Нодира Саидова",
+        "type": "out",
+        "note": "500m Cotton Satin shipped"
+      },
+      {
+        "id": 2,
+        "date": "20-Июн",
+        "product": "Хлопковый сатин 120 GSM",
+        "quantity": "+2 000 м",
+        "supplier": "Fergana Cotton Mill",
+        "employee": "Нодира Саидова",
+        "type": "in",
+        "note": "+ 2,000m Cotton Satin received"
+      },
+      {
+        "id": 3,
+        "date": "20-Июн",
+        "product": "Базовая белая футболка",
+        "quantity": "-2 400 шт",
+        "client": "Orion Retail",
+        "employee": "Бекзод Нурматов",
+        "type": "out",
+        "note": "2 400 футболок отгружено"
+      }
     ],
     "revenueEntries": [
-      { "id": 1, "date": "21-Июн", "client": "Orion Retail", "order": "ORD-2406-026", "amount": 756000000 },
-      { "id": 2, "date": "20-Июн", "client": "Samarkand Uniform", "order": "ORD-2406-021", "amount": 408000000 },
-      { "id": 3, "date": "19-Июн", "client": "Atlas Home Textile", "order": "ORD-2406-018", "amount": 140000000 }
+      {
+        "id": 1,
+        "date": "21-Июн",
+        "client": "Orion Retail",
+        "order": "ORD-2406-026",
+        "amount": 756000000
+      },
+      {
+        "id": 2,
+        "date": "20-Июн",
+        "client": "Samarkand Uniform",
+        "order": "ORD-2406-021",
+        "amount": 408000000
+      },
+      {
+        "id": 3,
+        "date": "19-Июн",
+        "client": "Atlas Home Textile",
+        "order": "ORD-2406-018",
+        "amount": 140000000
+      }
     ],
     "expenseEntries": [
-      { "id": 1, "date": "21-Июн", "category": "Сырье", "description": "Закупка хлопкового сатина", "amount": 210000000 },
-      { "id": 2, "date": "20-Июн", "category": "Логистика", "description": "Расходы доставки", "amount": 24000000 },
-      { "id": 3, "date": "19-Июн", "category": "Зарплата", "description": "Смена швейного цеха", "amount": 86000000 }
+      {
+        "id": 1,
+        "date": "21-Июн",
+        "category": "Сырье",
+        "description": "Закупка хлопкового сатина",
+        "amount": 210000000
+      },
+      {
+        "id": 2,
+        "date": "20-Июн",
+        "category": "Логистика",
+        "description": "Расходы доставки",
+        "amount": 24000000
+      },
+      {
+        "id": 3,
+        "date": "19-Июн",
+        "category": "Зарплата",
+        "description": "Смена швейного цеха",
+        "amount": 86000000
+      }
     ]
   }
 }

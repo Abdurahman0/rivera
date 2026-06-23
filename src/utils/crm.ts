@@ -2,7 +2,7 @@ import type { PageId, Product, StatusTone, StockMovement } from '../types/crm';
 
 export function getPageFromPath(pathname: string): PageId {
   const path = pathname.replace(/^\/+/, '').split('/')[0];
-  const pages: PageId[] = ['dashboard', 'clients', 'orders', 'products', 'suppliers', 'staff', 'finance', 'reports'];
+  const pages: PageId[] = ['dashboard', 'clients', 'orders', 'products', 'warehouse', 'staff', 'finance'];
   return pages.includes(path as PageId) ? (path as PageId) : 'dashboard';
 }
 
