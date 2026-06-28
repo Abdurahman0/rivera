@@ -1,8 +1,24 @@
-export type PageId = 'dashboard' | 'clients' | 'orders' | 'products' | 'warehouse' | 'staff' | 'finance';
+export type PageId = 'dashboard' | 'clients' | 'orders' | 'production' | 'materials' | 'products' | 'warehouse' | 'staff' | 'finance';
 export type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 export type ModalMode = 'view' | 'create' | 'edit';
 export type EntityKind = 'client' | 'staff' | 'product' | 'category' | 'order';
 export type EntityId = number | string;
+
+export interface Material {
+  id: number;
+  name: string;
+  category: string;
+  categoryKey: string;
+  sku: string;
+  supplier: string;
+  color: string;
+  unit: 'm' | 'kg' | 'pcs';
+  price: number;
+  stock: number;
+  minStock: number;
+  status: string;
+  statusKey: string;
+}
 
 export interface Client {
   id: number;
@@ -59,6 +75,8 @@ export interface Product {
   sold: number;
   revenue: number;
   trend: number;
+  materialsUsed?: string[];
+  recipe?: Array<{ materialName: string; qtyPerUnit: number; unit: 'm' | 'kg' | 'pcs' }>;
 }
 
 export interface CategoryDatum {
@@ -110,6 +128,42 @@ export interface FinanceEntry {
   category?: string;
   description?: string;
   amount: number;
+}
+
+export interface ProductionRecord {
+  id: number;
+  date: string;
+  employee: string;
+  role: string;
+  product: string;
+  quantity: string;
+  orderId: string | null;
+  shift: string;
+  notes: string;
+}
+
+export interface ProductionBatch {
+  id: number;
+  dateLabel: string;
+  product: string;
+  productId: number;
+  producedQty: number;
+  unit: 'm' | 'kg' | 'pcs';
+  employees: string[];
+  shift: string;
+  orderId: string | null;
+  notes: string;
+}
+
+export interface PieceworkRecord {
+  id: number;
+  employeeName: string;
+  operationName: string;
+  product: string;
+  quantity: number;
+  ratePerPiece: number;
+  unit: 'm' | 'kg' | 'pcs';
+  week: string;
 }
 
 export interface ModalState {

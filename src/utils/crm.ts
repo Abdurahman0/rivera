@@ -2,8 +2,15 @@ import type { PageId, Product, StatusTone, StockMovement } from '../types/crm';
 
 export function getPageFromPath(pathname: string): PageId {
   const path = pathname.replace(/^\/+/, '').split('/')[0];
-  const pages: PageId[] = ['dashboard', 'clients', 'orders', 'products', 'warehouse', 'staff', 'finance'];
+  const pages: PageId[] = ['dashboard', 'clients', 'orders', 'production', 'materials', 'products', 'warehouse', 'staff', 'finance'];
   return pages.includes(path as PageId) ? (path as PageId) : 'dashboard';
+}
+
+export function materialStatusTone(statusKey: string): StatusTone {
+  if (statusKey === 'ok') return 'success';
+  if (statusKey === 'low') return 'warning';
+  if (statusKey === 'critical' || statusKey === 'outOfStock') return 'danger';
+  return 'neutral';
 }
 
 export function hexToRgba(hexColor: string, alpha: number): string {

@@ -22,3 +22,6 @@ npm-debug.log*
 
 # Claude Code session files
 .claude/
+
+# Source documents / internal reference files
+src/docs/

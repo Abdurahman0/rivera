@@ -104,13 +104,21 @@
       "label": "Buyurtmalar",
       "caption": "Ishlab chiqarish oqimi"
     },
+    "production": {
+      "label": "Ishlab chiqarish",
+      "caption": "Partiyalar va material sarfi"
+    },
     "staff": {
       "label": "Xodimlar",
       "caption": "Kelib-ketish nazorati"
     },
+    "materials": {
+      "label": "Materiallar",
+      "caption": "Xom ashyo va ta'minotchilar"
+    },
     "products": {
-      "label": "Mahsulotlar",
-      "caption": "Sklad va analitika"
+      "label": "Tayyor mahsulot",
+      "caption": "Ishlab chiqarilgan tovarlar"
     },
     "warehouse": {
       "label": "Sklad",
@@ -137,7 +145,48 @@
     },
     "revenueTitle": "Daromad va buyurtmalar",
     "priorityTitle": "Ustuvor mijozlar",
-    "productionTitle": "Haftalik ishlab chiqarish"
+    "productionTitle": "Haftalik ishlab chiqarish",
+    "attendanceTitle": "Bugungi davomat",
+    "lowStockTitle": "Kam zaxira materialar",
+    "noLowStock": "Barcha materiallar yetarli"
+  },
+  "materials": {
+    "eyebrow": "Xom ashyo",
+    "title": "Materiallar",
+    "description": "Ishlab chiqarish uchun keladigan barcha xom ashyolar: mato, ip, tugma, fermuar va boshqalar.",
+    "create": "Material qo'shish",
+    "searchPlaceholder": "Material nomi, SKU yoki ta'minotchi...",
+    "metrics": {
+      "total": "Jami materiallar",
+      "totalCaption": "Turlar bo'yicha",
+      "lowStock": "Kam zaxira",
+      "lowStockCaption": "Qayta buyurtma kerak",
+      "totalValue": "Umumiy qiymat",
+      "totalValueCaption": "Joriy zaxira narxi"
+    },
+    "columns": {
+      "name": "Material nomi",
+      "category": "Tur",
+      "sku": "SKU",
+      "supplier": "Ta'minotchi",
+      "color": "Rang",
+      "stock": "Qoldiq",
+      "price": "Narx",
+      "status": "Holat"
+    },
+    "categories": {
+      "fabric": "Mato",
+      "yarn": "Ip-kalava",
+      "knitwear": "Trikotaj",
+      "accessories": "Furnitura"
+    },
+    "modal": {
+      "viewTitle": "Material kartasi",
+      "createTitle": "Yangi material",
+      "editTitle": "Materialni tahrirlash",
+      "summary": "Xom ashyo turi, ta'minotchi, joriy zaxira va minimal chegara.",
+      "nextStep": "Keyingi qadam: ta'minotchiga buyurtma yuborish."
+    }
   },
   "clients": {
     "eyebrow": "CRM pipeline",
@@ -201,7 +250,51 @@
     },
     "tabs": {
       "employees": "Xodimlar",
-      "attendance": "Davomat"
+      "attendance": "Davomat",
+      "salary": "Ish haqi",
+      "piecework": "Akkord (dona hisobi)"
+    },
+    "piecework": {
+      "title": "Akkord ish haqi",
+      "description": "Har bir xodim bajargan operatsiya va miqdoriga qarab to'lanadigan akkord hisob-kitobi.",
+      "metrics": {
+        "totalPayout": "Jami akkord summasi",
+        "totalPayoutCaption": "Bu oy barcha operatsiyalar",
+        "totalPieces": "Jami dona bajarildi",
+        "totalPiecesCaption": "Barcha xodimlar bo'yicha",
+        "topWorker": "Eng ko'p ishlagan"
+      },
+      "columns": {
+        "operation": "Operatsiya",
+        "product": "Mahsulot",
+        "quantity": "Miqdor",
+        "rate": "Narx/dona",
+        "earned": "Hisoblangan",
+        "week": "Hafta"
+      },
+      "earned": "Jami daromad",
+      "pieces": "dona bajarildi"
+    },
+    "salary": {
+      "title": "Ish haqi hisob-kitobi",
+      "description": "Davomat foiziga asoslanib hisoblangan oylik ish haqi.",
+      "metrics": {
+        "totalPayroll": "Jami oylik fond",
+        "totalPayrollCaption": "Asosiy ish haqi summasi",
+        "totalNet": "Hisoblangan ish haqi",
+        "totalNetCaption": "Davomatga qarab",
+        "avgAttendance": "O'rtacha davomat",
+        "avgAttendanceCaption": "Barcha xodimlar bo'yicha"
+      },
+      "columns": {
+        "employee": "Xodim",
+        "baseSalary": "Asosiy oylik",
+        "attendance": "Davomat",
+        "workedDays": "Ish kunlari",
+        "netSalary": "Hisoblangan oylik",
+        "deduction": "Ushlanma"
+      },
+      "workingDays": "Ish kunlari"
     },
     "modal": {
       "viewTitle": "Xodim profili",
@@ -228,10 +321,19 @@
     "categoryTitle": "Kategoriya ulushi",
     "tabs": {
       "products": "Mahsulotlar",
+      "bom": "Resept (BOM)",
       "categories": "Kategoriyalar",
       "stockIn": "Sklad kirimi",
       "stockOut": "Sklad chiqimi",
       "history": "Harakat tarixi"
+    },
+    "bom": {
+      "produced": "Ishlab chiqarilgan",
+      "perUnit": "1 donaga sarflanadi",
+      "totalUsed": "Jami sarflangan",
+      "noRecipe": "Bu mahsulot uchun resept kiritilmagan",
+      "totalCount": "xil material ishlatildi",
+      "panelTitle": "Resept va material sarfi"
     },
     "movementTitle": "Harakat tarixi",
     "stockColumns": {
@@ -346,6 +448,31 @@
     "title": "Buyurtmalar boshqaruvi",
     "description": "Mijoz buyurtmalari, ishlab chiqarish holati, menejer va yetkazib berish muddatlari.",
     "create": "Buyurtma yaratish",
+    "tabs": {
+      "orders": "Buyurtmalar",
+      "production": "Ishlab chiqarish"
+    },
+    "production": {
+      "title": "Ishlab chiqarish kuzatuvi",
+      "description": "Xodimlar tomonidan bajarilgan ishlab chiqarish hajmi va buyurtmaga bog'liq chiqish.",
+      "metrics": {
+        "total": "Jami chiqarildi",
+        "totalCaption": "Hozirgi davr",
+        "workers": "Faol ishchilar",
+        "workersCaption": "Ishlab chiqarishda",
+        "inProduction": "Ishlab chiqarishdagi buyurtmalar",
+        "inProductionCaption": "Jarayonda"
+      },
+      "columns": {
+        "date": "Sana",
+        "employee": "Xodim",
+        "product": "Mahsulot",
+        "quantity": "Miqdor",
+        "orderId": "Buyurtma",
+        "shift": "Smena",
+        "notes": "Izoh"
+      }
+    },
     "metrics": {
       "total": "Jami buyurtmalar",
       "totalCaption": "Faol pipeline",
@@ -376,6 +503,49 @@
       "editTitle": "Buyurtmani tahrirlash",
       "summary": "Mijoz, mahsulot, miqdor, narx va yetkazib berish rejasini boshqarish.",
       "nextStep": "Keyingi qadam: ishlab chiqarish rejasi va sklad qoldig'ini tekshirish."
+    }
+  },
+  "production": {
+    "eyebrow": "Ishlab chiqarish",
+    "title": "Ishlab chiqarish jurnali",
+    "description": "Qaysi mahsulotdan qancha tayyorlanganini, nechta material sarflanganini va qachon ekanini ko'ring.",
+    "create": "Yangi partiya",
+    "tabs": {
+      "batches": "Partiyalar",
+      "stock": "Joriy zaxira",
+      "consumption": "Material sarfi"
+    },
+    "metrics": {
+      "batches": "Jami partiyalar",
+      "batchesCaption": "Ro'yxatga olingan",
+      "produced": "Jami ishlab chiqarilgan",
+      "producedCaption": "Barcha mahsulotlar",
+      "materials": "Material sarflandi",
+      "materialsCaption": "Hisoblangan sarflar"
+    },
+    "batch": {
+      "produced": "dona ishlab chiqarildi",
+      "materials": "Material sarfi",
+      "employees": "Ishchilar",
+      "shift": "Smena",
+      "order": "Buyurtma",
+      "noRecipe": "Bu mahsulot uchun resept yo'q — material sarfi hisoblanmaydi",
+      "noNotes": "Izoh yo'q"
+    },
+    "stock": {
+      "title": "Tayyor mahsulot zaxirasi",
+      "currentStock": "Joriy zaxira",
+      "minStock": "Minimal",
+      "inStock": "Yetarli",
+      "lowStock": "Kam zaxira",
+      "noStock": "Tugagan"
+    },
+    "consumption": {
+      "title": "Material sarfi jami",
+      "material": "Material",
+      "totalUsed": "Jami sarflangan",
+      "remaining": "Qoldiq",
+      "source": "Qaysi partiyalardan"
     }
   },
   "finance": {
@@ -684,7 +854,8 @@
         "unit": "m",
         "sold": 31200,
         "revenue": 1092000000,
-        "trend": 18
+        "trend": 18,
+        "materialsUsed": ["Paxta grifte mato", "Tikish ipi"]
       },
       {
         "id": 2,
@@ -715,7 +886,12 @@
         "unit": "m",
         "sold": 20500,
         "revenue": 697000000,
-        "trend": -4
+        "trend": -4,
+        "materialsUsed": ["Gabardin mato", "YKK fermuar", "Ko'k tugma"],
+        "recipe": [
+          { "materialName": "Gabardin mato 150cm", "qtyPerUnit": 1.05, "unit": "m" },
+          { "materialName": "Tikish ipi (polyester)", "qtyPerUnit": 0.003, "unit": "kg" }
+        ]
       },
       {
         "id": 3,
@@ -777,7 +953,12 @@
         "unit": "kg",
         "sold": 16600,
         "revenue": 481400000,
-        "trend": 6
+        "trend": 6,
+        "materialsUsed": ["Ring spun ip 30/1", "Interlok trikotaj 185cm"],
+        "recipe": [
+          { "materialName": "Ring spun ip 30/1", "qtyPerUnit": 1.12, "unit": "kg" },
+          { "materialName": "Interlok trikotaj 185cm", "qtyPerUnit": 0.05, "unit": "kg" }
+        ]
       },
       {
         "id": 5,
@@ -808,7 +989,13 @@
         "unit": "pcs",
         "sold": 28000,
         "revenue": 1176000000,
-        "trend": 22
+        "trend": 22,
+        "materialsUsed": ["Paxta grifte mato", "Tikish ipi"],
+        "recipe": [
+          { "materialName": "Paxta grifte mato", "qtyPerUnit": 0.85, "unit": "m" },
+          { "materialName": "Tikish ipi (polyester)", "qtyPerUnit": 0.018, "unit": "kg" },
+          { "materialName": "Ko'k tugma 12mm", "qtyPerUnit": 5, "unit": "pcs" }
+        ]
       }
     ],
     "categoryAnalytics": [
@@ -928,6 +1115,254 @@
         "type": "out",
         "note": "2 400 dona futbolka jo'natildi"
       }
+    ],
+    "materials": [
+      {
+        "id": 1,
+        "name": "Paxta grifte mato 240cm",
+        "category": "Mato",
+        "categoryKey": "fabric",
+        "sku": "MAT-001",
+        "supplier": "Fergana Cotton Mill",
+        "color": "Xom oq",
+        "unit": "m",
+        "price": 18000,
+        "stock": 12600,
+        "minStock": 4000,
+        "status": "Yetarli",
+        "statusKey": "ok"
+      },
+      {
+        "id": 2,
+        "name": "Gabardin mato 150cm",
+        "category": "Mato",
+        "categoryKey": "fabric",
+        "sku": "MAT-002",
+        "supplier": "Namangan Weave",
+        "color": "To'q ko'k",
+        "unit": "m",
+        "price": 22000,
+        "stock": 3600,
+        "minStock": 4500,
+        "status": "Kam",
+        "statusKey": "low"
+      },
+      {
+        "id": 3,
+        "name": "Ring spun ip 30/1",
+        "category": "Ip-kalava",
+        "categoryKey": "yarn",
+        "sku": "MAT-003",
+        "supplier": "Andijan Yarn House",
+        "color": "Xom oq",
+        "unit": "kg",
+        "price": 40000,
+        "stock": 4400,
+        "minStock": 1200,
+        "status": "Yetarli",
+        "statusKey": "ok"
+      },
+      {
+        "id": 4,
+        "name": "Interlok trikotaj 185cm",
+        "category": "Trikotaj",
+        "categoryKey": "knitwear",
+        "sku": "MAT-004",
+        "supplier": "Tashkent Knit Lab",
+        "color": "Melanj kulrang",
+        "unit": "kg",
+        "price": 29000,
+        "stock": 5800,
+        "minStock": 6000,
+        "status": "Kam",
+        "statusKey": "low"
+      },
+      {
+        "id": 5,
+        "name": "Ko'k tugma 12mm",
+        "category": "Furnitura",
+        "categoryKey": "accessories",
+        "sku": "MAT-005",
+        "supplier": "Button House UZ",
+        "color": "Ko'k",
+        "unit": "pcs",
+        "price": 500,
+        "stock": 45000,
+        "minStock": 10000,
+        "status": "Yetarli",
+        "statusKey": "ok"
+      },
+      {
+        "id": 6,
+        "name": "YKK fermuar 20cm",
+        "category": "Furnitura",
+        "categoryKey": "accessories",
+        "sku": "MAT-006",
+        "supplier": "YKK Uzbekistan",
+        "color": "Qora",
+        "unit": "pcs",
+        "price": 3500,
+        "stock": 2800,
+        "minStock": 3000,
+        "status": "Kam",
+        "statusKey": "low"
+      },
+      {
+        "id": 7,
+        "name": "Tikish ipi (polyester)",
+        "category": "Ip-kalava",
+        "categoryKey": "yarn",
+        "sku": "MAT-007",
+        "supplier": "Tashkent Thread Co",
+        "color": "Oq",
+        "unit": "kg",
+        "price": 35000,
+        "stock": 980,
+        "minStock": 500,
+        "status": "Yetarli",
+        "statusKey": "ok"
+      },
+      {
+        "id": 8,
+        "name": "Qo'ndaq bezi (astarliq)",
+        "category": "Mato",
+        "categoryKey": "fabric",
+        "sku": "MAT-008",
+        "supplier": "Samarkand Lining",
+        "color": "Oq",
+        "unit": "m",
+        "price": 12000,
+        "stock": 1800,
+        "minStock": 2000,
+        "status": "Kam",
+        "statusKey": "low"
+      }
+    ],
+    "productionRecords": [
+      {
+        "id": 1,
+        "date": "21-Iyun",
+        "employee": "Malika Toshpo'latova",
+        "role": "Tikuvchi menejeri",
+        "product": "Basic oq futbolka",
+        "quantity": "320 dona",
+        "orderId": "ORD-2406-026",
+        "shift": "09:00 - 18:00",
+        "notes": "Sifat nazorat o'tdi"
+      },
+      {
+        "id": 2,
+        "date": "21-Iyun",
+        "employee": "Aziz Hamroyev",
+        "role": "Savdo rahbari",
+        "product": "Gabardin forma matosi",
+        "quantity": "800 metr",
+        "orderId": "ORD-2406-021",
+        "shift": "09:00 - 18:00",
+        "notes": "Bo'yash liniyasida yakunlandi"
+      },
+      {
+        "id": 3,
+        "date": "20-Iyun",
+        "employee": "Nodira Saidova",
+        "role": "Sklad administratori",
+        "product": "Paxta satin 120 GSM",
+        "quantity": "1 200 metr",
+        "orderId": "ORD-2406-018",
+        "shift": "08:30 - 17:30",
+        "notes": "Rulonlar bo'yashdan keyin tekshirildi"
+      },
+      {
+        "id": 4,
+        "date": "20-Iyun",
+        "employee": "Bekzod Nurmatov",
+        "role": "Mahsulot analitigi",
+        "product": "Ring spun ip 30/1",
+        "quantity": "460 kg",
+        "orderId": null,
+        "shift": "Masofadan",
+        "notes": "Kalava partiyasi analiz qilindi"
+      },
+      {
+        "id": 5,
+        "date": "19-Iyun",
+        "employee": "Malika Toshpo'latova",
+        "role": "Tikuvchi menejeri",
+        "product": "Basic oq futbolka",
+        "quantity": "280 dona",
+        "orderId": "ORD-2406-026",
+        "shift": "09:00 - 18:00",
+        "notes": "Tikiluv sexida bajarildi"
+      },
+      {
+        "id": 6,
+        "date": "18-Iyun",
+        "employee": "Zarina Umarova",
+        "role": "HR nazoratchi",
+        "product": "Interlok trikotaj",
+        "quantity": "320 kg",
+        "orderId": "ORD-2406-030",
+        "shift": "09:00 - 18:00",
+        "notes": "Erta ketishdan oldin bajarildi"
+      }
+    ],
+    "productionBatches": [
+      {
+        "id": 1, "dateLabel": "22-Iyun", "product": "Basic oq futbolka", "productId": 5,
+        "producedQty": 500, "unit": "pcs",
+        "employees": ["Nodira Saidova", "Bekzod Tursunov", "Mavluda Xoliqova"],
+        "shift": "Kunduzgi (08:00–17:00)", "orderId": "ORD-2406-026",
+        "notes": "Birinchi partiya — sifat nazoratidan o'tdi"
+      },
+      {
+        "id": 2, "dateLabel": "19-Iyun", "product": "Basic oq futbolka", "productId": 5,
+        "producedQty": 350, "unit": "pcs",
+        "employees": ["Nodira Saidova", "Dilnoza Yusupova"],
+        "shift": "Kunduzgi (08:00–17:00)", "orderId": "ORD-2406-026",
+        "notes": ""
+      },
+      {
+        "id": 3, "dateLabel": "15-Iyun", "product": "Gabardin forma matosi", "productId": 2,
+        "producedQty": 210, "unit": "m",
+        "employees": ["Bekzod Tursunov", "Mavluda Xoliqova"],
+        "shift": "Kechki (17:00–22:00)", "orderId": "ORD-2406-021",
+        "notes": "Forma to'plamining birinchi partiyasi"
+      },
+      {
+        "id": 4, "dateLabel": "10-Iyun", "product": "Basic oq futbolka", "productId": 5,
+        "producedQty": 600, "unit": "pcs",
+        "employees": ["Nodira Saidova", "Bekzod Tursunov", "Mavluda Xoliqova", "Dilnoza Yusupova"],
+        "shift": "Kunduzgi (08:00–17:00)", "orderId": null,
+        "notes": "Ombor zaxirasi uchun ishlab chiqarildi"
+      },
+      {
+        "id": 5, "dateLabel": "5-Iyun", "product": "Gabardin forma matosi", "productId": 2,
+        "producedQty": 180, "unit": "m",
+        "employees": ["Bekzod Tursunov"],
+        "shift": "Kunduzgi (08:00–17:00)", "orderId": "ORD-2406-021",
+        "notes": ""
+      },
+      {
+        "id": 6, "dateLabel": "28-May", "product": "Basic oq futbolka", "productId": 5,
+        "producedQty": 420, "unit": "pcs",
+        "employees": ["Nodira Saidova", "Mavluda Xoliqova"],
+        "shift": "Kunduzgi (08:00–17:00)", "orderId": null,
+        "notes": "May oyi oxirgi partiyasi"
+      }
+    ],
+    "pieceworkRecords": [
+      { "id": 1,  "employeeName": "Nodira Saidova",    "operationName": "Yoqa tikish",     "product": "Basic oq futbolka",   "quantity": 340, "ratePerPiece": 800,  "unit": "pcs", "week": "1-hafta" },
+      { "id": 2,  "employeeName": "Nodira Saidova",    "operationName": "Yeng tikish",     "product": "Basic oq futbolka",   "quantity": 180, "ratePerPiece": 600,  "unit": "pcs", "week": "1-hafta" },
+      { "id": 3,  "employeeName": "Nodira Saidova",    "operationName": "Yoqa tikish",     "product": "Gabardin forma matosi","quantity": 210, "ratePerPiece": 900,  "unit": "pcs", "week": "2-hafta" },
+      { "id": 4,  "employeeName": "Bekzod Tursunov",   "operationName": "Yon chok tikish", "product": "Basic oq futbolka",   "quantity": 520, "ratePerPiece": 500,  "unit": "pcs", "week": "1-hafta" },
+      { "id": 5,  "employeeName": "Bekzod Tursunov",   "operationName": "Kesish",          "product": "Gabardin forma matosi","quantity": 200, "ratePerPiece": 200,  "unit": "pcs", "week": "1-hafta" },
+      { "id": 6,  "employeeName": "Bekzod Tursunov",   "operationName": "Yon chok tikish", "product": "Gabardin forma matosi","quantity": 310, "ratePerPiece": 500,  "unit": "pcs", "week": "2-hafta" },
+      { "id": 7,  "employeeName": "Mavluda Xoliqova",  "operationName": "Tugma qadash",    "product": "Basic oq futbolka",   "quantity": 1200,"ratePerPiece": 150,  "unit": "pcs", "week": "1-hafta" },
+      { "id": 8,  "employeeName": "Mavluda Xoliqova",  "operationName": "Dazmollash",      "product": "Basic oq futbolka",   "quantity": 380, "ratePerPiece": 200,  "unit": "pcs", "week": "1-hafta" },
+      { "id": 9,  "employeeName": "Mavluda Xoliqova",  "operationName": "Tugma qadash",    "product": "Gabardin forma matosi","quantity": 640, "ratePerPiece": 150,  "unit": "pcs", "week": "2-hafta" },
+      { "id": 10, "employeeName": "Dilnoza Yusupova",  "operationName": "Sifat tekshiruv", "product": "Basic oq futbolka",   "quantity": 620, "ratePerPiece": 300,  "unit": "pcs", "week": "1-hafta" },
+      { "id": 11, "employeeName": "Dilnoza Yusupova",  "operationName": "Qadoqlash",       "product": "Basic oq futbolka",   "quantity": 480, "ratePerPiece": 100,  "unit": "pcs", "week": "1-hafta" },
+      { "id": 12, "employeeName": "Dilnoza Yusupova",  "operationName": "Sifat tekshiruv", "product": "Gabardin forma matosi","quantity": 390, "ratePerPiece": 300,  "unit": "pcs", "week": "2-hafta" }
     ],
     "revenueEntries": [
       {

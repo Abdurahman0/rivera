@@ -104,13 +104,21 @@
       "label": "Заказы",
       "caption": "Производственный поток"
     },
+    "production": {
+      "label": "Производство",
+      "caption": "Партии и расход материалов"
+    },
     "staff": {
       "label": "Сотрудники",
       "caption": "Приход и уход"
     },
+    "materials": {
+      "label": "Материалы",
+      "caption": "Сырьё и поставщики"
+    },
     "products": {
-      "label": "Продукты",
-      "caption": "Склад и аналитика"
+      "label": "Готовая продукция",
+      "caption": "Произведённые товары"
     },
     "warehouse": {
       "label": "Склад",
@@ -137,7 +145,48 @@
     },
     "revenueTitle": "Выручка и заказы",
     "priorityTitle": "Приоритетные клиенты",
+    "attendanceTitle": "Посещаемость сегодня",
+    "lowStockTitle": "Материалы с низким запасом",
+    "noLowStock": "Все материалы в достатке",
     "productionTitle": "Недельное производство"
+  },
+  "materials": {
+    "eyebrow": "Сырьё",
+    "title": "Материалы",
+    "description": "Все входящие сырьевые материалы: ткань, нитки, пуговицы, молнии и другое.",
+    "create": "Добавить материал",
+    "searchPlaceholder": "Название, SKU или поставщик...",
+    "metrics": {
+      "total": "Всего материалов",
+      "totalCaption": "По категориям",
+      "lowStock": "Низкий запас",
+      "lowStockCaption": "Нужен повторный заказ",
+      "totalValue": "Общая стоимость",
+      "totalValueCaption": "По текущим запасам"
+    },
+    "columns": {
+      "name": "Название материала",
+      "category": "Тип",
+      "sku": "SKU",
+      "supplier": "Поставщик",
+      "color": "Цвет",
+      "stock": "Остаток",
+      "price": "Цена",
+      "status": "Статус"
+    },
+    "categories": {
+      "fabric": "Ткань",
+      "yarn": "Пряжа",
+      "knitwear": "Трикотаж",
+      "accessories": "Фурнитура"
+    },
+    "modal": {
+      "viewTitle": "Карточка материала",
+      "createTitle": "Новый материал",
+      "editTitle": "Редактировать материал",
+      "summary": "Тип сырья, поставщик, текущий запас и минимальный порог.",
+      "nextStep": "Следующий шаг: отправить заказ поставщику."
+    }
   },
   "clients": {
     "eyebrow": "CRM pipeline",
@@ -201,7 +250,51 @@
     },
     "tabs": {
       "employees": "Сотрудники",
-      "attendance": "Посещаемость"
+      "attendance": "Посещаемость",
+      "salary": "Зарплата",
+      "piecework": "Сдельная оплата"
+    },
+    "piecework": {
+      "title": "Сдельная заработная плата",
+      "description": "Расчёт оплаты каждого сотрудника по выполненным операциям и количеству изделий.",
+      "metrics": {
+        "totalPayout": "Итого сдельная оплата",
+        "totalPayoutCaption": "Все операции за месяц",
+        "totalPieces": "Всего изделий выполнено",
+        "totalPiecesCaption": "По всем сотрудникам",
+        "topWorker": "Лучший работник"
+      },
+      "columns": {
+        "operation": "Операция",
+        "product": "Продукт",
+        "quantity": "Количество",
+        "rate": "Цена/шт",
+        "earned": "Начислено",
+        "week": "Неделя"
+      },
+      "earned": "Итого заработано",
+      "pieces": "изделий выполнено"
+    },
+    "salary": {
+      "title": "Расчёт заработной платы",
+      "description": "Начисленная зарплата на основе процента посещаемости.",
+      "metrics": {
+        "totalPayroll": "Общий фонд зарплат",
+        "totalPayrollCaption": "Базовые оклады",
+        "totalNet": "Начисленная зарплата",
+        "totalNetCaption": "С учётом посещаемости",
+        "avgAttendance": "Средняя посещаемость",
+        "avgAttendanceCaption": "По всем сотрудникам"
+      },
+      "columns": {
+        "employee": "Сотрудник",
+        "baseSalary": "Базовый оклад",
+        "attendance": "Посещаемость",
+        "workedDays": "Рабочие дни",
+        "netSalary": "Начисленная зарплата",
+        "deduction": "Удержание"
+      },
+      "workingDays": "Рабочих дней"
     },
     "modal": {
       "viewTitle": "Профиль сотрудника",
@@ -228,10 +321,19 @@
     "categoryTitle": "Доля категорий",
     "tabs": {
       "products": "Продукты",
+      "bom": "Рецептура (BOM)",
       "categories": "Категории",
       "stockIn": "Приход склада",
       "stockOut": "Расход склада",
       "history": "История движений"
+    },
+    "bom": {
+      "produced": "Произведено",
+      "perUnit": "На 1 единицу",
+      "totalUsed": "Итого потрачено",
+      "noRecipe": "Рецептура для этого продукта не задана",
+      "totalCount": "видов сырья использовано",
+      "panelTitle": "Рецептура и расход материалов"
     },
     "movementTitle": "История движений",
     "stockColumns": {
@@ -346,6 +448,31 @@
     "title": "Управление заказами",
     "description": "Клиентские заказы, состояние производства, менеджер и сроки доставки.",
     "create": "Создать заказ",
+    "tabs": {
+      "orders": "Заказы",
+      "production": "Производство"
+    },
+    "production": {
+      "title": "Отслеживание производства",
+      "description": "Объём производства сотрудников и выпуск продукции по заказам.",
+      "metrics": {
+        "total": "Всего произведено",
+        "totalCaption": "Текущий период",
+        "workers": "Активные рабочие",
+        "workersCaption": "В производстве",
+        "inProduction": "Заказов в производстве",
+        "inProductionCaption": "В процессе"
+      },
+      "columns": {
+        "date": "Дата",
+        "employee": "Сотрудник",
+        "product": "Продукт",
+        "quantity": "Количество",
+        "orderId": "Заказ",
+        "shift": "Смена",
+        "notes": "Примечание"
+      }
+    },
     "metrics": {
       "total": "Всего заказов",
       "totalCaption": "Активный pipeline",
@@ -376,6 +503,31 @@
       "editTitle": "Редактировать заказ",
       "summary": "Управление клиентом, продуктом, количеством, ценой и планом доставки.",
       "nextStep": "Следующий шаг: проверить производственный план и остаток склада."
+    }
+  },
+  "production": {
+    "eyebrow": "Производство",
+    "title": "Журнал производства",
+    "description": "Смотрите сколько изделий произведено, какие материалы израсходованы и когда.",
+    "create": "Новая партия",
+    "tabs": { "batches": "Партии", "stock": "Текущий запас", "consumption": "Расход материалов" },
+    "metrics": {
+      "batches": "Всего партий", "batchesCaption": "Зарегистрировано",
+      "produced": "Итого произведено", "producedCaption": "Все продукты",
+      "materials": "Материалов израсходовано", "materialsCaption": "Расчётный расход"
+    },
+    "batch": {
+      "produced": "шт. произведено", "materials": "Расход материалов",
+      "employees": "Сотрудники", "shift": "Смена", "order": "Заказ",
+      "noRecipe": "Рецептура не задана — расход не рассчитывается", "noNotes": "Без примечаний"
+    },
+    "stock": {
+      "title": "Запас готовой продукции", "currentStock": "Текущий запас",
+      "minStock": "Минимум", "inStock": "В наличии", "lowStock": "Мало", "noStock": "Закончился"
+    },
+    "consumption": {
+      "title": "Итоговый расход материалов", "material": "Материал",
+      "totalUsed": "Израсходовано", "remaining": "Остаток", "source": "Из каких партий"
     }
   },
   "finance": {
@@ -715,7 +867,12 @@
         "unit": "m",
         "sold": 20500,
         "revenue": 697000000,
-        "trend": -4
+        "trend": -4,
+        "materialsUsed": ["Габардин ткань 150см", "Нить швейная"],
+        "recipe": [
+          { "materialName": "Габардин ткань 150см", "qtyPerUnit": 1.05, "unit": "m" },
+          { "materialName": "Нить швейная (полиэстер)", "qtyPerUnit": 0.003, "unit": "kg" }
+        ]
       },
       {
         "id": 3,
@@ -777,7 +934,12 @@
         "unit": "kg",
         "sold": 16600,
         "revenue": 481400000,
-        "trend": 6
+        "trend": 6,
+        "materialsUsed": ["Ring spun пряжа 30/1", "Интерлок трикотаж 185см"],
+        "recipe": [
+          { "materialName": "Ring spun пряжа 30/1", "qtyPerUnit": 1.12, "unit": "kg" },
+          { "materialName": "Интерлок трикотаж 185см", "qtyPerUnit": 0.05, "unit": "kg" }
+        ]
       },
       {
         "id": 5,
@@ -808,7 +970,13 @@
         "unit": "pcs",
         "sold": 28000,
         "revenue": 1176000000,
-        "trend": 22
+        "trend": 22,
+        "materialsUsed": ["Хлопок грифте ткань", "Нить швейная"],
+        "recipe": [
+          { "materialName": "Хлопок грифте ткань", "qtyPerUnit": 0.85, "unit": "m" },
+          { "materialName": "Нить швейная (полиэстер)", "qtyPerUnit": 0.018, "unit": "kg" },
+          { "materialName": "Синяя пуговица 12мм", "qtyPerUnit": 5, "unit": "pcs" }
+        ]
       }
     ],
     "categoryAnalytics": [
@@ -928,6 +1096,106 @@
         "type": "out",
         "note": "2 400 футболок отгружено"
       }
+    ],
+    "materials": [
+      { "id": 1, "name": "Хлопковая суровая ткань 240см", "category": "Ткань", "categoryKey": "fabric", "sku": "MAT-001", "supplier": "Fergana Cotton Mill", "color": "Суровый белый", "unit": "m", "price": 18000, "stock": 12600, "minStock": 4000, "status": "Достаточно", "statusKey": "ok" },
+      { "id": 2, "name": "Габардин ткань 150см", "category": "Ткань", "categoryKey": "fabric", "sku": "MAT-002", "supplier": "Namangan Weave", "color": "Тёмно-синий", "unit": "m", "price": 22000, "stock": 3600, "minStock": 4500, "status": "Мало", "statusKey": "low" },
+      { "id": 3, "name": "Ring spun пряжа 30/1", "category": "Пряжа", "categoryKey": "yarn", "sku": "MAT-003", "supplier": "Andijan Yarn House", "color": "Суровый белый", "unit": "kg", "price": 40000, "stock": 4400, "minStock": 1200, "status": "Достаточно", "statusKey": "ok" },
+      { "id": 4, "name": "Интерлок трикотаж 185см", "category": "Трикотаж", "categoryKey": "knitwear", "sku": "MAT-004", "supplier": "Tashkent Knit Lab", "color": "Серый меланж", "unit": "kg", "price": 29000, "stock": 5800, "minStock": 6000, "status": "Мало", "statusKey": "low" },
+      { "id": 5, "name": "Синяя пуговица 12мм", "category": "Фурнитура", "categoryKey": "accessories", "sku": "MAT-005", "supplier": "Button House UZ", "color": "Синий", "unit": "pcs", "price": 500, "stock": 45000, "minStock": 10000, "status": "Достаточно", "statusKey": "ok" },
+      { "id": 6, "name": "Молния YKK 20см", "category": "Фурнитура", "categoryKey": "accessories", "sku": "MAT-006", "supplier": "YKK Uzbekistan", "color": "Чёрный", "unit": "pcs", "price": 3500, "stock": 2800, "minStock": 3000, "status": "Мало", "statusKey": "low" },
+      { "id": 7, "name": "Швейная нитка (полиэстер)", "category": "Пряжа", "categoryKey": "yarn", "sku": "MAT-007", "supplier": "Tashkent Thread Co", "color": "Белый", "unit": "kg", "price": 35000, "stock": 980, "minStock": 500, "status": "Достаточно", "statusKey": "ok" },
+      { "id": 8, "name": "Подкладочная ткань", "category": "Ткань", "categoryKey": "fabric", "sku": "MAT-008", "supplier": "Samarkand Lining", "color": "Белый", "unit": "m", "price": 12000, "stock": 1800, "minStock": 2000, "status": "Мало", "statusKey": "low" }
+    ],
+    "productionRecords": [
+      {
+        "id": 1,
+        "date": "21-Июн",
+        "employee": "Малика Тошпўлатова",
+        "role": "Менеджер пошива",
+        "product": "Базовая белая футболка",
+        "quantity": "320 шт",
+        "orderId": "ORD-2406-026",
+        "shift": "09:00 - 18:00",
+        "notes": "Прошёл контроль качества"
+      },
+      {
+        "id": 2,
+        "date": "21-Июн",
+        "employee": "Азиз Хамроев",
+        "role": "Руководитель продаж",
+        "product": "Габардин форменная ткань",
+        "quantity": "800 метр",
+        "orderId": "ORD-2406-021",
+        "shift": "09:00 - 18:00",
+        "notes": "Завершено на линии крашения"
+      },
+      {
+        "id": 3,
+        "date": "20-Июн",
+        "employee": "Нодира Саидова",
+        "role": "Администратор склада",
+        "product": "Хлопковый сатин 120 GSM",
+        "quantity": "1 200 метр",
+        "orderId": "ORD-2406-018",
+        "shift": "08:30 - 17:30",
+        "notes": "Рулоны проверены после крашения"
+      },
+      {
+        "id": 4,
+        "date": "20-Июн",
+        "employee": "Бекзод Нурматов",
+        "role": "Аналитик продукции",
+        "product": "Ring spun пряжа 30/1",
+        "quantity": "460 кг",
+        "orderId": null,
+        "shift": "Удалённо",
+        "notes": "Анализ партии пряжи"
+      },
+      {
+        "id": 5,
+        "date": "19-Июн",
+        "employee": "Малика Тошпўлатова",
+        "role": "Менеджер пошива",
+        "product": "Базовая белая футболка",
+        "quantity": "280 шт",
+        "orderId": "ORD-2406-026",
+        "shift": "09:00 - 18:00",
+        "notes": "Пошив в цехе"
+      },
+      {
+        "id": 6,
+        "date": "18-Июн",
+        "employee": "Зарина Умарова",
+        "role": "HR-контролёр",
+        "product": "Интерлок трикотаж",
+        "quantity": "320 кг",
+        "orderId": "ORD-2406-030",
+        "shift": "09:00 - 18:00",
+        "notes": "Выполнено до раннего ухода"
+      }
+    ],
+    "productionBatches": [
+      { "id": 1, "dateLabel": "22 июня", "product": "Базовая белая футболка", "productId": 5, "producedQty": 500, "unit": "pcs", "employees": ["Nodira Saidova", "Bekzod Tursunov", "Mavluda Xoliqova"], "shift": "Дневная (08:00–17:00)", "orderId": "ORD-2406-026", "notes": "Первая партия — прошла контроль качества" },
+      { "id": 2, "dateLabel": "19 июня", "product": "Базовая белая футболка", "productId": 5, "producedQty": 350, "unit": "pcs", "employees": ["Nodira Saidova", "Dilnoza Yusupova"], "shift": "Дневная (08:00–17:00)", "orderId": "ORD-2406-026", "notes": "" },
+      { "id": 3, "dateLabel": "15 июня", "product": "Форменная одежда Габардин", "productId": 2, "producedQty": 210, "unit": "m", "employees": ["Bekzod Tursunov", "Mavluda Xoliqova"], "shift": "Вечерняя (17:00–22:00)", "orderId": "ORD-2406-021", "notes": "Первая партия комплекта формы" },
+      { "id": 4, "dateLabel": "10 июня", "product": "Базовая белая футболка", "productId": 5, "producedQty": 600, "unit": "pcs", "employees": ["Nodira Saidova", "Bekzod Tursunov", "Mavluda Xoliqova", "Dilnoza Yusupova"], "shift": "Дневная (08:00–17:00)", "orderId": null, "notes": "Производство для склада" },
+      { "id": 5, "dateLabel": "5 июня", "product": "Форменная одежда Габардин", "productId": 2, "producedQty": 180, "unit": "m", "employees": ["Bekzod Tursunov"], "shift": "Дневная (08:00–17:00)", "orderId": "ORD-2406-021", "notes": "" },
+      { "id": 6, "dateLabel": "28 мая", "product": "Базовая белая футболка", "productId": 5, "producedQty": 420, "unit": "pcs", "employees": ["Nodira Saidova", "Mavluda Xoliqova"], "shift": "Дневная (08:00–17:00)", "orderId": null, "notes": "Последняя партия мая" }
+    ],
+    "pieceworkRecords": [
+      { "id": 1,  "employeeName": "Nodira Saidova",    "operationName": "Пошив воротника",   "product": "Базовая белая футболка",  "quantity": 340, "ratePerPiece": 800,  "unit": "pcs", "week": "1-я неделя" },
+      { "id": 2,  "employeeName": "Nodira Saidova",    "operationName": "Пошив рукавов",     "product": "Базовая белая футболка",  "quantity": 180, "ratePerPiece": 600,  "unit": "pcs", "week": "1-я неделя" },
+      { "id": 3,  "employeeName": "Nodira Saidova",    "operationName": "Пошив воротника",   "product": "Форменная одежда Габардин","quantity": 210, "ratePerPiece": 900,  "unit": "pcs", "week": "2-я неделя" },
+      { "id": 4,  "employeeName": "Bekzod Tursunov",   "operationName": "Боковой шов",       "product": "Базовая белая футболка",  "quantity": 520, "ratePerPiece": 500,  "unit": "pcs", "week": "1-я неделя" },
+      { "id": 5,  "employeeName": "Bekzod Tursunov",   "operationName": "Раскрой",           "product": "Форменная одежда Габардин","quantity": 200, "ratePerPiece": 200,  "unit": "pcs", "week": "1-я неделя" },
+      { "id": 6,  "employeeName": "Bekzod Tursunov",   "operationName": "Боковой шов",       "product": "Форменная одежда Габардин","quantity": 310, "ratePerPiece": 500,  "unit": "pcs", "week": "2-я неделя" },
+      { "id": 7,  "employeeName": "Mavluda Xoliqova",  "operationName": "Пришив пуговиц",    "product": "Базовая белая футболка",  "quantity": 1200,"ratePerPiece": 150,  "unit": "pcs", "week": "1-я неделя" },
+      { "id": 8,  "employeeName": "Mavluda Xoliqova",  "operationName": "Глажка",            "product": "Базовая белая футболка",  "quantity": 380, "ratePerPiece": 200,  "unit": "pcs", "week": "1-я неделя" },
+      { "id": 9,  "employeeName": "Mavluda Xoliqova",  "operationName": "Пришив пуговиц",    "product": "Форменная одежда Габардин","quantity": 640, "ratePerPiece": 150,  "unit": "pcs", "week": "2-я неделя" },
+      { "id": 10, "employeeName": "Dilnoza Yusupova",  "operationName": "Контроль качества", "product": "Базовая белая футболка",  "quantity": 620, "ratePerPiece": 300,  "unit": "pcs", "week": "1-я неделя" },
+      { "id": 11, "employeeName": "Dilnoza Yusupova",  "operationName": "Упаковка",          "product": "Базовая белая футболка",  "quantity": 480, "ratePerPiece": 100,  "unit": "pcs", "week": "1-я неделя" },
+      { "id": 12, "employeeName": "Dilnoza Yusupova",  "operationName": "Контроль качества", "product": "Форменная одежда Габардин","quantity": 390, "ratePerPiece": 300,  "unit": "pcs", "week": "2-я неделя" }
     ],
     "revenueEntries": [
       {

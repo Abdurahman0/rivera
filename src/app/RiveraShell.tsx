@@ -60,8 +60,10 @@ import { navItems } from '../data/navigation';
 import {
   ACCENT_STORAGE_KEY,
   BACKGROUND_COLOR_PRESETS,
+  COLOR_PALETTES,
   DEFAULT_BACKGROUND_ACCENT,
   THEME_STORAGE_KEY,
+  applyColorPalette,
 } from '../data/ui-config';
 import type {
   CategoryDatum,
@@ -69,11 +71,15 @@ import type {
   EntityId,
   EntityKind,
   FinanceEntry,
+  Material,
   ModalState,
   Order,
   PageId,
+  PieceworkRecord,
   Product,
   ProductCategory,
+  ProductionBatch,
+  ProductionRecord,
   StaffMember,
   StatusTone,
   StockMovement,
@@ -100,6 +106,8 @@ import {
 const DashboardPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.DashboardPage })));
 const ClientsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ClientsPage })));
 const OrdersPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.OrdersPage })));
+const ProductionPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ProductionPage })));
+const MaterialsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.MaterialsPage })));
 const StaffPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.StaffPage })));
 const ProductsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ProductsPage })));
 const WarehousePage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.WarehousePage })));
@@ -128,6 +136,13 @@ function getInitialAccent() {
   }
 }
 
+function initAccentOnLoad() {
+  const accent = getInitialAccent();
+  const theme = (typeof window !== 'undefined' && window.localStorage.getItem('rivera-theme')) === 'dark' ? 'dark' : 'light';
+  applyColorPalette(accent, theme as 'light' | 'dark');
+  return accent;
+}
+
 function App() {
   const { t, i18n } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -135,7 +150,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeDesign, setActiveDesign] = useState<DesignVariant>(getStoredDesignVariant);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(getInitialTheme);
-  const [backgroundAccent, setBackgroundAccent] = useState(getInitialAccent);
+  const [backgroundAccent, setBackgroundAccent] = useState(initAccentOnLoad);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ModalState | null>(null);
@@ -159,6 +174,10 @@ function App() {
   const movementHistory = readObjects<StockMovement>(t, 'mock.movementHistory');
   const revenueEntries = readObjects<FinanceEntry>(t, 'mock.revenueEntries');
   const expenseEntries = readObjects<FinanceEntry>(t, 'mock.expenseEntries');
+  const productionRecords = readObjects<ProductionRecord>(t, 'mock.productionRecords');
+  const rawMaterials = readObjects<Material>(t, 'mock.materials');
+  const pieceworkRecords = readObjects<PieceworkRecord>(t, 'mock.pieceworkRecords');
+  const productionBatches = readObjects<ProductionBatch>(t, 'mock.productionBatches');
   const mergedProductCategories = rawProductCategories
     .map(category => editedCategories[category.id] ?? category)
     .concat(createdCategories.map(category => editedCategories[category.id] ?? category));
@@ -210,7 +229,8 @@ function App() {
     } catch {
       // Keep in-memory theme switching if storage is unavailable.
     }
-  }, [themeMode]);
+    applyColorPalette(backgroundAccent, themeMode);
+  }, [themeMode, backgroundAccent]);
 
   useEffect(() => {
     try {
@@ -218,7 +238,8 @@ function App() {
     } catch {
       // Keep in-memory accent switching if storage is unavailable.
     }
-  }, [backgroundAccent]);
+    applyColorPalette(backgroundAccent, themeMode);
+  }, [backgroundAccent, themeMode]);
 
   useEffect(() => {
     function handleLocationChange() {
@@ -286,6 +307,7 @@ function App() {
   }
 
   function openCreateModal() {
+    if (activePage === 'dashboard' || activePage === 'warehouse' || activePage === 'finance' || activePage === 'materials' || activePage === 'production') return;
     const kind: EntityKind =
       activePage === 'staff'
         ? 'staff'
@@ -462,6 +484,8 @@ function App() {
               <DashboardPage
                 clients={clients}
                 products={products}
+                materials={rawMaterials}
+                staff={staff}
                 categoryAnalytics={categoryAnalytics}
                 revenueData={revenueData}
                 totalStock={totalStock}
@@ -477,10 +501,16 @@ function App() {
               <ClientsPage clients={clients} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
             )}
             {activePage === 'orders' && (
-              <OrdersPage orders={orders} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
+              <OrdersPage orders={orders} productionRecords={productionRecords} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
+            )}
+            {activePage === 'production' && (
+              <ProductionPage batches={productionBatches} products={products} materials={rawMaterials} formatMoney={formatMoney} />
+            )}
+            {activePage === 'materials' && (
+              <MaterialsPage materials={rawMaterials} formatMoney={formatMoney} />
             )}
             {activePage === 'staff' && (
-              <StaffPage staff={staff} staffFlow={staffFlow} openModal={setModal} openDelete={setPendingDelete} />
+              <StaffPage staff={staff} staffFlow={staffFlow} pieceworkRecords={pieceworkRecords} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
             )}
             {activePage === 'products' && (
               <ProductsPage
@@ -965,29 +995,40 @@ function CustomizePanel({ accent, onAccentChange, onClose }: { accent: string; o
 
         <div className="mt-5 grid gap-3">
           <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">{t('customize.colorSection')}</p>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-3 gap-2">
             {BACKGROUND_COLOR_PRESETS.map(option => {
               const isActive = option.value.toLowerCase() === accent.toLowerCase();
+              const palette = COLOR_PALETTES[option.value];
+              const lightPrimary = palette ? `rgb(${palette.light.primary})` : option.value;
+              const darkPrimary = palette ? `rgb(${palette.dark.primary})` : option.value;
               return (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => onAccentChange(option.value)}
                   className={[
-                    'flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-3 text-left transition duration-fast',
+                    'group relative flex flex-col items-center gap-2.5 rounded-2xl border p-3 text-center transition duration-fast',
                     isActive
-                      ? 'border-primary/45 bg-primary/8 shadow-[0_18px_36px_-28px_rgba(99,102,241,0.42)]'
-                      : 'border-border-soft/60 bg-surface-subtle hover:border-primary/25 hover:bg-surface-card',
+                      ? 'border-primary/40 bg-primary/8 shadow-sm'
+                      : 'border-border-soft/60 bg-surface-subtle hover:border-border-soft hover:bg-surface-card',
                   ].join(' ')}
                 >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className="h-4 w-4 shrink-0 rounded-full ring-4 ring-white/70" style={{ backgroundColor: option.value }} />
-                    <span className="truncate text-sm font-semibold text-text-primary">{t(`customize.presets.${option.key}`)}</span>
+                  <span className="flex w-full items-center justify-center gap-1">
+                    <span className="h-6 w-6 rounded-lg shadow-sm" style={{ backgroundColor: lightPrimary }} />
+                    <span className="h-6 w-6 rounded-lg shadow-sm" style={{ backgroundColor: darkPrimary }} />
                   </span>
-                  {isActive ? <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary" /> : null}
+                  <span className="text-[11px] font-bold text-text-secondary">{t(`customize.presets.${option.key}`)}</span>
+                  {isActive && (
+                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-extrabold text-primary-foreground">✓</span>
+                  )}
                 </button>
               );
             })}
+          </div>
+          <div className="mt-1 rounded-xl bg-surface-subtle p-3 text-xs text-text-muted">
+            <span className="mr-1 inline-block h-3 w-3 rounded-sm align-middle" style={{ backgroundColor: 'rgb(var(--color-primary))' }} />
+            Hozirgi rang: <span className="font-bold text-text-primary">{t(`customize.presets.${BACKGROUND_COLOR_PRESETS.find(p => p.value === accent)?.key ?? 'indigo'}`)}</span>
+            &nbsp;·&nbsp;Tugmalar, havolalar va faol elementlarga qo'llaniladi
           </div>
         </div>
 
