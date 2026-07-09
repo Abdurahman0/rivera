@@ -1125,6 +1125,10 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
     const raw = (modal.item?.api || {}) as Record<string, unknown>;
     const value = (name: string, fallback = '') => String(raw[name] ?? fallback);
     const today = new Date().toISOString().slice(0, 10);
+    const [orderCurrency, setOrderCurrency] = useState(value('currency', 'UZS') || 'UZS');
+    useEffect(() => {
+      if (modal.kind === 'order') setOrderCurrency(value('currency', 'UZS') || 'UZS');
+    }, [modal.item?.id, modal.kind, raw.currency]);
     const inputClass = 'h-11 w-full rounded-xl border border-border-soft/60 bg-surface-card px-3 text-sm font-medium text-text-primary outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20';
     const FieldInput = ({ name, label, type = 'text', required = false, fallback = '', step }: { name: string; label: string; type?: string; required?: boolean; fallback?: string; step?: string }) => (
       <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
@@ -1132,10 +1136,10 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
         {type === 'date' ? <DatePicker name={name} required={required} defaultValue={value(name, fallback)} /> : <input className={inputClass} name={name} type={type} required={required} defaultValue={value(name, fallback)} step={step} />}
       </label>
     );
-    const SelectInput = ({ name, label, options, required = false, fallback = '' }: { name: string; label: string; options: Array<{ value: string; label: string }>; required?: boolean; fallback?: string }) => (
+    const SelectInput = ({ name, label, options, required = false, fallback = '', selectedValue, onChange }: { name: string; label: string; options: Array<{ value: string; label: string }>; required?: boolean; fallback?: string; selectedValue?: string; onChange?: (value: string) => void }) => (
       <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
         {label}
-        <Dropdown name={name} required={required} defaultValue={value(name, fallback)} options={options} />
+        <Dropdown name={name} required={required} defaultValue={value(name, fallback)} value={selectedValue} onChange={onChange} options={options} />
       </label>
     );
     const TextArea = ({ name, label }: { name: string; label: string }) => (
@@ -1189,8 +1193,8 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
             <FieldInput name="due_date" label={f('dueDate')} type="date" />
             <SelectInput name="status" label={f('status')} required fallback="draft" options={['draft', 'confirmed', 'completed', 'cancelled'].map(value => ({ value, label: optionLabel(t, 'orderStatus', value) }))} />
             <FieldInput name="total_amount" label={f('totalAmount')} type="number" step="0.01" fallback="0" />
-            <SelectInput name="currency" label={f('currency')} required fallback="UZS" options={[{ value: 'UZS', label: 'UZS' }, { value: 'USD', label: 'USD' }]} />
-            <FieldInput name="exchange_rate" label={f('exchangeRate')} type="number" step="0.0001" />
+            <SelectInput name="currency" label={f('currency')} required fallback="UZS" selectedValue={orderCurrency} onChange={setOrderCurrency} options={[{ value: 'UZS', label: 'UZS' }, { value: 'USD', label: 'USD' }]} />
+            {orderCurrency === 'USD' ? <FieldInput name="exchange_rate" label={f('exchangeRate')} type="number" step="0.0001" /> : null}
             <TextArea name="note" label={f('note')} />
           </> : null}
           {modal.kind === 'material' ? <>

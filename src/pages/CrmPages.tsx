@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
+import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StockMovement } from '../types/crm';
 import { formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
@@ -967,7 +967,7 @@ export function OrdersPage({ orders, productionRecords, formatMoney, openModal, 
           onRowClick={(rowIndex) => openModal({ kind: 'order', mode: 'view', item: orders[rowIndex] })}
         />
       ) : (
-        <ProductionTab records={productionRecords} orders={orders} />
+        <ProductionTab records={productionRecords} orders={orders} formatMoney={formatMoney} />
       )}
     </div>
   );
@@ -1690,8 +1690,78 @@ function SalaryTab({ staff, formatMoney }: { staff: StaffMember[]; formatMoney: 
   );
 }
 
-function ProductionTab({ records, orders }: { records: ProductionRecord[]; orders: Order[] }) {
+function formatProductionQuantity(record: ProductionRecord, t: (key: string) => string) {
+  return `${record.quantity.toLocaleString()} ${unitLabel(record.unit, t)}`;
+}
+
+function ProductionRecordModal({ record, formatMoney, onClose }: { record: ProductionRecord; formatMoney: (value: number) => string; onClose: () => void }) {
   const { t } = useTranslation();
+  const detailRows = [
+    { label: t('orders.production.columns.date'), value: formatDisplayDate(record.date, t) },
+    { label: t('orders.production.columns.employee'), value: record.employee },
+    { label: t('orders.production.details.operation'), value: record.operation },
+    { label: t('orders.production.columns.product'), value: record.product },
+    { label: t('orders.production.columns.quantity'), value: formatProductionQuantity(record, t) },
+    { label: t('orders.production.details.amount'), value: formatMoney(record.amount) },
+    { label: t('orders.production.columns.orderId'), value: record.orderId || '—' },
+    { label: t('orders.production.columns.shift'), value: record.shift || '—' },
+    { label: t('orders.production.columns.notes'), value: record.notes || '—' },
+    { label: t('orders.production.details.backendId'), value: String(record.api?.id ?? '—') },
+    { label: t('orders.production.details.created'), value: record.api?.created_at ? formatDisplayDateTime(String(record.api.created_at), t) : '—' },
+    { label: t('orders.production.details.updated'), value: record.api?.updated_at ? formatDisplayDateTime(String(record.api.updated_at), t) : '—' },
+  ];
+  const apiRows = ([
+    ['employee', record.api?.employee],
+    ['operation_type', record.api?.operation_type],
+    ['related_batch', record.api?.related_batch],
+    ['quantity_done', record.api?.quantity_done],
+    ['amount', record.api?.amount],
+  ] as Array<[string, unknown]>).filter(([, value]) => value !== undefined && value !== null && value !== '');
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <section className="grid max-h-[90vh] w-full max-w-[760px] grid-rows-[auto_1fr] overflow-hidden rounded-[28px] bg-surface-card shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <header className="flex items-start justify-between gap-4 border-b border-border-soft/30 p-5">
+          <div className="min-w-0">
+            <p className="m-0 text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary">{t('orders.production.title')}</p>
+            <h3 className="mt-1 truncate font-display text-xl font-extrabold text-text-primary">{record.product}</h3>
+            <p className="mt-1 text-sm font-semibold text-text-muted">{record.employee} · {formatProductionQuantity(record, t)}</p>
+          </div>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </header>
+        <div className="min-h-0 overflow-y-auto p-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {detailRows.map(row => (
+              <div key={row.label} className="min-w-0 rounded-xl bg-surface-subtle p-3 ring-1 ring-border-soft/35">
+                <p className="m-0 text-[11px] font-extrabold uppercase tracking-wide text-text-muted">{row.label}</p>
+                <p className="mt-1 min-w-0 break-words text-sm font-bold text-text-primary">{row.value}</p>
+              </div>
+            ))}
+          </div>
+          {apiRows.length ? (
+            <div className="mt-4 rounded-xl bg-surface-subtle p-3 ring-1 ring-border-soft/35">
+              <p className="m-0 text-[11px] font-extrabold uppercase tracking-wide text-text-muted">{t('orders.production.details.apiDetails')}</p>
+              <div className="mt-2 grid gap-2">
+                {apiRows.map(([key, value]) => (
+                  <div key={key} className="flex min-w-0 items-center justify-between gap-3 text-xs">
+                    <span className="shrink-0 font-bold text-text-muted">{key}</span>
+                    <span className="min-w-0 truncate font-mono font-semibold text-text-secondary" title={String(value)}>{String(value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ProductionTab({ records, orders, formatMoney }: { records: ProductionRecord[]; orders: Order[]; formatMoney: (value: number) => string }) {
+  const { t } = useTranslation();
+  const [detailRecord, setDetailRecord] = useState<ProductionRecord | null>(null);
   const uniqueWorkers = new Set(records.map(r => r.employee)).size;
   const inProductionOrders = orders.filter(o => o.statusKey === 'confirmed').length;
 
@@ -1711,19 +1781,25 @@ function ProductionTab({ records, orders }: { records: ProductionRecord[]; order
           t('orders.production.columns.orderId'),
           t('orders.production.columns.shift'),
           t('orders.production.columns.notes'),
+          t('common.actions'),
         ]}
         rows={records.map(record => [
           formatDisplayDate(record.date, t),
-          <PrimaryCell title={record.employee} subtitle={record.role} />,
+          <PrimaryCell title={record.employee} subtitle={record.operation} />,
           record.product,
-          <span className="font-bold text-text-primary">{record.quantity}</span>,
+          <span className="font-bold text-text-primary">{formatProductionQuantity(record, t)}</span>,
           record.orderId
             ? <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-text-accent">{record.orderId}</span>
             : <span className="text-text-muted">—</span>,
-          record.shift,
-          record.notes,
+          record.shift || '—',
+          record.notes || '—',
+          <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-surface-card text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary" onClick={(event) => { event.stopPropagation(); setDetailRecord(record); }} aria-label={t('common.view')}>
+            <FiEye className="h-4 w-4" />
+          </button>,
         ])}
+        onRowClick={(rowIndex) => setDetailRecord(records[rowIndex])}
       />
+      {detailRecord ? <ProductionRecordModal record={detailRecord} formatMoney={formatMoney} onClose={() => setDetailRecord(null)} /> : null}
     </div>
   );
 }

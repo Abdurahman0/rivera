@@ -532,6 +532,14 @@
         "orderId": "Заказ",
         "shift": "Смена",
         "notes": "Примечание"
+      },
+      "details": {
+        "operation": "Операция",
+        "amount": "Расчетная сумма",
+        "backendId": "Backend ID",
+        "created": "Создано",
+        "updated": "Обновлено",
+        "apiDetails": "API данные"
       }
     },
     "metrics": {

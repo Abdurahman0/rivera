@@ -142,10 +142,14 @@ export interface ProductionRecord {
   employee: string;
   role: string;
   product: string;
-  quantity: string;
+  operation: string;
+  quantity: number;
+  unit: 'm' | 'kg' | 'pcs';
+  amount: number;
   orderId: string | null;
   shift: string;
   notes: string;
+  api?: Record<string, unknown>;
 }
 
 export interface ProductionBatch {

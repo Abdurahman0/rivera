@@ -92,6 +92,7 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
   const employeeNames = new Map(data.employees.map(row => [row.id, row.full_name]));
   const operationNames = new Map(data.operationTypes.map(row => [row.id, row.name]));
   const batchNames = new Map(data.batches.map(row => [row.id, row.batch_number]));
+  const batchById = new Map(data.batches.map(row => [row.id, row]));
   const materialById = new Map(data.materials.map(row => [row.id, row]));
   const supplierNames = new Map(data.suppliers.map(row => [row.id, row.name]));
   const materialStock = new Map(data.materialStocks.map(row => [row.material, number(row.quantity)]));
@@ -236,11 +237,15 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     date: row.date,
     employee: employeeNames.get(row.employee) || row.employee,
     role: '',
-    product: row.related_batch ? batchNames.get(row.related_batch) || row.related_batch : '—',
-    quantity: `${row.quantity_done} pcs`,
+    product: row.related_batch ? productNames.get(batchById.get(row.related_batch)?.product || '') || batchNames.get(row.related_batch) || row.related_batch : '—',
+    operation: operationNames.get(row.operation_type) || row.operation_type,
+    quantity: row.quantity_done,
+    unit: 'pcs',
+    amount: number(row.amount),
     orderId: row.related_batch ? batchNames.get(row.related_batch) || null : null,
     shift: '',
     notes: row.note,
+    api: row as unknown as Record<string, unknown>,
   }));
 
   const employeesByBatch = new Map<string, Set<string>>();
