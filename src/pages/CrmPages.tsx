@@ -1,13 +1,109 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FiAlertTriangle, FiArchive, FiBriefcase, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUsers, FiSliders } from 'react-icons/fi';
+import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { CategoryDatum, Client, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StockMovement } from '../types/crm';
-import { materialStatusTone, orderStatusTone, statusTone, unitLabel } from '../utils/crm';
+import type { CategoryDatum, Client, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StockMovement } from '../types/crm';
+import { formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
+import { translateMovementLabel } from '../lib/enumLabels';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
+import { useDialog } from '../components/DialogProvider';
+import { useToast } from '../components/ToastProvider';
+import { useHasPermission } from '../components/PermissionsProvider';
+import { Dropdown, DatePicker } from '../components/FormControls';
+import { ApiResourceManager, type ResourceAction, type ResourceConfig } from '../components/ApiResourceManager';
+import { actions, api, ApiError, resources } from '../api/client';
+import type { ApiApproval, ApiRecord } from '../api/types';
+import { APPROVAL_ACTION_TARGETS, buildApprovalObjectLabel } from '../lib/approvalTargets';
+import { operationsConfigs } from '../data/resource-config';
+import { FaceEnrollDrawer } from '../components/FaceEnrollDrawer';
 
-export function DashboardPage({ clients, products, materials, staff, categoryAnalytics, revenueData, totalStock, lowStockCount, pipelineValue, onDutyCount, staffTotal, formatMoney, openModal }: {
+/** Every export button must download the real backend XLSX via GET /api/<resource>/export/ — never generate files client-side. */
+function useResourceExport() {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  return (resource: string) => {
+    void api.export(resource).catch(error => {
+      toast(error instanceof ApiError ? error.message : t('admin.ui.requestFailed'), 'danger');
+    });
+  };
+}
+
+function useApprovalObjectLabels(approvals: ApiApproval[], materials: Material[], products: Product[], t: ReturnType<typeof useTranslation>['t']) {
+  const [targets, setTargets] = useState<Record<string, Map<string, ApiRecord>>>({});
+  const actionsKey = [...new Set(approvals.map(row => row.action))].sort().join(',');
+
+  useEffect(() => {
+    const resourcesNeeded = [...new Set(
+      actionsKey.split(',').filter(Boolean).map(action => APPROVAL_ACTION_TARGETS[action]?.resource).filter((value): value is string => Boolean(value)),
+    )];
+    if (!resourcesNeeded.length) return;
+    let cancelled = false;
+    void Promise.all(resourcesNeeded.map(resource => api.list<ApiRecord>(resource).then(rows => [resource, rows] as const))).then(results => {
+      if (cancelled) return;
+      const next: Record<string, Map<string, ApiRecord>> = {};
+      results.forEach(([resource, rows]) => {
+        next[resource] = new Map(rows.map(row => [String(row.id), row]));
+      });
+      setTargets(next);
+    });
+    return () => { cancelled = true; };
+  }, [actionsKey]);
+
+  const materialsById = useMemo(() => new Map(materials.map(m => [String(m.id), m.name])), [materials]);
+  const productsById = useMemo(() => new Map(products.map(p => [String(p.id), p.name])), [products]);
+
+  return (row: ApiApproval) => {
+    const config = APPROVAL_ACTION_TARGETS[row.action];
+    const targetRow = config ? targets[config.resource]?.get(row.object_id) : undefined;
+    return buildApprovalObjectLabel(row.action, targetRow, materialsById, productsById, t);
+  };
+}
+
+export function ApprovalsPage({ approvals, materials, products, onApprove, onReject }: { approvals: ApiApproval[]; materials: Material[]; products: Product[]; onApprove: (id: string) => Promise<void>; onReject: (id: string, reason: string) => Promise<void> }) {
+  const { t } = useTranslation();
+  const { prompt } = useDialog();
+  const exportResource = useResourceExport();
+  const canManage = useHasPermission('approvals', 'manage');
+  const pending = approvals.filter(row => row.status === 'pending');
+  const objectLabel = useApprovalObjectLabels(approvals, materials, products, t);
+  return (
+    <div className="grid gap-5">
+      <PageHeader eyebrow={t('approvals.eyebrow')} title={t('approvals.title')} description={t('approvals.description')} onExport={() => exportResource(resources.approvals)} />
+      <div className="flex flex-wrap gap-3">
+        <div className="rounded-xl bg-warning-bg px-4 py-2.5 text-sm font-bold text-warning">{t('approvals.pendingCount', { count: pending.length })}</div>
+        <div className="rounded-xl bg-success-bg px-4 py-2.5 text-sm font-bold text-success">{t('approvals.approvedCount', { count: approvals.filter(row => row.status === 'approved').length })}</div>
+        <div className="rounded-xl bg-danger-bg px-4 py-2.5 text-sm font-bold text-danger">{t('approvals.rejectedCount', { count: approvals.filter(row => row.status === 'rejected').length })}</div>
+      </div>
+      <DataTable
+        columns={[t('approvals.columns.page'), t('approvals.columns.action'), t('approvals.columns.object'), t('approvals.columns.created'), t('approvals.columns.status'), t('approvals.columns.actions')]}
+        rows={approvals.map(row => {
+          const label = objectLabel(row) ?? `#${row.object_id.slice(0, 8).toUpperCase()}`;
+          return [
+            optionLabel(t, 'page', row.page),
+            optionLabel(t, 'approvalAction', row.action),
+            <span className="block max-w-[220px] truncate" title={label}>{label}</span>,
+            formatDisplayDateTime(row.created_at, t),
+            <StatusBadge tone={row.status === 'approved' ? 'success' : row.status === 'rejected' ? 'danger' : 'warning'}>{statusLabel(t, row.status)}</StatusBadge>,
+            row.status === 'pending' && canManage ? (
+              <div className="flex gap-2">
+                <button className="rounded-lg bg-success-bg px-3 py-1.5 text-xs font-bold text-success" onClick={() => void onApprove(row.id)}>{t('approvals.approve')}</button>
+                <button className="rounded-lg bg-danger-bg px-3 py-1.5 text-xs font-bold text-danger" onClick={() => {
+                  void prompt({ title: t('dialog.rejectReasonTitle'), placeholder: t('dialog.rejectReasonPlaceholder'), required: true }).then(reason => {
+                    if (reason?.trim()) void onReject(row.id, reason.trim());
+                  });
+                }}>{t('approvals.reject')}</button>
+              </div>
+            ) : '—',
+          ];
+        })}
+      />
+    </div>
+  );
+}
+
+export function DashboardPage({ clients, priorityClients, products, materials, staff, categoryAnalytics, revenueData, totalStock, lowStockCount, pipelineValue, onDutyCount, staffTotal, formatMoney, openModal }: {
   clients: Client[];
+  priorityClients: Client[];
   products: Product[];
   materials: Material[];
   staff: StaffMember[];
@@ -22,6 +118,7 @@ export function DashboardPage({ clients, products, materials, staff, categoryAna
   openModal: (modal: ModalState) => void;
 }) {
   const { t } = useTranslation();
+  const exportResource = useResourceExport();
   const lowStockMaterials = materials.filter(m => m.stock <= m.minStock);
 
   return (
@@ -35,7 +132,7 @@ export function DashboardPage({ clients, products, materials, staff, categoryAna
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.55fr_1fr]">
-        <Panel title={t('dashboard.revenueTitle')} action={t('common.export')}>
+        <Panel title={t('dashboard.revenueTitle')} action={t('common.export')} onAction={() => exportResource(resources.clientPayments)}>
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={revenueData}>
@@ -57,7 +154,7 @@ export function DashboardPage({ clients, products, materials, staff, categoryAna
         </Panel>
         <Panel title={t('dashboard.priorityTitle')} action={t('common.viewAll')}>
           <div className="grid gap-3">
-            {clients.slice(0, 4).map(client => (
+            {(priorityClients.length ? priorityClients : clients).slice(0, 4).map(client => (
               <button
                 key={client.id}
                 className="group flex items-center justify-between gap-3 rounded-2xl border border-border-soft/55 bg-surface-card/80 p-3 text-left shadow-sm transition duration-fast hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/8 hover:shadow-[0_18px_36px_-28px_rgb(var(--color-primary)/0.55)]"
@@ -67,7 +164,7 @@ export function DashboardPage({ clients, products, materials, staff, categoryAna
                   <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
                     <FiBriefcase className="h-4 w-4" />
                   </span>
-                  <PrimaryCell title={client.name} subtitle={`${client.status} · ${client.manager}`} />
+                  <PrimaryCell title={client.name} subtitle={`${statusLabel(t, client.statusKey)} · ${client.manager}`} />
                 </span>
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-text-muted transition group-hover:bg-primary/15 group-hover:text-text-accent">
                   <FiChevronRight className="h-4 w-4" />
@@ -92,9 +189,9 @@ export function DashboardPage({ clients, products, materials, staff, categoryAna
                   <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-extrabold text-primary">{initials}</span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-text-primary">{member.name}</p>
-                    <p className="text-xs text-text-muted">{member.role} · {member.arrival === 'Masofadan' || member.arrival === 'Удалённо' ? member.arrival : `${member.arrival} → ${member.leaving}`}</p>
+                    <p className="text-xs text-text-muted">{optionLabel(t, 'employeePosition', member.role)} · {member.arrival === 'Masofadan' || member.arrival === 'Удалённо' ? member.arrival : `${member.arrival} → ${member.leaving}`}</p>
                   </div>
-                  <StatusBadge tone={statusTone(member.statusKey)}>{member.status}</StatusBadge>
+                  <StatusBadge tone={statusTone(member.statusKey)}>{statusLabel(t, member.statusKey)}</StatusBadge>
                 </div>
               );
             })}
@@ -126,7 +223,7 @@ export function DashboardPage({ clients, products, materials, staff, categoryAna
                     <p className="truncate text-sm font-bold text-text-primary">{mat.name}</p>
                     <p className="text-xs text-warning">{mat.stock.toLocaleString()} {unitLabel(mat.unit, t)} / min {mat.minStock.toLocaleString()}</p>
                   </div>
-                  <StatusBadge tone="warning">{mat.status}</StatusBadge>
+                  <StatusBadge tone="warning">{statusLabel(t, mat.statusKey)}</StatusBadge>
                 </div>
               ))}
             </div>
@@ -139,8 +236,70 @@ export function DashboardPage({ clients, products, materials, staff, categoryAna
   );
 }
 
+function scopedFieldConfig(base: ResourceConfig, canManage: boolean, fieldName: string): ResourceConfig {
+  return {
+    ...base,
+    readOnly: base.readOnly || !canManage,
+    fields: base.fields.map(field => (field.name === fieldName ? { ...field, readOnly: true, table: false } : field)),
+  };
+}
+
+function scopedClientConfig(base: ResourceConfig, canManage: boolean): ResourceConfig {
+  return scopedFieldConfig(base, canManage, 'client');
+}
+
+function ClientDetailModal({ client, onClose, canManage }: { client: Client; onClose: () => void; canManage: boolean }) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<'deliveries' | 'payments' | 'returns' | 'debts'>('deliveries');
+  const extraParams = useMemo(() => ({ client: String(client.id) }), [client.id]);
+  const fixedValues = useMemo(() => ({ client: String(client.id) }), [client.id]);
+  const configs = useMemo(() => ({
+    deliveries: scopedClientConfig(operationsConfigs.deliveries, canManage),
+    payments: scopedClientConfig(operationsConfigs.payments, canManage),
+    returns: scopedClientConfig(operationsConfigs.returns, canManage),
+    debts: scopedClientConfig(operationsConfigs.debts, canManage),
+  }), [canManage]);
+
+  return (
+    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <section role="dialog" aria-modal="true" className="grid max-h-[90vh] w-full max-w-[980px] grid-rows-[auto_1fr] overflow-hidden rounded-[28px] bg-surface-card shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <div className="flex items-start justify-between gap-4 border-b border-border-soft/30 p-6">
+          <div className="min-w-0">
+            <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">{client.phone}</p>
+            <h3 className="mt-1 truncate font-display text-xl font-extrabold text-text-primary">{client.name}</h3>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>
+              <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{t('clients.columns.value')}: {client.value.toLocaleString()}</span>
+            </div>
+          </div>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="overflow-y-auto p-6">
+          <SegmentTabs
+            tabs={[
+              { id: 'deliveries', label: t('admin.resources.deliveries.title'), icon: <FiPackage className="h-4 w-4" /> },
+              { id: 'payments', label: t('admin.resources.payments.title'), icon: <FiDollarSign className="h-4 w-4" /> },
+              { id: 'returns', label: t('admin.resources.returns.title'), icon: <FiArchive className="h-4 w-4" /> },
+              { id: 'debts', label: t('admin.resources.debts.title'), icon: <FiAlertTriangle className="h-4 w-4" /> },
+            ]}
+            activeTab={activeTab}
+            onChange={id => setActiveTab(id as typeof activeTab)}
+          />
+          <div className="mt-4">
+            <ApiResourceManager key={`${activeTab}-${client.id}`} config={configs[activeTab]} extraParams={extraParams} fixedValues={fixedValues} />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { clients: Client[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
+  const exportResource = useResourceExport();
+  const canManage = useHasPermission('clients', 'manage');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
@@ -160,10 +319,11 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
         return second.value - first.value;
       });
   }, [clients, query, sortMode, sourceFilter, statusFilter]);
+  const [viewingClient, setViewingClient] = useState<Client | null>(null);
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('clients.eyebrow')} title={t('clients.title')} description={t('clients.description')} createLabel={t('clients.create')} onCreate={() => openModal({ kind: 'client', mode: 'create' })} />
+      <PageHeader eyebrow={t('clients.eyebrow')} title={t('clients.title')} description={t('clients.description')} createLabel={canManage ? t('clients.create') : undefined} onCreate={canManage ? () => openModal({ kind: 'client', mode: 'create' }) : undefined} onExport={() => exportResource(resources.clients)} />
       <ClientsFilterBar
         query={query}
         setQuery={setQuery}
@@ -182,175 +342,289 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
         rows={filteredClients.map(client => [
           <PrimaryCell title={client.name} subtitle={client.phone} />,
           client.source,
-          <StatusBadge tone={statusTone(client.statusKey)}>{client.status}</StatusBadge>,
+          <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>,
           client.fabric,
           formatMoney(client.value),
-          <RowActions onView={() => openModal({ kind: 'client', mode: 'view', item: client })} onEdit={() => openModal({ kind: 'client', mode: 'edit', item: client })} onDelete={() => openDelete({ kind: 'client', mode: 'view', item: client })} />,
+          <RowActions onView={() => setViewingClient(client)} onEdit={canManage ? () => openModal({ kind: 'client', mode: 'edit', item: client }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'client', mode: 'view', item: client }) : undefined} />,
         ])}
-        onRowClick={(rowIndex) => openModal({ kind: 'client', mode: 'view', item: filteredClients[rowIndex] })}
+        onRowClick={(rowIndex) => setViewingClient(filteredClients[rowIndex])}
       />
+      {viewingClient ? <ClientDetailModal client={viewingClient} canManage={canManage} onClose={() => setViewingClient(null)} /> : null}
     </div>
   );
 }
 
 function EmployeeGrid({ staff, pieceworkRecords, formatMoney, openModal, openDelete }: { staff: StaffMember[]; pieceworkRecords: PieceworkRecord[]; formatMoney: (v: number) => string; openModal: (m: ModalState) => void; openDelete: (m: ModalState) => void }) {
   const { t } = useTranslation();
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const canManage = useHasPermission('employees', 'manage');
+  const [detailId, setDetailId] = useState<EntityId | null>(null);
+  const detailMember = staff.find(member => member.id === detailId) ?? null;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {staff.map(member => {
-        const initials = member.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('');
-        const isOpen = expandedId === member.id;
-        const myRecords = pieceworkRecords.filter(r => r.employeeName === member.name);
-        const totalEarned = myRecords.reduce((sum, r) => sum + r.quantity * r.ratePerPiece, 0);
-        const totalPieces = myRecords.reduce((sum, r) => sum + r.quantity, 0);
-        const hasPiecework = myRecords.length > 0;
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {staff.map(member => {
+          const initials = member.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('');
+          const myRecords = pieceworkRecords.filter(r => r.employeeName === member.name);
+          const totalEarned = myRecords.reduce((sum, r) => sum + r.quantity * r.ratePerPiece, 0);
+          const hasPiecework = myRecords.length > 0;
 
-        return (
-          <article key={member.id} className={['app-card--nova flex flex-col gap-0 overflow-hidden transition-all duration-200', isOpen ? 'sm:col-span-2 xl:col-span-3' : ''].join(' ')}>
-            <div className="flex flex-col gap-4 p-5">
+          return (
+            <article key={member.id} className="app-card--nova flex flex-col gap-4 p-5">
               <div className="flex items-start gap-4">
                 <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-xl font-extrabold text-primary">{initials}</span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-extrabold text-text-primary">{member.name}</p>
-                  <p className="mt-0.5 truncate text-sm text-text-muted">{member.role}</p>
+                  <p className="mt-0.5 truncate text-sm text-text-muted">{optionLabel(t, 'employeePosition', member.role)}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <StatusBadge tone={statusTone(member.statusKey)}>{member.status}</StatusBadge>
+                    <StatusBadge tone={statusTone(member.statusKey)}>{statusLabel(t, member.statusKey)}</StatusBadge>
                     {hasPiecework && (
-                      <span className="rounded-pill bg-success/10 px-2.5 py-0.5 text-[11px] font-bold text-success ring-1 ring-success/20">{formatMoney(totalEarned)} akkord</span>
+                      <span className="rounded-pill bg-success/10 px-2.5 py-0.5 text-[11px] font-bold text-success ring-1 ring-success/20">{formatMoney(totalEarned)} {t('staff.detail.pieceworkBadge')}</span>
                     )}
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 rounded-xl bg-surface-subtle p-3 text-xs">
                 <div><p className="text-text-muted">{t('staff.columns.phone')}</p><p className="mt-0.5 font-semibold text-text-primary">{member.phone}</p></div>
-                <div><p className="text-text-muted">{t('staff.columns.hireDate')}</p><p className="mt-0.5 font-semibold text-text-primary">{member.hireDate}</p></div>
-                <div><p className="text-text-muted">{t('staff.columns.shift')}</p><p className="mt-0.5 font-semibold text-text-primary">{member.shift}</p></div>
+                <div><p className="text-text-muted">{t('staff.columns.hireDate')}</p><p className="mt-0.5 font-semibold text-text-primary">{formatDisplayDate(member.hireDate, t)}</p></div>
+                <div><p className="text-text-muted">{t('staff.columns.shift')}</p><p className="mt-0.5 font-semibold text-text-primary">{optionLabel(t, 'salaryType', member.shift)}</p></div>
                 <div><p className="text-text-muted">{t('staff.columns.salary')}</p><p className="mt-0.5 font-bold text-success">{formatMoney(member.salary)}</p></div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setExpandedId(isOpen ? null : member.id)} className={['inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl text-xs font-bold ring-1 transition', isOpen ? 'bg-primary text-primary-foreground ring-primary/30' : 'bg-surface-subtle text-text-secondary ring-border-soft/50 hover:bg-primary/10 hover:text-text-primary'].join(' ')}>
-                  <FiChevronRight className={['h-3.5 w-3.5 transition-transform', isOpen ? 'rotate-90' : ''].join(' ')} />
-                  {isOpen ? "Yopish" : "Batafsil ko'rish"}
+                <button onClick={() => setDetailId(member.id)} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl bg-surface-subtle text-xs font-bold text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary">
+                  <FiChevronRight className="h-3.5 w-3.5" />
+                  {t('staff.detail.toggleOpen')}
                 </button>
-                <button onClick={() => openModal({ kind: 'staff', mode: 'edit', item: member })} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-surface-subtle text-xs font-bold text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary"><FiSettings className="h-3.5 w-3.5" /></button>
-                <button onClick={() => openDelete({ kind: 'staff', mode: 'view', item: member })} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-danger-bg text-xs font-bold text-danger ring-1 ring-danger/15 transition hover:bg-danger/15">✕</button>
+                {canManage ? <button onClick={() => openModal({ kind: 'staff', mode: 'edit', item: member })} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-surface-subtle text-xs font-bold text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary"><FiSettings className="h-3.5 w-3.5" /></button> : null}
+                {canManage ? <button onClick={() => openDelete({ kind: 'staff', mode: 'view', item: member })} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-danger-bg text-xs font-bold text-danger ring-1 ring-danger/15 transition hover:bg-danger/15">✕</button> : null}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      {detailMember ? (
+        <StaffDetailModal
+          member={detailMember}
+          records={pieceworkRecords.filter(r => r.employeeName === detailMember.name)}
+          formatMoney={formatMoney}
+          onClose={() => setDetailId(null)}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function StaffDetailModal({ member, records, formatMoney, onClose }: { member: StaffMember; records: PieceworkRecord[]; formatMoney: (v: number) => string; onClose: () => void }) {
+  const { t } = useTranslation();
+  const canManage = useHasPermission('employees', 'manage');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leaveRequests' | 'terminations'>('overview');
+  const initials = member.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('');
+  const totalEarned = records.reduce((sum, r) => sum + r.quantity * r.ratePerPiece, 0);
+  const totalPieces = records.reduce((sum, r) => sum + r.quantity, 0);
+  const hasPiecework = records.length > 0;
+  const extraParams = useMemo(() => ({ employee: String(member.id) }), [member.id]);
+  const fixedValues = useMemo(() => ({ employee: String(member.id) }), [member.id]);
+  const leaveConfig = useMemo(() => scopedFieldConfig(operationsConfigs.leaveRequests, canManage, 'employee'), [canManage]);
+  const terminationConfig = useMemo(() => scopedFieldConfig(operationsConfigs.employeeTerminations, canManage, 'employee'), [canManage]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]"
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section role="dialog" aria-modal="true" className="grid max-h-[90vh] w-full max-w-[1040px] grid-rows-[auto_1fr] overflow-hidden rounded-[28px] bg-surface-card shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <div className="flex items-start justify-between gap-4 border-b border-border-soft/30 p-6">
+          <div className="flex items-start gap-4">
+            <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-2xl font-extrabold text-primary">{initials}</span>
+            <div className="min-w-0">
+              <h3 className="truncate font-display text-2xl font-extrabold text-text-primary">{member.name}</h3>
+              <p className="mt-1 truncate text-sm text-text-muted">{optionLabel(t, 'employeePosition', member.role)}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <StatusBadge tone={statusTone(member.statusKey)}>{statusLabel(t, member.statusKey)}</StatusBadge>
+                <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{member.phone}</span>
+                <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{t('staff.columns.hireDate')}: {formatDisplayDate(member.hireDate, t)}</span>
+                <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{optionLabel(t, 'salaryType', member.shift)}</span>
               </div>
             </div>
+          </div>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
 
-            {isOpen && (
-              <div className="border-t border-border-soft/30 bg-surface-subtle/40 p-5">
-                <div className="grid gap-5 lg:grid-cols-[1fr_1.6fr]">
-                  {/* Left: summary stats */}
-                  <div className="grid gap-3">
-                    <h4 className="text-sm font-extrabold text-text-primary">Bu oy ko'rsatkichlari</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-surface-card p-3.5 ring-1 ring-border-soft/30">
-                        <p className="text-xs text-text-muted">Davomat</p>
-                        <p className="mt-1 text-2xl font-extrabold text-text-primary">{member.attendance}%</p>
-                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-pill bg-surface-muted">
-                          <div className={['h-full rounded-pill', member.attendance >= 90 ? 'bg-success' : member.attendance >= 75 ? 'bg-warning' : 'bg-danger'].join(' ')} style={{ width: `${member.attendance}%` }} />
-                        </div>
-                      </div>
-                      <div className="rounded-xl bg-surface-card p-3.5 ring-1 ring-border-soft/30">
-                        <p className="text-xs text-text-muted">Kelish vaqti</p>
-                        <p className="mt-1 text-xl font-extrabold text-text-primary">{member.arrival}</p>
-                        <p className="mt-0.5 text-xs text-text-muted">Ketish: {member.leaving}</p>
-                      </div>
-                      <div className="rounded-xl bg-surface-card p-3.5 ring-1 ring-border-soft/30">
-                        <p className="text-xs text-text-muted">Asosiy oylik</p>
-                        <p className="mt-1 text-lg font-extrabold text-text-primary">{formatMoney(member.salary)}</p>
-                      </div>
-                      <div className={['rounded-xl p-3.5 ring-1', hasPiecework ? 'bg-success/5 ring-success/20' : 'bg-surface-card ring-border-soft/30'].join(' ')}>
-                        <p className="text-xs text-text-muted">Akkord daromad</p>
-                        <p className={['mt-1 text-lg font-extrabold', hasPiecework ? 'text-success' : 'text-text-muted'].join(' ')}>{hasPiecework ? formatMoney(totalEarned) : '—'}</p>
-                        {hasPiecework && <p className="mt-0.5 text-xs text-text-muted">{totalPieces.toLocaleString()} dona</p>}
-                      </div>
+        <div className="overflow-y-auto p-6">
+          <SegmentTabs
+            tabs={[
+              { id: 'overview', label: t('staff.detail.overview'), icon: <FiUsers className="h-4 w-4" /> },
+              { id: 'leaveRequests', label: t('admin.resources.leaveRequests.title'), icon: <FiCalendar className="h-4 w-4" /> },
+              { id: 'terminations', label: t('admin.resources.employeeTerminations.title'), icon: <FiUserX className="h-4 w-4" /> },
+            ]}
+            activeTab={activeTab}
+            onChange={id => setActiveTab(id as typeof activeTab)}
+          />
+          {activeTab === 'leaveRequests' ? (
+            <div className="mt-4">
+              <ApiResourceManager key={`leave-${member.id}`} config={leaveConfig} extraParams={extraParams} fixedValues={fixedValues} />
+            </div>
+          ) : activeTab === 'terminations' ? (
+            <div className="mt-4">
+              <ApiResourceManager key={`termination-${member.id}`} config={terminationConfig} extraParams={extraParams} fixedValues={fixedValues} />
+            </div>
+          ) : (
+          <>
+          <h4 className="mt-4 text-sm font-extrabold text-text-primary">{t('staff.detail.monthStats')}</h4>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-2xl bg-surface-subtle p-4 ring-1 ring-border-soft/30">
+              <p className="text-xs text-text-muted">{t('staff.tabs.attendance')}</p>
+              <p className="mt-1 text-2xl font-extrabold text-text-primary">{member.attendance}%</p>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-pill bg-surface-muted">
+                <div className={['h-full rounded-pill', member.attendance >= 90 ? 'bg-success' : member.attendance >= 75 ? 'bg-warning' : 'bg-danger'].join(' ')} style={{ width: `${member.attendance}%` }} />
+              </div>
+            </div>
+            <div className="rounded-2xl bg-surface-subtle p-4 ring-1 ring-border-soft/30">
+              <p className="text-xs text-text-muted">{t('staff.detail.arrivalTime')}</p>
+              <p className="mt-1 text-xl font-extrabold text-text-primary">{member.arrival}</p>
+              <p className="mt-0.5 text-xs text-text-muted">{t('staff.detail.leaving')}: {member.leaving}</p>
+            </div>
+            <div className="rounded-2xl bg-surface-subtle p-4 ring-1 ring-border-soft/30">
+              <p className="text-xs text-text-muted">{t('staff.detail.baseSalary')}</p>
+              <p className="mt-1 text-xl font-extrabold text-text-primary">{formatMoney(member.salary)}</p>
+            </div>
+            <div className={['rounded-2xl p-4 ring-1', hasPiecework ? 'bg-success/5 ring-success/20' : 'bg-surface-subtle ring-border-soft/30'].join(' ')}>
+              <p className="text-xs text-text-muted">{t('staff.detail.pieceworkIncome')}</p>
+              <p className={['mt-1 text-xl font-extrabold', hasPiecework ? 'text-success' : 'text-text-muted'].join(' ')}>{hasPiecework ? formatMoney(totalEarned) : '—'}</p>
+              {hasPiecework && <p className="mt-0.5 text-xs text-text-muted">{totalPieces.toLocaleString()} {t('common.pcs')}</p>}
+            </div>
+          </div>
+
+          <h4 className="mb-3 mt-6 text-sm font-extrabold text-text-primary">{t('staff.detail.pieceworkOperations')}</h4>
+          {!hasPiecework ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-soft/60 p-10 text-center text-sm text-text-muted">
+              <FiTool className="h-6 w-6 shrink-0 opacity-50" />
+              {t('staff.detail.noPieceworkData')}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl ring-1 ring-border-soft/30">
+              <div className="grid gap-2 bg-surface-subtle/40 p-3 md:hidden">
+                {records.map(r => (
+                  <div key={r.id} className="grid gap-1.5 rounded-xl bg-surface-card p-3 ring-1 ring-border-soft/30">
+                    <div className="flex items-center gap-2">
+                      <FiTool className="h-3 w-3 shrink-0 text-primary" />
+                      <span className="text-sm font-semibold text-text-primary">{r.operationName}</span>
+                    </div>
+                    <p className="text-xs text-text-muted">{r.product}</p>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-text-muted">{r.quantity.toLocaleString()} × {formatMoney(r.ratePerPiece)}</span>
+                      <span className="font-extrabold text-success">{formatMoney(r.quantity * r.ratePerPiece)}</span>
                     </div>
                   </div>
-
-                  {/* Right: piecework table */}
-                  <div>
-                    <h4 className="mb-3 text-sm font-extrabold text-text-primary">Akkord operatsiyalari</h4>
-                    {!hasPiecework ? (
-                      <div className="flex items-center gap-2 rounded-xl border border-dashed border-border-soft/60 p-5 text-sm text-text-muted">
-                        <FiTool className="h-4 w-4 shrink-0 opacity-50" />
-                        Bu xodim uchun akkord ma'lumotlari yo'q
-                      </div>
-                    ) : (
-                      <div className="overflow-hidden rounded-xl ring-1 ring-border-soft/30">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-border-soft/20 bg-surface-subtle">
-                              <th className="py-2.5 pl-4 pr-3 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">Operatsiya</th>
-                              <th className="px-3 py-2.5 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">Mahsulot</th>
-                              <th className="px-3 py-2.5 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">Dona</th>
-                              <th className="px-3 py-2.5 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">Narx</th>
-                              <th className="py-2.5 pl-3 pr-4 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">Jami</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {myRecords.map(r => (
-                              <tr key={r.id} className="border-b border-border-soft/10 last:border-0">
-                                <td className="py-3 pl-4 pr-3">
-                                  <div className="flex items-center gap-2">
-                                    <FiTool className="h-3 w-3 shrink-0 text-primary" />
-                                    <span className="font-semibold text-text-primary">{r.operationName}</span>
-                                  </div>
-                                </td>
-                                <td className="px-3 py-3 text-xs text-text-muted">{r.product}</td>
-                                <td className="px-3 py-3 text-right font-bold text-text-primary">{r.quantity.toLocaleString()}</td>
-                                <td className="px-3 py-3 text-right text-xs text-text-muted">{formatMoney(r.ratePerPiece)}</td>
-                                <td className="py-3 pl-3 pr-4 text-right font-extrabold text-success">{formatMoney(r.quantity * r.ratePerPiece)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                          <tfoot>
-                            <tr className="bg-success/5">
-                              <td colSpan={4} className="py-3 pl-4 pr-3 text-sm font-extrabold text-text-primary">Jami akkord</td>
-                              <td className="py-3 pl-3 pr-4 text-right text-base font-extrabold text-success">{formatMoney(totalEarned)}</td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
-                    )}
-                  </div>
+                ))}
+                <div className="flex items-center justify-between rounded-xl bg-success/5 p-3">
+                  <span className="text-sm font-extrabold text-text-primary">{t('staff.piecework.earned')}</span>
+                  <span className="text-base font-extrabold text-success">{formatMoney(totalEarned)}</span>
                 </div>
               </div>
-            )}
-          </article>
-        );
-      })}
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full min-w-[520px] text-sm">
+                  <thead>
+                    <tr className="border-b border-border-soft/20 bg-surface-subtle">
+                      <th className="py-2.5 pl-4 pr-3 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.operation')}</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.product')}</th>
+                      <th className="px-3 py-2.5 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.quantity')}</th>
+                      <th className="px-3 py-2.5 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.rate')}</th>
+                      <th className="py-2.5 pl-3 pr-4 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.detail.total')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {records.map(r => (
+                      <tr key={r.id} className="border-b border-border-soft/10 last:border-0">
+                        <td className="py-3 pl-4 pr-3">
+                          <div className="flex items-center gap-2">
+                            <FiTool className="h-3 w-3 shrink-0 text-primary" />
+                            <span className="font-semibold text-text-primary">{r.operationName}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-xs text-text-muted">{r.product}</td>
+                        <td className="px-3 py-3 text-right font-bold text-text-primary">{r.quantity.toLocaleString()}</td>
+                        <td className="px-3 py-3 text-right text-xs text-text-muted">{formatMoney(r.ratePerPiece)}</td>
+                        <td className="py-3 pl-3 pr-4 text-right font-extrabold text-success">{formatMoney(r.quantity * r.ratePerPiece)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-success/5">
+                      <td colSpan={4} className="py-3 pl-4 pr-3 text-sm font-extrabold text-text-primary">{t('staff.piecework.earned')}</td>
+                      <td className="py-3 pl-3 pr-4 text-right text-base font-extrabold text-success">{formatMoney(totalEarned)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+          </>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
 
 export function StaffPage({ staff, staffFlow, pieceworkRecords, formatMoney, openModal, openDelete }: { staff: StaffMember[]; staffFlow: Array<{ day: string; came: number; late: number; left: number }>; pieceworkRecords: PieceworkRecord[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'employees' | 'attendance' | 'piecework'>('employees');
+  const exportResource = useResourceExport();
+  const canManage = useHasPermission('employees', 'manage');
+  const [activeTab, setActiveTab] = useState<'employees' | 'attendance' | 'piecework' | 'departments'>('employees');
+  const [attendanceSubTab, setAttendanceSubTab] = useState<'overview' | 'schedules' | 'devices' | 'records' | 'events'>('overview');
+  const [enrolling, setEnrolling] = useState(false);
   const onTimeCount = staff.filter(m => m.statusKey === 'onTime').length;
   const lateCount = staff.filter(m => m.statusKey === 'late').length;
   const avgAttendance = staff.length > 0 ? (staff.reduce((sum, m) => sum + m.attendance, 0) / staff.length).toFixed(1) : '0';
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('staff.eyebrow')} title={t('staff.title')} description={t('staff.description')} createLabel={t('staff.create')} onCreate={() => openModal({ kind: 'staff', mode: 'create' })} />
+      <PageHeader eyebrow={t('staff.eyebrow')} title={t('staff.title')} description={t('staff.description')} createLabel={canManage && activeTab !== 'departments' && !(activeTab === 'attendance' && attendanceSubTab !== 'overview') ? t('staff.create') : undefined} onCreate={canManage && activeTab !== 'departments' && !(activeTab === 'attendance' && attendanceSubTab !== 'overview') ? () => openModal({ kind: 'staff', mode: 'create' }) : undefined} onExport={() => exportResource(activeTab === 'departments' ? resources.departments : activeTab === 'attendance' ? (attendanceSubTab === 'schedules' ? resources.workSchedules : attendanceSubTab === 'devices' ? resources.attendanceDevices : attendanceSubTab === 'records' ? resources.attendanceRecords : attendanceSubTab === 'events' ? resources.attendanceEvents : resources.attendanceRecords) : resources.employees)} />
       <SegmentTabs
         tabs={[
           { id: 'employees', label: t('staff.tabs.employees'), icon: <FiUsers className="h-4 w-4" /> },
           { id: 'attendance', label: t('staff.tabs.attendance'), icon: <FiClock className="h-4 w-4" /> },
           { id: 'piecework', label: t('staff.tabs.piecework'), icon: <FiTool className="h-4 w-4" /> },
+          { id: 'departments', label: t('admin.resources.departments.title'), icon: <FiBriefcase className="h-4 w-4" /> },
         ]}
         activeTab={activeTab}
-        onChange={(id) => setActiveTab(id as 'employees' | 'attendance' | 'piecework')}
+        onChange={(id) => setActiveTab(id as 'employees' | 'attendance' | 'piecework' | 'departments')}
       />
       {activeTab === 'employees' ? (
         <EmployeeGrid staff={staff} pieceworkRecords={pieceworkRecords} formatMoney={formatMoney} openModal={openModal} openDelete={openDelete} />
       ) : activeTab === 'piecework' ? (
         <PieceworkTab staff={staff} pieceworkRecords={pieceworkRecords} formatMoney={formatMoney} />
+      ) : activeTab === 'departments' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.departments, readOnly: !canManage }} />
       ) : (
         <>
+          <SegmentTabs
+            tabs={[
+              { id: 'overview', label: t('staff.detail.overview'), icon: <FiClock className="h-4 w-4" /> },
+              { id: 'records', label: t('admin.resources.attendanceRecords.title'), icon: <FiCheckCircle className="h-4 w-4" /> },
+              { id: 'events', label: t('admin.resources.attendanceEvents.title'), icon: <FiActivity className="h-4 w-4" /> },
+              { id: 'schedules', label: t('admin.resources.schedules.title'), icon: <FiCalendar className="h-4 w-4" /> },
+              { id: 'devices', label: t('admin.resources.devices.title'), icon: <FiCpu className="h-4 w-4" /> },
+            ]}
+            activeTab={attendanceSubTab}
+            onChange={id => setAttendanceSubTab(id as typeof attendanceSubTab)}
+          />
+          {canManage ? <div className="flex justify-end"><button className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => setEnrolling(true)}>{t('faceEnroll.buttonLabel')}</button></div> : null}
+          {attendanceSubTab === 'schedules' ? (
+            <ApiResourceManager config={{ ...operationsConfigs.schedules, readOnly: !canManage }} />
+          ) : attendanceSubTab === 'devices' ? (
+            <ApiResourceManager config={{ ...operationsConfigs.devices, readOnly: !canManage }} />
+          ) : attendanceSubTab === 'records' ? (
+            <ApiResourceManager config={{ ...operationsConfigs.attendanceRecords, readOnly: !canManage }} />
+          ) : attendanceSubTab === 'events' ? (
+            <ApiResourceManager config={operationsConfigs.attendanceEvents} />
+          ) : (
+          <>
           <div className="grid gap-4 md:grid-cols-3">
             <MetricCard icon={<FiCheckCircle />} label={t('staff.metrics.onTime')} value={String(onTimeCount)} caption={t('staff.metrics.onTimeCaption')} tone="success" />
             <MetricCard icon={<FiClock />} label={t('staff.metrics.late')} value={String(lateCount)} caption={t('staff.metrics.lateCaption')} tone="warning" />
@@ -406,22 +680,27 @@ export function StaffPage({ staff, staffFlow, pieceworkRecords, formatMoney, ope
               </ResponsiveContainer>
             </div>
           </Panel>
+          </>
+          )}
         </>
       )}
+      {enrolling ? <FaceEnrollDrawer onClose={() => setEnrolling(false)} onEnrolled={() => setEnrolling(false)} /> : null}
     </div>
   );
 }
 
 export function OrdersPage({ orders, productionRecords, formatMoney, openModal, openDelete }: { orders: Order[]; productionRecords: ProductionRecord[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
+  const exportResource = useResourceExport();
+  const canManage = useHasPermission('clients', 'manage');
   const [activeTab, setActiveTab] = useState<'orders' | 'production'>('orders');
-  const pending = orders.filter(o => o.statusKey === 'pending').length;
-  const inProd = orders.filter(o => o.statusKey === 'production').length;
-  const delivered = orders.filter(o => o.statusKey === 'delivered').length;
+  const pending = orders.filter(o => o.statusKey === 'draft').length;
+  const inProd = orders.filter(o => o.statusKey === 'confirmed').length;
+  const delivered = orders.filter(o => o.statusKey === 'completed').length;
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('orders.eyebrow')} title={t('orders.title')} description={t('orders.description')} createLabel={activeTab === 'orders' ? t('orders.create') : undefined} onCreate={activeTab === 'orders' ? () => openModal({ kind: 'order', mode: 'create' }) : undefined} />
+      <PageHeader eyebrow={t('orders.eyebrow')} title={t('orders.title')} description={t('orders.description')} createLabel={activeTab === 'orders' && canManage ? t('orders.create') : undefined} onCreate={activeTab === 'orders' && canManage ? () => openModal({ kind: 'order', mode: 'create' }) : undefined} onExport={() => exportResource(activeTab === 'orders' ? resources.clientOrders : resources.dailyWorkEntries)} />
       <div className="flex flex-wrap gap-3">
         {([
           { label: t('orders.metrics.total'), value: orders.length, tone: 'text-text-primary bg-surface-subtle' },
@@ -445,14 +724,14 @@ export function OrdersPage({ orders, productionRecords, formatMoney, openModal, 
       />
       {activeTab === 'orders' ? (
         <DataTable
-          columns={[t('orders.columns.orderId'), t('orders.columns.client'), t('orders.columns.total'), t('orders.columns.deliveryDate'), t('orders.columns.status'), t('common.actions')]}
+          columns={[t('orders.columns.orderId'), t('orders.columns.client'), t('orders.columns.total'), t('orders.columns.dueDate'), t('orders.columns.status'), t('common.actions')]}
           rows={orders.map(order => [
-            <PrimaryCell title={order.orderId} subtitle={order.product} />,
-            <PrimaryCell title={order.client} subtitle={order.manager} />,
+            <PrimaryCell title={order.orderId} subtitle={formatDisplayDate(order.orderDate, t)} />,
+            order.client,
             formatMoney(order.totalAmount),
-            order.deliveryDate,
-            <StatusBadge tone={orderStatusTone(order.statusKey)}>{order.status}</StatusBadge>,
-            <RowActions onView={() => openModal({ kind: 'order', mode: 'view', item: order })} onEdit={() => openModal({ kind: 'order', mode: 'edit', item: order })} onDelete={() => openDelete({ kind: 'order', mode: 'view', item: order })} />,
+            formatDisplayDate(order.dueDate, t),
+            <StatusBadge tone={orderStatusTone(order.statusKey)}>{statusLabel(t, order.statusKey)}</StatusBadge>,
+            <RowActions onView={() => openModal({ kind: 'order', mode: 'view', item: order })} onEdit={canManage ? () => openModal({ kind: 'order', mode: 'edit', item: order }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'order', mode: 'view', item: order }) : undefined} />,
           ])}
           onRowClick={(rowIndex) => openModal({ kind: 'order', mode: 'view', item: orders[rowIndex] })}
         />
@@ -463,101 +742,209 @@ export function OrdersPage({ orders, productionRecords, formatMoney, openModal, 
   );
 }
 
-function BomView({ products, formatMoney }: { products: Product[]; formatMoney: (v: number) => string }) {
+function BomProductSection({ product, materials, canManage, formatMoney, onChanged }: { product: Product; materials: Material[]; canManage: boolean; formatMoney: (v: number) => string; onChanged: () => void }) {
   const { t } = useTranslation();
-  const withRecipe = products.filter(p => p.recipe && p.recipe.length > 0);
+  const { toast } = useToast();
+  const [adding, setAdding] = useState(false);
+  const [newMaterial, setNewMaterial] = useState('');
+  const [newQty, setNewQty] = useState('');
+  const [saving, setSaving] = useState(false);
+  const recipe = product.recipe ?? [];
+  const totalQty = recipe.reduce((sum, r) => sum + r.qtyPerUnit * product.sold, 0);
+  const availableMaterials = materials.filter(m => !recipe.some(r => r.materialId === String(m.id)));
 
-  if (withRecipe.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border-soft/60 py-16 text-center">
-        <FiLayers className="h-10 w-10 text-text-muted opacity-50" />
-        <p className="text-sm font-semibold text-text-muted">{t('products.bom.noRecipe')}</p>
-      </div>
-    );
+  async function addNorm() {
+    if (!newMaterial || !newQty || Number(newQty) <= 0) {
+      toast(t('admin.ui.requiredFieldsMissing'), 'danger');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.create(resources.productMaterialNorms, { product: product.id, material: newMaterial, norm_per_unit: newQty });
+      toast(t('admin.ui.savedOk'), 'success');
+      setAdding(false);
+      setNewMaterial('');
+      setNewQty('');
+      onChanged();
+    } catch (error) {
+      toast(error instanceof ApiError ? error.message : t('admin.ui.requestFailed'), 'danger');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeNorm(normId: string) {
+    try {
+      await api.remove(resources.productMaterialNorms, normId);
+      toast(t('admin.ui.archivedOk'), 'success');
+      onChanged();
+    } catch (error) {
+      toast(error instanceof ApiError ? error.message : t('admin.ui.requestFailed'), 'danger');
+    }
   }
 
   return (
-    <div className="grid gap-5">
-      {withRecipe.map(product => {
-        const totalQty = product.recipe!.reduce((sum, r) => sum + r.qtyPerUnit * product.sold, 0);
-        return (
-          <section key={product.id} className="app-card--nova overflow-hidden">
-            <div className="flex items-center gap-4 border-b border-border-soft/30 p-5">
-              <img src={product.imageUrl} alt={product.name} className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-border-soft/50" />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-baseline gap-3">
-                  <h3 className="text-base font-extrabold text-text-primary">{product.name}</h3>
-                  <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-xs font-bold text-text-muted ring-1 ring-border-soft/40">{product.sku}</span>
+    <section className="app-card--nova overflow-hidden">
+      <div className="flex flex-col items-start gap-4 border-b border-border-soft/30 p-5 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 w-full items-center gap-4 sm:w-auto sm:flex-1">
+          <img src={product.imageUrl} alt={product.name} className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-border-soft/50" />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline gap-3">
+              <h3 className="min-w-0 truncate text-base font-extrabold text-text-primary">{product.name}</h3>
+              <span className="shrink-0 rounded-pill bg-surface-subtle px-2.5 py-0.5 text-xs font-bold text-text-muted ring-1 ring-border-soft/40">{product.sku}</span>
+            </div>
+            <p className="mt-1 text-sm text-text-muted">
+              <span className="font-bold text-text-primary">{product.sold.toLocaleString()} {unitLabel(product.unit, t)}</span>&nbsp;{t('products.bom.produced').toLowerCase()} · {recipe.length} {t('products.bom.totalCount')}
+            </p>
+          </div>
+        </div>
+        <div className="shrink-0 self-stretch text-right sm:self-auto">
+          <p className="text-xs text-text-muted">{t('products.metrics.revenue')}</p>
+          <p className="text-lg font-extrabold text-success">{formatMoney(product.revenue)}</p>
+        </div>
+      </div>
+      {recipe.length === 0 && !adding ? (
+        <div className="flex flex-col items-center gap-2 p-8 text-center">
+          <FiLayers className="h-6 w-6 text-text-muted opacity-50" />
+          <p className="text-sm font-semibold text-text-muted">{t('products.bom.noRecipe')}</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-2 bg-surface-subtle/30 p-3 md:hidden">
+            {recipe.map(item => {
+              const total = item.qtyPerUnit * product.sold;
+              const pct = totalQty > 0 ? Math.round((total / totalQty) * 100) : 0;
+              return (
+                <div key={item.id} className="grid gap-2 rounded-xl bg-surface-card p-3 ring-1 ring-border-soft/30">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><FiLayers className="h-3.5 w-3.5" /></span>
+                      <span className="min-w-0 truncate font-semibold text-text-primary">{item.materialName}</span>
+                    </div>
+                    {canManage ? (
+                      <button className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-danger-bg text-danger transition hover:bg-danger/15" title={t('common.delete')} onClick={() => void removeNorm(item.id)}>
+                        <FiX className="h-3.5 w-3.5" />
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <span className="text-text-muted">{t('products.bom.perUnit')}: <span className="font-mono font-bold text-text-secondary">{item.qtyPerUnit} {unitLabel(item.unit, t)}</span></span>
+                    <span className="text-text-muted">{t('products.bom.produced')}: × {product.sold.toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-text-muted">{t('products.bom.totalUsed')}</span>
+                      <span className="font-extrabold text-text-primary">{total.toLocaleString()} {unitLabel(item.unit, t)}</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-pill bg-surface-muted">
+                      <div className="h-full rounded-pill bg-primary/70" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-1 text-sm text-text-muted">
-                  <span className="font-bold text-text-primary">{product.sold.toLocaleString()} {unitLabel(product.unit, t)}</span>&nbsp;{t('products.bom.produced').toLowerCase()} · {product.recipe!.length} {t('products.bom.totalCount')}
-                </p>
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="text-xs text-text-muted">{t('products.metrics.revenue')}</p>
-                <p className="text-lg font-extrabold text-success">{formatMoney(product.revenue)}</p>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[480px] text-sm">
-                <thead>
-                  <tr className="border-b border-border-soft/25 bg-surface-subtle">
-                    <th className="py-3 pl-5 pr-3 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('materials.columns.name')}</th>
-                    <th className="px-3 py-3 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('products.bom.perUnit')}</th>
-                    <th className="px-3 py-3 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('products.bom.produced')}</th>
-                    <th className="py-3 pl-3 pr-5 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('products.bom.totalUsed')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {product.recipe!.map((item, idx) => {
-                    const total = item.qtyPerUnit * product.sold;
-                    const pct = totalQty > 0 ? Math.round((total / totalQty) * 100) : 0;
-                    return (
-                      <tr key={idx} className="border-b border-border-soft/15 transition hover:bg-surface-subtle/60">
-                        <td className="py-4 pl-5 pr-3">
-                          <div className="flex items-center gap-2.5">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><FiLayers className="h-3.5 w-3.5" /></span>
-                            <span className="font-semibold text-text-primary">{item.materialName}</span>
+              );
+            })}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[480px] text-sm">
+              <thead>
+                <tr className="border-b border-border-soft/25 bg-surface-subtle">
+                  <th className="py-3 pl-5 pr-3 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('materials.columns.name')}</th>
+                  <th className="px-3 py-3 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('products.bom.perUnit')}</th>
+                  <th className="px-3 py-3 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('products.bom.produced')}</th>
+                  <th className="py-3 pl-3 pr-3 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('products.bom.totalUsed')}</th>
+                  {canManage ? <th className="py-3 pl-3 pr-5"></th> : null}
+                </tr>
+              </thead>
+              <tbody>
+                {recipe.map(item => {
+                  const total = item.qtyPerUnit * product.sold;
+                  const pct = totalQty > 0 ? Math.round((total / totalQty) * 100) : 0;
+                  return (
+                    <tr key={item.id} className="border-b border-border-soft/15 transition hover:bg-surface-subtle/60">
+                      <td className="py-4 pl-5 pr-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><FiLayers className="h-3.5 w-3.5" /></span>
+                          <span className="font-semibold text-text-primary">{item.materialName}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-4 text-right font-mono text-xs font-bold text-text-secondary">
+                        {item.qtyPerUnit} {unitLabel(item.unit, t)}
+                      </td>
+                      <td className="px-3 py-4 text-right text-xs text-text-muted">
+                        × {product.sold.toLocaleString()}
+                      </td>
+                      <td className="py-4 pl-3 pr-3">
+                        <div className="flex flex-col items-end gap-1.5">
+                          <span className="font-extrabold text-text-primary">{total.toLocaleString()} {unitLabel(item.unit, t)}</span>
+                          <div className="h-1.5 w-24 overflow-hidden rounded-pill bg-surface-muted">
+                            <div className="h-full rounded-pill bg-primary/70" style={{ width: `${pct}%` }} />
                           </div>
+                        </div>
+                      </td>
+                      {canManage ? (
+                        <td className="py-4 pl-3 pr-5 text-right">
+                          <button className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-danger-bg text-danger transition hover:bg-danger/15" title={t('common.delete')} onClick={() => void removeNorm(item.id)}>
+                            <FiX className="h-3.5 w-3.5" />
+                          </button>
                         </td>
-                        <td className="px-3 py-4 text-right font-mono text-xs font-bold text-text-secondary">
-                          {item.qtyPerUnit} {unitLabel(item.unit, t)}
-                        </td>
-                        <td className="px-3 py-4 text-right text-xs text-text-muted">
-                          × {product.sold.toLocaleString()}
-                        </td>
-                        <td className="py-4 pl-3 pr-5">
-                          <div className="flex flex-col items-end gap-1.5">
-                            <span className="font-extrabold text-text-primary">{total.toLocaleString()} {unitLabel(item.unit, t)}</span>
-                            <div className="h-1.5 w-24 overflow-hidden rounded-pill bg-surface-muted">
-                              <div className="h-full rounded-pill bg-primary/70" style={{ width: `${pct}%` }} />
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        );
-      })}
+                      ) : null}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      {canManage ? (
+        adding ? (
+          <div className="grid gap-3 border-t border-border-soft/20 bg-surface-subtle/40 p-5 sm:grid-cols-[1fr_140px_auto_auto]">
+            <Dropdown value={newMaterial} onChange={setNewMaterial} options={availableMaterials.map(m => ({ value: String(m.id), label: m.name }))} placeholder={t('admin.ui.selectPlaceholder')} />
+            <input type="number" step="0.000001" min="0" value={newQty} onChange={event => setNewQty(event.target.value)} placeholder={t('admin.fields.normPerUnit')} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50" />
+            <button disabled={saving} className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50" onClick={() => void addNorm()}>
+              {saving ? t('common.loading') : t('common.save')}
+            </button>
+            <button className="inline-flex h-11 items-center justify-center rounded-xl bg-surface-subtle px-4 text-sm font-semibold text-text-secondary transition hover:bg-surface-muted" onClick={() => setAdding(false)}>
+              {t('common.cancel')}
+            </button>
+          </div>
+        ) : (
+          <div className="border-t border-border-soft/20 p-4">
+            <button className="rounded-lg bg-primary/10 px-3 py-2 text-xs font-bold text-text-accent transition hover:bg-primary/20" onClick={() => setAdding(true)}>
+              + {t('products.bom.addMaterial')}
+            </button>
+          </div>
+        )
+      ) : null}
+    </section>
+  );
+}
+
+function BomView({ products, materials, canManage, formatMoney, onChanged }: { products: Product[]; materials: Material[]; canManage: boolean; formatMoney: (v: number) => string; onChanged: () => void }) {
+  return (
+    <div className="grid gap-5">
+      {products.map(product => (
+        <BomProductSection key={product.id} product={product} materials={materials} canManage={canManage} formatMoney={formatMoney} onChanged={onChanged} />
+      ))}
     </div>
   );
 }
 
-export function ProductsPage({ products, categoryAnalytics, categories, totalStock, lowStockCount, formatMoney, openModal, openDelete }: {
+export function ProductsPage({ products, categoryAnalytics, categories, materials, totalStock, lowStockCount, formatMoney, openModal, openDelete, onDataChanged }: {
   products: Product[];
   categoryAnalytics: CategoryDatum[];
   categories: ProductCategory[];
+  materials: Material[];
   totalStock: number;
   lowStockCount: number;
   formatMoney: (value: number) => string;
   openModal: (modal: ModalState) => void;
   openDelete: (modal: ModalState) => void;
+  onDataChanged: () => void;
 }) {
   const { t } = useTranslation();
+  const exportResource = useResourceExport();
+  const canManage = useHasPermission('products', 'manage');
   const [activeTab, setActiveTab] = useState<'products' | 'bom'>('products');
   const totalRevenue = products.reduce((sum, product) => sum + product.revenue, 0);
 
@@ -567,8 +954,9 @@ export function ProductsPage({ products, categoryAnalytics, categories, totalSto
         eyebrow={t('products.eyebrow')}
         title={t('products.title')}
         description={t('products.description')}
-        createLabel={t('products.create')}
-        onCreate={() => openModal({ kind: 'product', mode: 'create' })}
+        createLabel={canManage ? t('products.create') : undefined}
+        onCreate={canManage ? () => openModal({ kind: 'product', mode: 'create' }) : undefined}
+        onExport={() => exportResource(resources.products)}
       />
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard icon={<FiPackage />} label={t('products.metrics.revenue')} value={formatMoney(totalRevenue)} caption={t('products.metrics.revenueCaption')} tone="success" />
@@ -599,12 +987,12 @@ export function ProductsPage({ products, categoryAnalytics, categories, totalSto
           categories.find(category => category.id === product.categoryId)?.name ?? product.category,
           <span className={product.stock <= product.minStock ? 'font-bold text-warning' : 'font-bold text-text-primary'}>{product.stock.toLocaleString()} {unitLabel(product.unit, t)}</span>,
           formatMoney(product.revenue),
-          <RowActions onView={() => openModal({ kind: 'product', mode: 'view', item: product })} onEdit={() => openModal({ kind: 'product', mode: 'edit', item: product })} onDelete={() => openDelete({ kind: 'product', mode: 'view', item: product })} />,
+          <RowActions onView={() => openModal({ kind: 'product', mode: 'view', item: product })} onEdit={canManage ? () => openModal({ kind: 'product', mode: 'edit', item: product }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'product', mode: 'view', item: product }) : undefined} />,
         ])}
         onRowClick={(rowIndex) => openModal({ kind: 'product', mode: 'view', item: products[rowIndex] })}
       />
       )}
-      {activeTab === 'bom' && <BomView products={products} formatMoney={formatMoney} />}
+      {activeTab === 'bom' && <BomView products={products} materials={materials} canManage={canManage} formatMoney={formatMoney} onChanged={onDataChanged} />}
     </div>
   );
 }
@@ -722,18 +1110,71 @@ export function CategoriesTable({ categories, products, openModal, openDelete }:
   );
 }
 
-export function MaterialsPage({ materials, formatMoney }: { materials: Material[]; formatMoney: (value: number) => string }) {
+function ScopedResourceModal({ title, subtitle, config, extraParams, fixedValues, onClose }: {
+  title: string;
+  subtitle?: string;
+  config: ResourceConfig;
+  extraParams: Record<string, string>;
+  fixedValues: Record<string, unknown>;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
+  return (
+    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <section role="dialog" aria-modal="true" className="grid max-h-[88vh] w-full max-w-[880px] grid-rows-[auto_1fr] overflow-hidden rounded-[28px] bg-surface-card shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <div className="flex items-start justify-between gap-4 border-b border-border-soft/30 p-6">
+          <div className="min-w-0">
+            {subtitle ? <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">{subtitle}</p> : null}
+            <h3 className="mt-1 truncate font-display text-xl font-extrabold text-text-primary">{title}</h3>
+          </div>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="overflow-y-auto p-6">
+          <ApiResourceManager config={config} extraParams={extraParams} fixedValues={fixedValues} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function MaterialsPage({ materials, formatMoney, onCreate, openModal, openDelete }: { materials: Material[]; formatMoney: (value: number) => string; onCreate: () => void; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
+  const { t } = useTranslation();
+  const exportResource = useResourceExport();
+  const canManage = useHasPermission('materials', 'manage');
   const [query, setQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'materials' | 'suppliers' | 'stock'>('materials');
+  const [viewingPurchasesFor, setViewingPurchasesFor] = useState<Material | null>(null);
   const lowStockCount = materials.filter(m => m.stock <= m.minStock).length;
   const totalValue = materials.reduce((sum, m) => sum + m.stock * m.price, 0);
   const filtered = materials.filter(m =>
-    `${m.name} ${m.category} ${m.supplier}`.toLowerCase().includes(query.toLowerCase())
+    `${m.name} ${m.supplier}`.toLowerCase().includes(query.toLowerCase())
   );
+  const purchasesConfig = useMemo(() => {
+    if (!viewingPurchasesFor) return null;
+    const base = operationsConfigs.materialPurchases;
+    return { ...base, readOnly: !canManage, fields: base.fields.map(field => (field.name === 'material' ? { ...field, readOnly: true, table: false } : field)) };
+  }, [viewingPurchasesFor, canManage]);
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('materials.eyebrow')} title={t('materials.title')} description={t('materials.description')} createLabel={t('materials.create')} onCreate={() => {}} />
+      <PageHeader eyebrow={t('materials.eyebrow')} title={t('materials.title')} description={t('materials.description')} createLabel={canManage && activeTab === 'materials' ? t('materials.create') : undefined} onCreate={canManage && activeTab === 'materials' ? onCreate : undefined} onExport={() => exportResource(activeTab === 'suppliers' ? resources.suppliers : activeTab === 'stock' ? resources.materialStocks : resources.materials)} />
+      <SegmentTabs
+        tabs={[
+          { id: 'materials', label: t('materials.title'), icon: <FiLayers className="h-4 w-4" /> },
+          { id: 'suppliers', label: t('admin.resources.suppliers.title'), icon: <FiBriefcase className="h-4 w-4" /> },
+          { id: 'stock', label: t('admin.resources.materialStocks.title'), icon: <FiArchive className="h-4 w-4" /> },
+        ]}
+        activeTab={activeTab}
+        onChange={id => setActiveTab(id as typeof activeTab)}
+      />
+      {activeTab === 'suppliers' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.suppliers, readOnly: !canManage }} />
+      ) : activeTab === 'stock' ? (
+        <ApiResourceManager config={operationsConfigs.materialStocks} />
+      ) : (
+        <>
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 text-sm font-bold ring-1 ring-border-soft/30">
           <span className="text-lg font-extrabold text-text-primary">{materials.length}</span>
@@ -758,15 +1199,14 @@ export function MaterialsPage({ materials, formatMoney }: { materials: Material[
         className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-4 text-sm font-medium text-text-primary placeholder:text-text-muted outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
       />
       <DataTable
-        columns={[t('materials.columns.name'), t('materials.columns.category'), t('materials.columns.stock'), t('materials.columns.price'), t('materials.columns.status')]}
+        columns={[t('materials.columns.name'), t('materials.columns.stock'), t('materials.columns.price'), t('materials.columns.status'), t('common.actions')]}
         rows={filtered.map(mat => {
-          const pct = Math.min(100, Math.round((mat.stock / mat.minStock) * 100));
+          const pct = Math.min(100, Math.round((mat.stock / Math.max(mat.minStock, 1)) * 100));
           return [
             <span className="block min-w-0">
               <span className="block max-w-[220px] truncate text-sm font-bold text-text-primary">{mat.name}</span>
               <span className="text-xs text-text-muted">{mat.supplier}</span>
             </span>,
-            <span className="rounded-pill bg-surface-muted px-2.5 py-1 text-xs font-semibold text-text-secondary">{mat.category}</span>,
             <span className="block min-w-[120px]">
               <span className={['block text-sm font-bold', mat.stock <= mat.minStock ? 'text-warning' : 'text-text-primary'].join(' ')}>{mat.stock.toLocaleString()} {unitLabel(mat.unit, t)}</span>
               <div className="mt-1 h-1.5 w-full max-w-[100px] overflow-hidden rounded-pill bg-surface-muted">
@@ -774,18 +1214,64 @@ export function MaterialsPage({ materials, formatMoney }: { materials: Material[
               </div>
             </span>,
             <span className="font-semibold text-text-primary">{formatMoney(mat.price)}<span className="ml-1 text-xs text-text-muted">/{unitLabel(mat.unit, t)}</span></span>,
-            <StatusBadge tone={materialStatusTone(mat.statusKey)}>{mat.status}</StatusBadge>,
+            <StatusBadge tone={materialStatusTone(mat.statusKey)}>{statusLabel(t, mat.statusKey)}</StatusBadge>,
+            <div className="flex items-center gap-2">
+              <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => setViewingPurchasesFor(mat)}>{t('materials.purchases')}</button>
+              <RowActions onView={() => openModal({ kind: 'material', mode: 'view', item: mat })} onEdit={canManage ? () => openModal({ kind: 'material', mode: 'edit', item: mat }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'material', mode: 'view', item: mat }) : undefined} />
+            </div>,
           ];
         })}
       />
+        </>
+      )}
+      {viewingPurchasesFor && purchasesConfig ? (
+        <ScopedResourceModal
+          title={viewingPurchasesFor.name}
+          subtitle={t('admin.resources.materialPurchases.title')}
+          config={purchasesConfig}
+          extraParams={{ material: String(viewingPurchasesFor.id) }}
+          fixedValues={{ material: String(viewingPurchasesFor.id) }}
+          onClose={() => setViewingPurchasesFor(null)}
+        />
+      ) : null}
     </div>
   );
 }
 
 const WORKING_DAYS = 26;
 
+function PayrollTab() {
+  const { t } = useTranslation();
+  const { prompt } = useDialog();
+  const canManage = useHasPermission('payroll', 'manage');
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const rowActions = useMemo<ResourceAction[]>(() => {
+    if (!canManage) return [];
+    return [
+      { label: 'admin.page.approve', tone: 'success', show: row => row.status === 'draft' || row.status === 'unlocked', run: row => actions.approvePayroll(String(row.id)) },
+      { label: 'admin.page.markPaid', tone: 'primary', show: row => row.status === 'approved', run: row => actions.markPayrollPaid(String(row.id)) },
+      { label: 'admin.page.unlock', tone: 'warning', show: row => row.status === 'approved' || row.status === 'paid', run: row => actions.unlockPayroll(String(row.id)) },
+    ];
+  }, [canManage]);
+
+  const headerActions = useMemo(() => {
+    if (!canManage) return undefined;
+    return [{ label: 'admin.page.calculateMonth', run: async () => {
+      const month = await prompt({ title: t('dialog.monthTitle'), message: t('admin.page.promptMonth'), defaultValue: new Date().toISOString().slice(0, 7), inputType: 'month', required: true });
+      if (!month) return;
+      await actions.calculatePayroll(month);
+      setReloadKey(value => value + 1);
+    } }];
+  }, [canManage, prompt, t]);
+
+  return <ApiResourceManager key={reloadKey} config={{ ...operationsConfigs.payrolls, readOnly: !canManage }} actions={rowActions} headerActions={headerActions} />;
+}
+
 function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMember[]; pieceworkRecords: PieceworkRecord[]; formatMoney: (value: number) => string }) {
   const { t } = useTranslation();
+  const canManage = useHasPermission('payroll', 'manage');
+  const [subTab, setSubTab] = useState<'summary' | 'operationTypes' | 'adjustments' | 'payroll' | 'workEntries' | 'workHourBreakdowns'>('summary');
 
   const byEmployee = staff
     .map(member => {
@@ -803,6 +1289,30 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
 
   return (
     <div className="grid gap-5">
+      <SegmentTabs
+        tabs={[
+          { id: 'summary', label: t('staff.piecework.tabs.summary'), icon: <FiDollarSign className="h-4 w-4" /> },
+          { id: 'workEntries', label: t('admin.resources.workEntries.title'), icon: <FiCheckCircle className="h-4 w-4" /> },
+          { id: 'operationTypes', label: t('admin.resources.operationTypes.title'), icon: <FiTool className="h-4 w-4" /> },
+          { id: 'adjustments', label: t('admin.resources.adjustments.title'), icon: <FiSliders className="h-4 w-4" /> },
+          { id: 'payroll', label: t('admin.resources.payrolls.title'), icon: <FiArchive className="h-4 w-4" /> },
+          { id: 'workHourBreakdowns', label: t('admin.resources.workHourBreakdowns.title'), icon: <FiClock className="h-4 w-4" /> },
+        ]}
+        activeTab={subTab}
+        onChange={id => setSubTab(id as typeof subTab)}
+      />
+      {subTab === 'operationTypes' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.operationTypes, readOnly: !canManage }} />
+      ) : subTab === 'adjustments' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.adjustments, readOnly: !canManage }} />
+      ) : subTab === 'payroll' ? (
+        <PayrollTab />
+      ) : subTab === 'workEntries' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.workEntries, readOnly: !canManage }} />
+      ) : subTab === 'workHourBreakdowns' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.workHourBreakdowns, readOnly: !canManage }} />
+      ) : (
+      <>
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard icon={<FiDollarSign />} label={t('staff.piecework.metrics.totalPayout')} value={formatMoney(grandTotal)} caption={t('staff.piecework.metrics.totalPayoutCaption')} tone="success" />
         <MetricCard icon={<FiPackage />} label={t('staff.piecework.metrics.totalPieces')} value={grandPieces.toLocaleString()} caption={t('staff.piecework.metrics.totalPiecesCaption')} tone="info" />
@@ -818,14 +1328,40 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
               <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-lg font-extrabold text-primary">{initials}</span>
               <div className="min-w-0 flex-1">
                 <p className="font-extrabold text-text-primary">{member.name}</p>
-                <p className="text-sm text-text-muted">{member.role} · {totalPieces.toLocaleString()} {t('staff.piecework.pieces')}</p>
+                <p className="text-sm text-text-muted">{optionLabel(t, 'employeePosition', member.role)} · {totalPieces.toLocaleString()} {t('staff.piecework.pieces')}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-text-muted">{t('staff.piecework.earned')}</p>
                 <p className="text-xl font-extrabold text-success">{formatMoney(totalEarned)}</p>
               </div>
             </div>
-            <div className="overflow-x-auto">
+            <div className="grid gap-2 bg-surface-subtle/30 p-3 md:hidden">
+              {records.map(record => {
+                const earned = record.quantity * record.ratePerPiece;
+                const pct = maxEarned > 0 ? Math.round((earned / maxEarned) * 100) : 0;
+                return (
+                  <div key={record.id} className="grid gap-1.5 rounded-xl bg-surface-card p-3 ring-1 ring-border-soft/30">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><FiTool className="h-3 w-3" /></span>
+                      <span className="min-w-0 truncate font-semibold text-text-primary">{record.operationName}</span>
+                      <span className="ml-auto rounded-pill bg-surface-muted px-2.5 py-1 text-xs font-semibold text-text-secondary">{record.product}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-text-muted">{record.quantity.toLocaleString()} {t('common.pcs')} × {formatMoney(record.ratePerPiece)}/{t('common.pcs')}</span>
+                      <span className="font-extrabold text-success">{formatMoney(earned)}</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-pill bg-surface-muted">
+                      <div className="h-full rounded-pill bg-success/60" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="flex items-center justify-between rounded-xl bg-success/5 p-3">
+                <span className="text-sm font-extrabold text-text-primary">{t('staff.detail.total')}</span>
+                <span className="text-base font-extrabold text-success">{formatMoney(totalEarned)}</span>
+              </div>
+            </div>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[520px] text-sm">
                 <thead>
                   <tr className="border-b border-border-soft/20">
@@ -851,8 +1387,8 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
                         <td className="px-3 py-3.5">
                           <span className="rounded-pill bg-surface-muted px-2.5 py-1 text-xs font-semibold text-text-secondary">{record.product}</span>
                         </td>
-                        <td className="px-3 py-3.5 text-right font-bold text-text-primary">{record.quantity.toLocaleString()} dona</td>
-                        <td className="px-3 py-3.5 text-right text-xs font-semibold text-text-muted">{formatMoney(record.ratePerPiece)}/dona</td>
+                        <td className="px-3 py-3.5 text-right font-bold text-text-primary">{record.quantity.toLocaleString()} {t('common.pcs')}</td>
+                        <td className="px-3 py-3.5 text-right text-xs font-semibold text-text-muted">{formatMoney(record.ratePerPiece)}/{t('common.pcs')}</td>
                         <td className="py-3.5 pl-3 pr-5">
                           <div className="flex flex-col items-end gap-1.5">
                             <span className="font-extrabold text-success">{formatMoney(earned)}</span>
@@ -865,7 +1401,7 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
                     );
                   })}
                   <tr className="bg-success/5">
-                    <td colSpan={4} className="py-3 pl-5 pr-3 text-sm font-extrabold text-text-primary">Jami</td>
+                    <td colSpan={4} className="py-3 pl-5 pr-3 text-sm font-extrabold text-text-primary">{t('staff.detail.total')}</td>
                     <td className="py-3 pl-3 pr-5 text-right text-base font-extrabold text-success">{formatMoney(totalEarned)}</td>
                   </tr>
                 </tbody>
@@ -874,6 +1410,9 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
           </section>
         );
       })}
+
+      </>
+      )}
     </div>
   );
 }
@@ -905,7 +1444,7 @@ function SalaryTab({ staff, formatMoney }: { staff: StaffMember[]; formatMoney: 
           const netSalary = Math.round(member.salary * member.attendance / 100);
           const deduction = member.salary - netSalary;
           return [
-            <PrimaryCell title={member.name} subtitle={member.role} />,
+            <PrimaryCell title={member.name} subtitle={optionLabel(t, 'employeePosition', member.role)} />,
             formatMoney(member.salary),
             <span className={member.attendance >= 95 ? 'font-bold text-success' : member.attendance >= 85 ? 'font-bold text-warning' : 'font-bold text-danger'}>{member.attendance}%</span>,
             <span className="font-semibold text-text-primary">{attendedDays}/{WORKING_DAYS}</span>,
@@ -923,7 +1462,7 @@ function SalaryTab({ staff, formatMoney }: { staff: StaffMember[]; formatMoney: 
 function ProductionTab({ records, orders }: { records: ProductionRecord[]; orders: Order[] }) {
   const { t } = useTranslation();
   const uniqueWorkers = new Set(records.map(r => r.employee)).size;
-  const inProductionOrders = orders.filter(o => o.statusKey === 'production').length;
+  const inProductionOrders = orders.filter(o => o.statusKey === 'confirmed').length;
 
   return (
     <div className="grid gap-5">
@@ -943,7 +1482,7 @@ function ProductionTab({ records, orders }: { records: ProductionRecord[]; order
           t('orders.production.columns.notes'),
         ]}
         rows={records.map(record => [
-          record.date,
+          formatDisplayDate(record.date, t),
           <PrimaryCell title={record.employee} subtitle={record.role} />,
           record.product,
           <span className="font-bold text-text-primary">{record.quantity}</span>,
@@ -970,11 +1509,11 @@ export function StockTable({ rows, direction }: { rows: StockMovement[]; directi
         t('products.stockColumns.employee'),
       ]}
       rows={rows.map(row => [
-        row.date,
-        <PrimaryCell title={row.product} subtitle={row.note} />,
+        formatDisplayDate(row.date, t),
+        <PrimaryCell title={row.product} subtitle={translateMovementLabel(t, row.note)} />,
         <span className={direction === 'in' ? 'font-bold text-success' : 'font-bold text-warning'}>{row.quantity}</span>,
-        direction === 'in' ? row.supplier : row.client,
-        row.employee,
+        translateMovementLabel(t, direction === 'in' ? row.supplier : row.client),
+        translateMovementLabel(t, row.employee),
       ])}
     />
   );
@@ -989,8 +1528,8 @@ export function MovementTimeline({ rows }: { rows: StockMovement[] }) {
           <div key={row.id} className="flex gap-3 rounded-2xl bg-surface-subtle p-4 ring-1 ring-border-soft/45">
             <span className={['mt-1 h-3 w-3 shrink-0 rounded-full ring-4', row.type === 'in' ? 'bg-success ring-success/15' : 'bg-warning ring-warning/15'].join(' ')} />
             <div className="min-w-0">
-              <p className="text-sm font-extrabold text-text-primary">{row.note}</p>
-              <p className="mt-1 text-xs font-semibold text-text-muted">{row.date} · {row.employee} · {row.quantity}</p>
+              <p className="text-sm font-extrabold text-text-primary">{translateMovementLabel(t, row.note)}</p>
+              <p className="mt-1 text-xs font-semibold text-text-muted">{formatDisplayDate(row.date, t)} · {translateMovementLabel(t, row.employee)} · {row.quantity}</p>
             </div>
           </div>
         ))}
@@ -999,7 +1538,7 @@ export function MovementTimeline({ rows }: { rows: StockMovement[] }) {
   );
 }
 
-export function WarehousePage({ products, stockIn, stockOut, movementHistory, totalStock, lowStockCount, formatMoney }: {
+export function WarehousePage({ products, stockIn, stockOut, movementHistory, totalStock, lowStockCount, formatMoney, onCreate }: {
   products: Product[];
   stockIn: StockMovement[];
   stockOut: StockMovement[];
@@ -1007,15 +1546,22 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
   totalStock: number;
   lowStockCount: number;
   formatMoney: (value: number) => string;
+  onCreate: () => void;
 }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
+  const exportResource = useResourceExport();
+  const canManage = useHasPermission('inventory', 'manage');
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'locations' | 'defective' | 'defectiveStock' | 'finishedStock' | 'finishedTransactions'>('overview');
   const inventoryValue = products.reduce((sum, p) => sum + p.stock * p.price, 0);
   const allMovements = [...stockIn, ...stockOut].sort((a, b) => b.id - a.id);
+  const exportResourceMap = {
+    overview: resources.finishedGoodsStocks, history: resources.finishedGoodsTransactions, locations: resources.warehouseLocations, defective: resources.defectiveMaterialTransactions,
+    defectiveStock: resources.defectiveMaterialStocks, finishedStock: resources.finishedGoodsStocks, finishedTransactions: resources.finishedGoodsTransactions,
+  } as const;
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('warehouse.eyebrow')} title={t('warehouse.title')} description={t('warehouse.description')} />
+      <PageHeader eyebrow={t('warehouse.eyebrow')} title={t('warehouse.title')} description={t('warehouse.description')} createLabel={canManage && (activeTab === 'overview' || activeTab === 'history') ? t('common.create') : undefined} onCreate={canManage && (activeTab === 'overview' || activeTab === 'history') ? onCreate : undefined} onExport={() => exportResource(exportResourceMap[activeTab])} />
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 ring-1 ring-border-soft/30">
           <FiArchive className="h-4 w-4 text-text-muted" />
@@ -1038,11 +1584,26 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
         tabs={[
           { id: 'overview', label: t('warehouse.tabs.overview'), icon: <FiArchive className="h-4 w-4" /> },
           { id: 'history', label: t('warehouse.tabs.history'), icon: <FiClock className="h-4 w-4" /> },
+          { id: 'locations', label: t('admin.resources.warehouseLocations.title'), icon: <FiBriefcase className="h-4 w-4" /> },
+          { id: 'defective', label: t('admin.resources.defectiveTransactions.title'), icon: <FiAlertTriangle className="h-4 w-4" /> },
+          { id: 'defectiveStock', label: t('admin.resources.defectiveStocks.title'), icon: <FiAlertTriangle className="h-4 w-4" /> },
+          { id: 'finishedStock', label: t('admin.resources.finishedStocks.title'), icon: <FiPackage className="h-4 w-4" /> },
+          { id: 'finishedTransactions', label: t('admin.resources.finishedTransactions.title'), icon: <FiPackage className="h-4 w-4" /> },
         ]}
         activeTab={activeTab}
-        onChange={setActiveTab}
+        onChange={id => setActiveTab(id as typeof activeTab)}
       />
-      {activeTab === 'overview' ? (
+      {activeTab === 'locations' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.warehouseLocations, readOnly: !canManage }} />
+      ) : activeTab === 'defective' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.defectiveTransactions, readOnly: !canManage }} />
+      ) : activeTab === 'defectiveStock' ? (
+        <ApiResourceManager config={operationsConfigs.defectiveStocks} />
+      ) : activeTab === 'finishedStock' ? (
+        <ApiResourceManager config={operationsConfigs.finishedStocks} />
+      ) : activeTab === 'finishedTransactions' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.finishedTransactions, readOnly: !canManage }} />
+      ) : activeTab === 'overview' ? (
         <DataTable
           columns={[t('warehouse.columns.product'), t('warehouse.columns.quantity'), t('warehouse.columns.value'), t('warehouse.columns.lowStock')]}
           rows={products.map(product => [
@@ -1053,7 +1614,7 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
             <span className="block min-w-[120px]">
               <span className={['block text-sm font-bold', product.stock <= product.minStock ? 'text-warning' : 'text-text-primary'].join(' ')}>{product.stock.toLocaleString()} {unitLabel(product.unit, t)}</span>
               <div className="mt-1 h-1.5 w-full max-w-[90px] overflow-hidden rounded-pill bg-surface-muted">
-                <div className={['h-full rounded-pill', product.stock <= product.minStock ? 'bg-warning' : 'bg-success'].join(' ')} style={{ width: `${Math.min(100, Math.round(product.stock / product.minStock * 100))}%` }} />
+                <div className={['h-full rounded-pill', product.stock <= product.minStock ? 'bg-warning' : 'bg-success'].join(' ')} style={{ width: `${Math.min(100, Math.round(product.stock / Math.max(product.minStock, 1) * 100))}%` }} />
               </div>
             </span>,
             formatMoney(product.stock * product.price),
@@ -1066,11 +1627,11 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
         <DataTable
           columns={[t('warehouse.columns.date'), t('warehouse.columns.product'), t('common.type'), t('warehouse.columns.quantity'), t('staff.columns.staff')]}
           rows={allMovements.map(row => [
-            row.date,
+            formatDisplayDate(row.date, t),
             <span className="max-w-[180px] truncate text-sm font-semibold text-text-primary">{row.product}</span>,
-            <StatusBadge tone={row.type === 'in' ? 'success' : 'warning'}>{row.type === 'in' ? '+ Kirim' : '− Chiqim'}</StatusBadge>,
+            <StatusBadge tone={row.type === 'in' ? 'success' : 'warning'}>{row.type === 'in' ? t('warehouse.movementIn') : t('warehouse.movementOut')}</StatusBadge>,
             <span className={['font-bold', row.type === 'in' ? 'text-success' : 'text-warning'].join(' ')}>{row.quantity}</span>,
-            row.employee,
+            translateMovementLabel(t, row.employee),
           ])}
         />
       )}
@@ -1078,18 +1639,27 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
   );
 }
 
-export function FinancePage({ revenueEntries, expenseEntries, revenueData, formatMoney }: { revenueEntries: FinanceEntry[]; expenseEntries: FinanceEntry[]; revenueData: Array<{ month: string; revenue: number; orders: number }>; formatMoney: (value: number) => string }) {
+export function FinancePage({ revenueEntries, expenseEntries, revenueData, formatMoney, onCreate }: { revenueEntries: FinanceEntry[]; expenseEntries: FinanceEntry[]; revenueData: Array<{ month: string; revenue: number; orders: number }>; formatMoney: (value: number) => string; onCreate: () => void }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'revenue' | 'expenses'>('revenue');
+  const exportResource = useResourceExport();
+  const canManage = useHasPermission('clients', 'manage');
+  const [activeTab, setActiveTab] = useState<'revenue' | 'expenses' | 'cashAccounts' | 'cashTransactions' | 'invoices'>('revenue');
   const revenue = revenueEntries.reduce((sum, e) => sum + e.amount, 0);
   const expenses = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
   const profit = revenue - expenses;
-  const expNums = [142000000, 156000000, 161000000, 183000000, 194000000, 205000000];
-  const financeData = revenueData.map((e, i) => ({ month: e.month, revenue: e.revenue, expenses: expNums[i], profit: e.revenue - expNums[i] }));
+  const financeData = revenueData.map(entry => {
+    const monthExpenses = expenseEntries
+      .filter(expense => expense.date.startsWith(entry.month))
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    return { month: entry.month, revenue: entry.revenue, expenses: monthExpenses, profit: entry.revenue - monthExpenses };
+  });
+  const exportResourceMap = {
+    revenue: resources.clientPayments, expenses: resources.expenses, cashAccounts: resources.cashAccounts, cashTransactions: resources.cashTransactions, invoices: resources.invoices,
+  } as const;
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('finance.eyebrow')} title={t('finance.title')} description={t('finance.description')} />
+      <PageHeader eyebrow={t('finance.eyebrow')} title={t('finance.title')} description={t('finance.description')} createLabel={canManage && activeTab === 'revenue' ? t('common.create') : undefined} onCreate={canManage && activeTab === 'revenue' ? onCreate : undefined} onExport={() => exportResource(exportResourceMap[activeTab])} />
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl bg-success/8 p-5 ring-1 ring-success/20">
           <p className="text-xs font-bold uppercase tracking-wide text-success/70">{t('finance.metrics.revenue')}</p>
@@ -1125,34 +1695,171 @@ export function FinancePage({ revenueEntries, expenseEntries, revenueData, forma
       <SegmentTabs
         tabs={[
           { id: 'revenue', label: t('finance.revenueTable'), icon: <FiCheckCircle className="h-4 w-4" /> },
-          { id: 'expenses', label: t('finance.expensesTable'), icon: <FiArchive className="h-4 w-4" /> },
+          { id: 'expenses', label: t('admin.resources.expenses.title'), icon: <FiArchive className="h-4 w-4" /> },
+          { id: 'cashAccounts', label: t('admin.resources.cashAccounts.title'), icon: <FiDollarSign className="h-4 w-4" /> },
+          { id: 'cashTransactions', label: t('admin.resources.cashTransactions.title'), icon: <FiCpu className="h-4 w-4" /> },
+          { id: 'invoices', label: t('admin.resources.invoices.title'), icon: <FiPackage className="h-4 w-4" /> },
         ]}
         activeTab={activeTab}
-        onChange={setActiveTab}
+        onChange={id => setActiveTab(id as typeof activeTab)}
       />
       {activeTab === 'revenue' ? (
         <DataTable
           columns={[t('finance.columns.date'), t('finance.columns.client'), t('finance.columns.order'), t('finance.columns.amount')]}
-          rows={revenueEntries.map(e => [e.date, e.client, e.order, <span className="font-bold text-success">{formatMoney(e.amount)}</span>])}
+          rows={revenueEntries.map(e => [formatDisplayDate(e.date, t), e.client, translateMovementLabel(t, e.order), <span className="font-bold text-success">{formatMoney(e.amount)}</span>])}
         />
+      ) : activeTab === 'expenses' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.expenses, readOnly: !canManage }} />
+      ) : activeTab === 'cashAccounts' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.cashAccounts, readOnly: !canManage }} />
+      ) : activeTab === 'cashTransactions' ? (
+        <ApiResourceManager config={{ ...operationsConfigs.cashTransactions, readOnly: !canManage }} />
       ) : (
-        <DataTable
-          columns={[t('finance.columns.date'), t('finance.columns.category'), t('finance.columns.description'), t('finance.columns.amount')]}
-          rows={expenseEntries.map(e => [e.date, e.category, e.description, <span className="font-bold text-warning">{formatMoney(e.amount)}</span>])}
-        />
+        <ApiResourceManager config={{ ...operationsConfigs.invoices, readOnly: !canManage }} />
       )}
     </div>
   );
 }
 
-export function ProductionPage({ batches, products, materials, formatMoney }: {
+function AddWorkEntryModal({ batch, staff, operationTypes, onClose, onSaved }: {
+  batch: ProductionBatch;
+  staff: StaffMember[];
+  operationTypes: Array<{ id: string; name: string }>;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [employee, setEmployee] = useState('');
+  const [operationType, setOperationType] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [quantity, setQuantity] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!employee || !operationType || !date || !quantity || Number(quantity) <= 0) {
+      toast(t('admin.ui.requiredFieldsMissing'), 'danger');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.create(resources.dailyWorkEntries, {
+        employee, operation_type: operationType, date, quantity_done: Number(quantity), related_batch: batch.id,
+      });
+      toast(t('production.batch.workEntrySaved'), 'success');
+      onSaved();
+      onClose();
+    } catch (error) {
+      toast(error instanceof ApiError ? error.message : t('admin.ui.requestFailed'), 'danger');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <section role="dialog" aria-modal="true" className="w-full max-w-[440px] rounded-[28px] bg-surface-card p-5 shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">{batch.orderId || batch.product}</p>
+            <h3 className="mt-1 font-display text-xl font-extrabold text-text-primary">{t('production.batch.addEmployee')}</h3>
+          </div>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-5 grid gap-3">
+          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+            {t('admin.fields.employee')}
+            <Dropdown value={employee} onChange={setEmployee} options={staff.map(member => ({ value: String(member.id), label: member.name }))} placeholder={t('admin.ui.selectPlaceholder')} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+            {t('admin.fields.operation')}
+            <Dropdown value={operationType} onChange={setOperationType} options={operationTypes.map(op => ({ value: op.id, label: op.name }))} placeholder={t('admin.ui.selectPlaceholder')} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+            {t('admin.fields.date')}
+            <DatePicker value={date} onChange={setDate} />
+          </label>
+          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+            {t('admin.fields.quantity')}
+            <input type="number" min="1" value={quantity} onChange={event => setQuantity(event.target.value)} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50" />
+          </label>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-surface-subtle px-4 text-sm font-semibold text-text-secondary transition hover:bg-surface-muted hover:text-text-primary" onClick={onClose}>
+            {t('common.cancel')}
+          </button>
+          <button disabled={saving} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50" onClick={() => void handleSave()}>
+            {saving ? t('common.loading') : t('common.save')}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function BatchDetailModal({ batch, canManage, onClose }: { batch: ProductionBatch; canManage: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<'batchItems' | 'materialUsages'>('batchItems');
+  const extraParams = useMemo(() => ({ batch: String(batch.id) }), [batch.id]);
+  const fixedValues = useMemo(() => ({ batch: String(batch.id) }), [batch.id]);
+  const configs = useMemo(() => ({
+    batchItems: scopedFieldConfig(operationsConfigs.batchItems, canManage, 'batch'),
+    materialUsages: scopedFieldConfig(operationsConfigs.materialUsages, canManage, 'batch'),
+  }), [canManage]);
+
+  return (
+    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <section role="dialog" aria-modal="true" className="grid max-h-[90vh] w-full max-w-[980px] grid-rows-[auto_1fr] overflow-hidden rounded-[28px] bg-surface-card shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <div className="flex items-start justify-between gap-4 border-b border-border-soft/30 p-6">
+          <div className="min-w-0">
+            <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">{formatDisplayDate(batch.dateLabel, t)}</p>
+            <h3 className="mt-1 truncate font-display text-xl font-extrabold text-text-primary">{batch.orderId || batch.product}</h3>
+          </div>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="overflow-y-auto p-6">
+          <SegmentTabs
+            tabs={[
+              { id: 'batchItems', label: t('admin.resources.batchItems.title'), icon: <FiLayers className="h-4 w-4" /> },
+              { id: 'materialUsages', label: t('admin.resources.materialUsages.title'), icon: <FiPackage className="h-4 w-4" /> },
+            ]}
+            activeTab={activeTab}
+            onChange={id => setActiveTab(id as typeof activeTab)}
+          />
+          <div className="mt-4">
+            <ApiResourceManager key={`${activeTab}-${batch.id}`} config={configs[activeTab]} extraParams={extraParams} fixedValues={fixedValues} />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function ProductionPage({ batches, products, materials, staff, operationTypes, formatMoney, onCreate, openModal, openDelete, onIssue, onDeliver, onWorkEntrySaved }: {
   batches: ProductionBatch[];
   products: Product[];
   materials: Material[];
+  staff: StaffMember[];
+  operationTypes: Array<{ id: string; name: string }>;
   formatMoney: (v: number) => string;
+  onCreate: () => void;
+  openModal: (modal: ModalState) => void;
+  openDelete: (modal: ModalState) => void;
+  onIssue: (id: string | number) => Promise<void>;
+  onDeliver: (id: string | number) => Promise<void>;
+  onWorkEntrySaved: () => void;
 }) {
   const { t } = useTranslation();
+  const exportResource = useResourceExport();
+  const canManage = useHasPermission('production', 'manage');
+  const canManageWorkEntries = useHasPermission('payroll', 'manage');
   const [activeTab, setActiveTab] = useState<'batches' | 'stock' | 'consumption'>('batches');
+  const [addingEmployeeToBatch, setAddingEmployeeToBatch] = useState<ProductionBatch | null>(null);
+  const [viewingBatchDetail, setViewingBatchDetail] = useState<ProductionBatch | null>(null);
 
   const totalProduced = batches.reduce((sum, b) => sum + b.producedQty, 0);
 
@@ -1175,7 +1882,7 @@ export function ProductionPage({ batches, products, materials, formatMoney }: {
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('production.eyebrow')} title={t('production.title')} description={t('production.description')} createLabel={t('production.create')} onCreate={() => {}} />
+      <PageHeader eyebrow={t('production.eyebrow')} title={t('production.title')} description={t('production.description')} createLabel={canManage ? t('production.create') : undefined} onCreate={canManage ? onCreate : undefined} onExport={() => exportResource(activeTab === 'stock' ? resources.finishedGoodsStocks : activeTab === 'consumption' ? resources.productionMaterialUsages : resources.productionBatches)} />
 
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 ring-1 ring-border-soft/30">
@@ -1219,21 +1926,23 @@ export function ProductionPage({ batches, products, materials, formatMoney }: {
             return (
               <article key={batch.id} className="app-card--nova overflow-hidden">
                 {/* Card header */}
-                <div className="flex flex-wrap items-start gap-4 border-b border-border-soft/25 p-5">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <FiCpu className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-bold text-text-muted">{batch.dateLabel}</span>
-                      {batch.orderId && (
-                        <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-text-accent">{batch.orderId}</span>
-                      )}
+                <div className="flex flex-col items-start gap-4 border-b border-border-soft/25 p-5 sm:flex-row">
+                  <div className="flex min-w-0 w-full items-start gap-4 sm:w-auto sm:flex-1">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <FiCpu className="h-5 w-5" />
                     </div>
-                    <p className="mt-1 text-base font-extrabold text-text-primary">{batch.product}</p>
-                    {batch.notes && <p className="mt-0.5 text-xs text-text-muted">{batch.notes}</p>}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-bold text-text-muted">{formatDisplayDate(batch.dateLabel, t)}</span>
+                        {batch.orderId && (
+                          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-text-accent">{batch.orderId}</span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-base font-extrabold text-text-primary [overflow-wrap:anywhere]">{batch.product}</p>
+                      {batch.notes && <p className="mt-0.5 text-xs text-text-muted [overflow-wrap:anywhere]">{batch.notes}</p>}
+                    </div>
                   </div>
-                  <div className="shrink-0 rounded-2xl bg-primary/8 px-4 py-3 text-right ring-1 ring-primary/15">
+                  <div className="shrink-0 self-stretch rounded-2xl bg-primary/8 px-4 py-3 text-right ring-1 ring-primary/15 sm:self-auto">
                     <p className="text-2xl font-extrabold text-primary">{batch.producedQty.toLocaleString()}</p>
                     <p className="mt-0.5 text-xs font-semibold text-primary/70">{unitLabel(batch.unit, t)} {t('production.batch.produced')}</p>
                   </div>
@@ -1266,19 +1975,30 @@ export function ProductionPage({ batches, products, materials, formatMoney }: {
 
                 {/* Footer: employees + shift */}
                 <div className="flex flex-wrap items-center gap-4 border-t border-border-soft/20 bg-surface-subtle/40 px-5 py-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <FiUsers className="h-3.5 w-3.5 shrink-0 text-text-muted" />
-                    <span className="text-xs text-text-muted">{t('production.batch.employees')}:</span>
+                    <span className="whitespace-nowrap text-xs text-text-muted">{t('production.batch.employees')}:</span>
                     <div className="flex flex-wrap gap-1">
                       {visibleEmployees.map(name => (
-                        <span key={name} className="rounded-md bg-surface-card px-2 py-0.5 text-[11px] font-semibold text-text-secondary ring-1 ring-border-soft/40">{name.split(' ')[0]}</span>
+                        <span key={name} className="whitespace-nowrap rounded-md bg-surface-card px-2 py-0.5 text-[11px] font-semibold text-text-secondary ring-1 ring-border-soft/40">{name.split(' ')[0]}</span>
                       ))}
-                      {extraEmployees > 0 && <span className="rounded-md bg-surface-card px-2 py-0.5 text-[11px] font-semibold text-text-muted ring-1 ring-border-soft/40">+{extraEmployees}</span>}
+                      {extraEmployees > 0 && <span className="whitespace-nowrap rounded-md bg-surface-card px-2 py-0.5 text-[11px] font-semibold text-text-muted ring-1 ring-border-soft/40">+{extraEmployees}</span>}
                     </div>
+                    {canManageWorkEntries ? (
+                      <button className="whitespace-nowrap rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-text-accent transition hover:bg-primary/20" onClick={() => setAddingEmployeeToBatch(batch)}>
+                        + {t('production.batch.addEmployee')}
+                      </button>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-text-muted">
                     <FiClock className="h-3.5 w-3.5 shrink-0" />
-                    {batch.shift}
+                    {optionLabel(t, 'productionStatus', batch.shift)}
+                  </div>
+                  <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => setViewingBatchDetail(batch)}>{t('production.batch.detail')}</button>
+                    {canManage ? <button className="rounded-lg bg-warning-bg px-2.5 py-1.5 text-xs font-bold text-warning" onClick={() => void onIssue(batch.id)}>{t('production.batch.issueMaterials')}</button> : null}
+                    {canManage ? <button className="rounded-lg bg-success-bg px-2.5 py-1.5 text-xs font-bold text-success" onClick={() => void onDeliver(batch.id)}>{t('production.batch.deliver')}</button> : null}
+                    <RowActions onView={() => openModal({ kind: 'batch', mode: 'view', item: batch })} onEdit={canManage ? () => openModal({ kind: 'batch', mode: 'edit', item: batch }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'batch', mode: 'view', item: batch }) : undefined} />
                   </div>
                 </div>
               </article>
@@ -1290,7 +2010,7 @@ export function ProductionPage({ batches, products, materials, formatMoney }: {
       {activeTab === 'stock' && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {products.map(product => {
-            const pct = Math.min(100, Math.round((product.stock / product.minStock) * 100));
+            const pct = Math.min(100, Math.round((product.stock / Math.max(product.minStock, 1)) * 100));
             const tone = product.stock === 0 ? 'danger' : product.stock <= product.minStock ? 'warning' : 'success';
             const statusLabel = product.stock === 0 ? t('production.stock.noStock') : product.stock <= product.minStock ? t('production.stock.lowStock') : t('production.stock.inStock');
             return (
@@ -1366,6 +2086,18 @@ export function ProductionPage({ batches, products, materials, formatMoney }: {
           </div>
         </div>
       )}
+      {addingEmployeeToBatch ? (
+        <AddWorkEntryModal
+          batch={addingEmployeeToBatch}
+          staff={staff}
+          operationTypes={operationTypes}
+          onClose={() => setAddingEmployeeToBatch(null)}
+          onSaved={onWorkEntrySaved}
+        />
+      ) : null}
+      {viewingBatchDetail ? (
+        <BatchDetailModal batch={viewingBatchDetail} canManage={canManage} onClose={() => setViewingBatchDetail(null)} />
+      ) : null}
     </div>
   );
 }

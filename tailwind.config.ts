@@ -117,6 +117,16 @@ const config: Config = {
         'surface-card': 'none',
         'surface-muted': 'none',
       },
+      keyframes: {
+        loadingBar: {
+          '0%': { transform: 'translateX(-100%)' },
+          '60%': { transform: 'translateX(220%)' },
+          '100%': { transform: 'translateX(220%)' },
+        },
+      },
+      animation: {
+        loadingBar: 'loadingBar 1.1s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

@@ -1,27 +1,25 @@
-export type PageId = 'dashboard' | 'clients' | 'orders' | 'production' | 'materials' | 'products' | 'warehouse' | 'staff' | 'finance';
+export type PageId = 'dashboard' | 'clients' | 'orders' | 'production' | 'materials' | 'products' | 'warehouse' | 'staff' | 'finance' | 'approvals' | 'system';
 export type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 export type ModalMode = 'view' | 'create' | 'edit';
-export type EntityKind = 'client' | 'staff' | 'product' | 'category' | 'order';
+export type EntityKind = 'client' | 'staff' | 'product' | 'category' | 'order' | 'material' | 'batch' | 'payment' | 'stockMovement';
 export type EntityId = number | string;
 
 export interface Material {
-  id: number;
+  id: EntityId;
   name: string;
-  category: string;
-  categoryKey: string;
   sku: string;
   supplier: string;
-  color: string;
   unit: 'm' | 'kg' | 'pcs';
   price: number;
   stock: number;
   minStock: number;
   status: string;
   statusKey: string;
+  api?: Record<string, unknown>;
 }
 
 export interface Client {
-  id: number;
+  id: EntityId;
   name: string;
   phone: string;
   source: string;
@@ -31,10 +29,11 @@ export interface Client {
   value: number;
   lastContact: string;
   fabric: string;
+  api?: Record<string, unknown>;
 }
 
 export interface StaffMember {
-  id: number;
+  id: EntityId;
   name: string;
   role: string;
   phone: string;
@@ -46,10 +45,11 @@ export interface StaffMember {
   status: string;
   statusKey: string;
   attendance: number;
+  api?: Record<string, unknown>;
 }
 
 export interface Product {
-  id: number;
+  id: EntityId;
   name: string;
   description: string;
   category: string;
@@ -76,7 +76,8 @@ export interface Product {
   revenue: number;
   trend: number;
   materialsUsed?: string[];
-  recipe?: Array<{ materialName: string; qtyPerUnit: number; unit: 'm' | 'kg' | 'pcs' }>;
+  recipe?: Array<{ id: string; materialId: string; materialName: string; qtyPerUnit: number; unit: 'm' | 'kg' | 'pcs' }>;
+  api?: Record<string, unknown>;
 }
 
 export interface CategoryDatum {
@@ -91,21 +92,21 @@ export interface ProductCategory {
   code: string;
   description: string;
   sortOrder: number;
+  api?: Record<string, unknown>;
 }
 
 export interface Order {
-  id: number;
+  id: EntityId;
   orderId: string;
   client: string;
-  product: string;
-  quantity: string;
-  unitPrice: number;
+  orderDate: string;
+  dueDate: string;
   totalAmount: number;
-  manager: string;
-  deliveryDate: string;
   status: string;
   statusKey: string;
   notes: string;
+  clientId?: string;
+  api?: Record<string, unknown>;
 }
 
 export interface StockMovement {
@@ -143,16 +144,17 @@ export interface ProductionRecord {
 }
 
 export interface ProductionBatch {
-  id: number;
+  id: EntityId;
   dateLabel: string;
   product: string;
-  productId: number;
+  productId: EntityId;
   producedQty: number;
   unit: 'm' | 'kg' | 'pcs';
   employees: string[];
   shift: string;
   orderId: string | null;
   notes: string;
+  api?: Record<string, unknown>;
 }
 
 export interface PieceworkRecord {
@@ -169,5 +171,5 @@ export interface PieceworkRecord {
 export interface ModalState {
   mode: ModalMode;
   kind: EntityKind;
-  item?: Client | StaffMember | Product | ProductCategory | Order;
+  item?: Client | StaffMember | Product | ProductCategory | Order | Material | ProductionBatch;
 }

@@ -1,4 +1,4 @@
-import { FiArchive, FiClock, FiCpu, FiDollarSign, FiGrid, FiLayers, FiPackage, FiShoppingBag, FiUsers } from 'react-icons/fi';
+import { FiArchive, FiCheckCircle, FiClock, FiCpu, FiDollarSign, FiGrid, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiUsers } from 'react-icons/fi';
 import type { PageId } from '../types/crm';
 
 export const navItems: Array<{ id: PageId; icon: typeof FiGrid }> = [
@@ -11,4 +11,6 @@ export const navItems: Array<{ id: PageId; icon: typeof FiGrid }> = [
   { id: 'warehouse', icon: FiArchive },
   { id: 'staff', icon: FiClock },
   { id: 'finance', icon: FiDollarSign },
+  { id: 'approvals', icon: FiCheckCircle },
+  { id: 'system', icon: FiSettings },
 ];

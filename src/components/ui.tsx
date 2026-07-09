@@ -4,7 +4,6 @@ import { FiBriefcase, FiChevronDown, FiDownload, FiEdit2, FiEye, FiPlus, FiSearc
 import { designVariants, type DesignVariant } from '../lib/design-system';
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n';
 import type { StatusTone } from '../types/crm';
-import { exportCsv } from '../utils/crm';
 
 export function PremiumTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name?: string; value?: number | string; color?: string; payload?: { name?: string } }>; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -27,7 +26,7 @@ export function PremiumTooltip({ active, payload, label }: { active?: boolean; p
   );
 }
 
-export function PageHeader({ eyebrow, title, description, createLabel, onCreate }: { eyebrow: string; title: string; description: string; createLabel?: string; onCreate?: () => void }) {
+export function PageHeader({ eyebrow, title, description, createLabel, onCreate, onExport }: { eyebrow: string; title: string; description: string; createLabel?: string; onCreate?: () => void; onExport?: () => void }) {
   const { t } = useTranslation();
 
   return (
@@ -44,10 +43,12 @@ export function PageHeader({ eyebrow, title, description, createLabel, onCreate 
             {createLabel}
           </button>
         ) : null}
-        <button className="inline-flex h-10 w-fit items-center gap-2 rounded-xl bg-surface-card px-4 text-sm font-bold text-text-primary shadow-sm ring-1 ring-border-soft/60 transition hover:bg-primary/10" onClick={() => exportCsv(title, [[title], [description]])}>
-          <FiDownload className="h-4 w-4" />
-          {t('common.export')}
-        </button>
+        {onExport ? (
+          <button className="inline-flex h-10 w-fit items-center gap-2 rounded-xl bg-surface-card px-4 text-sm font-bold text-text-primary shadow-sm ring-1 ring-border-soft/60 transition hover:bg-primary/10" onClick={onExport}>
+            <FiDownload className="h-4 w-4" />
+            {t('common.export')}
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -189,14 +190,15 @@ export function DesignSwitch({ activeDesign, onDesignChange }: { activeDesign: D
   );
 }
 
-export function IconButton({ label, children, onClick }: { label: string; children: ReactNode; onClick?: () => void }) {
+export function IconButton({ label, children, onClick, disabled }: { label: string; children: ReactNode; onClick?: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
-      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-surface-card text-text-secondary shadow-sm ring-1 ring-border-soft/45 transition hover:bg-primary/10 hover:text-text-primary"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-surface-card text-text-secondary shadow-sm ring-1 ring-border-soft/45 transition hover:bg-primary/10 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
       aria-label={label}
       title={label}
       onClick={onClick}
+      disabled={disabled}
     >
       {children}
     </button>
@@ -205,13 +207,13 @@ export function IconButton({ label, children, onClick }: { label: string; childr
 
 export function MetricCard({ icon, label, value, caption, tone }: { icon: ReactNode; label: string; value: string; caption: string; tone: StatusTone }) {
   return (
-    <article className="stat-card app-card--nova group relative flex min-h-[148px] items-start justify-between gap-3 overflow-hidden p-5 transition duration-base hover:-translate-y-1 hover:scale-[1.015] hover:shadow-[0_24px_50px_-34px_rgb(var(--color-primary)/0.5)] max-[640px]:p-4">
+    <article className="stat-card app-card--nova group relative flex min-h-[148px] items-start justify-between gap-3 overflow-hidden p-5 transition duration-base hover:-translate-y-1 hover:shadow-[0_24px_50px_-34px_rgb(var(--color-primary)/0.5)] max-[640px]:p-4">
       <div className="grid gap-2.5">
         <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-muted">{label}</p>
         <p className="m-0 text-[clamp(1.7rem,3vw,2.35rem)] font-bold leading-none tracking-[-0.05em] text-text-primary">{value}</p>
         <p className="m-0 max-w-[26ch] text-[13px] leading-5 text-text-secondary">{caption}</p>
       </div>
-      <span className={['inline-flex min-h-7 items-center self-start whitespace-nowrap rounded-pill border px-2.5 text-[11px] font-semibold transition duration-fast group-hover:scale-110 group-hover:shadow-sm', trendToneClasses(tone)].join(' ')}>
+      <span className={['inline-flex min-h-7 items-center self-start whitespace-nowrap rounded-pill border px-2.5 text-[11px] font-semibold transition duration-fast group-hover:shadow-sm', trendToneClasses(tone)].join(' ')}>
         {icon}
       </span>
     </article>
@@ -223,7 +225,7 @@ export function Panel({ title, action, children, onAction }: { title: string; ac
     <section className="app-card--nova min-w-0 p-4 md:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 className="text-base font-extrabold text-text-primary">{title}</h3>
-        <button className="text-sm font-bold text-text-accent" onClick={onAction ?? (() => exportCsv(title, [[title, action]]))}>{action}</button>
+        {onAction ? <button className="text-sm font-bold text-text-accent" onClick={onAction}>{action}</button> : (action ? <span className="text-sm font-bold text-text-muted">{action}</span> : null)}
       </div>
       {children}
     </section>
@@ -239,7 +241,7 @@ export function SegmentTabs<T extends string>({ tabs, activeTab, onChange }: { t
           type="button"
           onClick={() => onChange(tab.id)}
           className={[
-            'inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-extrabold transition duration-fast hover:-translate-y-0.5',
+            'inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-sm font-extrabold transition duration-fast',
             activeTab === tab.id
               ? 'bg-primary text-primary-foreground shadow-[0_18px_36px_-28px_rgb(var(--color-primary)/0.65)]'
               : 'bg-surface-subtle text-text-secondary hover:bg-primary/10 hover:text-text-primary',
@@ -373,7 +375,7 @@ export function SelectField({ label, value, onChange, options, stretch = false }
         type="button"
         className={[
           'group inline-flex h-11 min-w-0 w-full items-center justify-between gap-3 rounded-xl border border-border-soft/70 bg-surface-card/90 px-3.5 text-left text-sm font-semibold text-text-primary shadow-sm transition duration-fast',
-          'hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/8 hover:shadow-[0_18px_36px_-30px_rgb(var(--color-primary)/0.5)]',
+          'hover:border-primary/35 hover:bg-primary/8',
           isOpen ? 'border-primary/45 bg-primary/10 ring-4 ring-primary/10' : '',
         ].join(' ')}
         aria-haspopup="listbox"
@@ -453,39 +455,41 @@ export function DataTable({ columns, rows, onRowClick }: { columns: string[]; ro
           </div>
         ))}
       </div>
-      <table className="data-table hidden w-full table-fixed border-separate border-spacing-y-1.5 text-left md:table">
-        <thead>
-          <tr>
-            {columns.map(column => (
-              <th key={column} className="data-table__cell data-table__cell--head bg-transparent px-4 py-3.5 text-left align-middle text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted max-[640px]:px-4">{column}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, rowIndex) => (
-            <tr
-              key={rowIndex}
-              className={['data-table__row bg-surface-subtle/70 transition-colors duration-fast', onRowClick ? 'data-table__row--clickable cursor-pointer' : ''].join(' ')}
-              onClick={() => onRowClick?.(rowIndex)}
-            >
-              {row.map((cell, cellIndex) => (
-                <td key={cellIndex} className="data-table__cell px-4 py-3.5 align-middle text-sm text-text-primary first:rounded-l-lg last:rounded-r-lg max-[640px]:px-4">{cell}</td>
+      <div className="hidden overflow-x-auto md:block">
+        <table className="data-table w-full min-w-[720px] table-fixed border-separate border-spacing-y-1.5 text-left">
+          <thead>
+            <tr>
+              {columns.map(column => (
+                <th key={column} className="data-table__cell data-table__cell--head bg-transparent px-4 py-3.5 text-left align-middle text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted max-[640px]:px-4">{column}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr
+                key={rowIndex}
+                className={['data-table__row bg-surface-subtle/70 transition-colors duration-fast', onRowClick ? 'data-table__row--clickable cursor-pointer' : ''].join(' ')}
+                onClick={() => onRowClick?.(rowIndex)}
+              >
+                {row.map((cell, cellIndex) => (
+                  <td key={cellIndex} className="data-table__cell px-4 py-3.5 align-middle text-sm text-text-primary first:rounded-l-lg last:rounded-r-lg max-[640px]:px-4">{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
-export function RowActions({ onView, onEdit, onDelete }: { onView: () => void; onEdit: () => void; onDelete: () => void }) {
+export function RowActions({ onView, onEdit, onDelete }: { onView: () => void; onEdit?: () => void; onDelete?: () => void }) {
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2">
       <TableAction label={t('common.view')} onClick={onView}><FiEye /></TableAction>
-      <TableAction label={t('common.edit')} onClick={onEdit}><FiEdit2 /></TableAction>
-      <TableAction label={t('common.delete')} onClick={onDelete}><FiTrash2 /></TableAction>
+      {onEdit ? <TableAction label={t('common.edit')} onClick={onEdit}><FiEdit2 /></TableAction> : null}
+      {onDelete ? <TableAction label={t('common.delete')} onClick={onDelete}><FiTrash2 /></TableAction> : null}
     </div>
   );
 }

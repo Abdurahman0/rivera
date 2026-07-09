@@ -22,6 +22,7 @@
     "login": "Войти",
     "logout": "Выйти",
     "email": "Email",
+    "username": "Имя пользователя",
     "password": "Пароль",
     "remember": "Запомнить",
     "refresh": "Обновить",
@@ -48,7 +49,22 @@
     "sum": "сум",
     "pcs": "шт",
     "meters": "метр",
-    "kg": "кг"
+    "kg": "кг",
+    "confirm": "Подтвердить",
+    "months": {
+      "0": "Январь",
+      "1": "Февраль",
+      "2": "Март",
+      "3": "Апрель",
+      "4": "Май",
+      "5": "Июнь",
+      "6": "Июль",
+      "7": "Август",
+      "8": "Сентябрь",
+      "9": "Октябрь",
+      "10": "Ноябрь",
+      "11": "Декабрь"
+    }
   },
   "deleteDialog": {
     "eyebrow": "Подтверждение",
@@ -74,18 +90,20 @@
       "fuchsia": "Фуксия",
       "amber": "Янтарный",
       "slate": "Сланец"
-    }
+    },
+    "currentColor": "Текущий цвет",
+    "usageHint": "Применяется к кнопкам, ссылкам и активным элементам"
   },
   "login": {
     "eyebrow": "Текстильные операции",
     "title": "Производство, клиенты и склад в одном месте.",
     "description": "Rivera Textile CRM — демо для управления заказами, приходом и уходом сотрудников, запасами ткани и аналитикой продукции.",
     "cardTitle": "Вход в систему",
-    "cardSubtitle": "Откройте панель с демо-данными.",
-    "emailPlaceholder": "admin@rivera.uz",
+    "cardSubtitle": "Войдите с учетными данными пользователя бэкенда.",
+    "emailPlaceholder": "admin",
     "passwordPlaceholder": "Пароль",
     "submit": "Войти в CRM",
-    "hint": "Демо-режим: можно войти с любым email и паролем.",
+    "hint": "Введите имя пользователя и пароль активной учетной записи бэкенда.",
     "metricOrders": "Активные заказы",
     "metricStock": "Ткань на складе",
     "metricOutput": "Месячный выпуск"
@@ -127,6 +145,18 @@
     "finance": {
       "label": "Финансы",
       "caption": "Денежный поток"
+    },
+    "approvals": {
+      "label": "Согласования",
+      "caption": "Ожидающие операции"
+    },
+    "operations": {
+      "label": "Расширенные",
+      "caption": "Все операции"
+    },
+    "system": {
+      "label": "Система",
+      "caption": "Настройки и контроль"
     }
   },
   "dashboard": {
@@ -186,7 +216,8 @@
       "editTitle": "Редактировать материал",
       "summary": "Тип сырья, поставщик, текущий запас и минимальный порог.",
       "nextStep": "Следующий шаг: отправить заказ поставщику."
-    }
+    },
+    "purchases": "Закупки"
   },
   "clients": {
     "eyebrow": "CRM pipeline",
@@ -273,7 +304,10 @@
         "week": "Неделя"
       },
       "earned": "Итого заработано",
-      "pieces": "изделий выполнено"
+      "pieces": "изделий выполнено",
+      "tabs": {
+        "summary": "Общее"
+      }
     },
     "salary": {
       "title": "Расчёт заработной платы",
@@ -302,6 +336,20 @@
       "editTitle": "Редактировать сотрудника",
       "summary": "Смена сотрудника, посещаемость и сегодняшнее состояние прихода/ухода.",
       "nextStep": "Следующий шаг: проверить график смены и добавить HR-комментарий."
+    },
+    "detail": {
+      "toggleOpen": "Подробнее",
+      "toggleClose": "Свернуть",
+      "monthStats": "Показатели за месяц",
+      "arrivalTime": "Время прихода",
+      "leaving": "Уход",
+      "baseSalary": "Базовый оклад",
+      "pieceworkIncome": "Сдельный доход",
+      "pieceworkOperations": "Сдельные операции",
+      "noPieceworkData": "Нет сдельных данных для этого сотрудника",
+      "total": "Итого",
+      "pieceworkBadge": "сдельно",
+      "overview": "Общее"
     }
   },
   "products": {
@@ -333,7 +381,8 @@
       "totalUsed": "Итого потрачено",
       "noRecipe": "Рецептура для этого продукта не задана",
       "totalCount": "видов сырья использовано",
-      "panelTitle": "Рецептура и расход материалов"
+      "panelTitle": "Рецептура и расход материалов",
+      "addMaterial": "Добавить материал"
     },
     "movementTitle": "История движений",
     "stockColumns": {
@@ -441,7 +490,9 @@
     },
     "lowStockYes": "Предупреждение",
     "lowStockNo": "Достаточно",
-    "searchPlaceholder": "Поиск по продукту, сотруднику, клиенту или источнику..."
+    "searchPlaceholder": "Поиск по продукту, сотруднику, клиенту или источнику...",
+    "movementIn": "+ Приход",
+    "movementOut": "− Расход"
   },
   "orders": {
     "eyebrow": "Заказы",
@@ -491,7 +542,9 @@
       "total": "Итоговая сумма",
       "manager": "Менеджер",
       "deliveryDate": "Дата доставки",
-      "status": "Статус"
+      "status": "Статус",
+      "orderDate": "Дата заказа",
+      "dueDate": "Срок"
     },
     "form": {
       "unitPrice": "Цена за единицу",
@@ -501,7 +554,7 @@
       "viewTitle": "Карточка заказа",
       "createTitle": "Новый заказ",
       "editTitle": "Редактировать заказ",
-      "summary": "Управление клиентом, продуктом, количеством, ценой и планом доставки.",
+      "summary": "Управление клиентом, номером заказа, датами и суммой.",
       "nextStep": "Следующий шаг: проверить производственный план и остаток склада."
     }
   },
@@ -510,24 +563,48 @@
     "title": "Журнал производства",
     "description": "Смотрите сколько изделий произведено, какие материалы израсходованы и когда.",
     "create": "Новая партия",
-    "tabs": { "batches": "Партии", "stock": "Текущий запас", "consumption": "Расход материалов" },
+    "tabs": {
+      "batches": "Партии",
+      "stock": "Текущий запас",
+      "consumption": "Расход материалов"
+    },
     "metrics": {
-      "batches": "Всего партий", "batchesCaption": "Зарегистрировано",
-      "produced": "Итого произведено", "producedCaption": "Все продукты",
-      "materials": "Материалов израсходовано", "materialsCaption": "Расчётный расход"
+      "batches": "Всего партий",
+      "batchesCaption": "Зарегистрировано",
+      "produced": "Итого произведено",
+      "producedCaption": "Все продукты",
+      "materials": "Материалов израсходовано",
+      "materialsCaption": "Расчётный расход"
     },
     "batch": {
-      "produced": "шт. произведено", "materials": "Расход материалов",
-      "employees": "Сотрудники", "shift": "Смена", "order": "Заказ",
-      "noRecipe": "Рецептура не задана — расход не рассчитывается", "noNotes": "Без примечаний"
+      "produced": "произведено",
+      "materials": "Расход материалов",
+      "employees": "Сотрудники",
+      "shift": "Смена",
+      "order": "Заказ",
+      "noRecipe": "Рецептура не задана — расход не рассчитывается",
+      "noNotes": "Без примечаний",
+      "issueMaterials": "Списать материалы",
+      "deliver": "Доставить",
+      "noEmployees": "Сотрудники не привязаны",
+      "addEmployee": "Добавить сотрудника",
+      "workEntrySaved": "Запись работы сохранена",
+      "detail": "Подробнее"
     },
     "stock": {
-      "title": "Запас готовой продукции", "currentStock": "Текущий запас",
-      "minStock": "Минимум", "inStock": "В наличии", "lowStock": "Мало", "noStock": "Закончился"
+      "title": "Запас готовой продукции",
+      "currentStock": "Текущий запас",
+      "minStock": "Минимум",
+      "inStock": "В наличии",
+      "lowStock": "Мало",
+      "noStock": "Закончился"
     },
     "consumption": {
-      "title": "Итоговый расход материалов", "material": "Материал",
-      "totalUsed": "Израсходовано", "remaining": "Остаток", "source": "Из каких партий"
+      "title": "Итоговый расход материалов",
+      "material": "Материал",
+      "totalUsed": "Израсходовано",
+      "remaining": "Остаток",
+      "source": "Из каких партий"
     }
   },
   "finance": {
@@ -554,7 +631,8 @@
       "category": "Категория",
       "description": "Описание",
       "amount": "Сумма"
-    }
+    },
+    "expensesCaption": "Расходы текущего месяца"
   },
   "statuses": {
     "newLead": "Новый лид",
@@ -565,7 +643,20 @@
     "onTime": "Вовремя",
     "late": "Опоздал",
     "leftEarly": "Ушел рано",
-    "remote": "Удаленно"
+    "remote": "Удаленно",
+    "hasBalance": "Есть долг",
+    "clear": "Чисто",
+    "ok": "Достаточно",
+    "low": "Мало осталось",
+    "outOfStock": "Закончилось",
+    "pending": "В ожидании",
+    "approved": "Подтверждено",
+    "rejected": "Отклонено",
+    "delivered": "Доставлено",
+    "cancelled": "Отменено",
+    "draft": "Черновик",
+    "confirmed": "Подтверждён",
+    "completed": "Завершён"
   },
   "mock": {
     "months": [
@@ -868,10 +959,21 @@
         "sold": 20500,
         "revenue": 697000000,
         "trend": -4,
-        "materialsUsed": ["Габардин ткань 150см", "Нить швейная"],
+        "materialsUsed": [
+          "Габардин ткань 150см",
+          "Нить швейная"
+        ],
         "recipe": [
-          { "materialName": "Габардин ткань 150см", "qtyPerUnit": 1.05, "unit": "m" },
-          { "materialName": "Нить швейная (полиэстер)", "qtyPerUnit": 0.003, "unit": "kg" }
+          {
+            "materialName": "Габардин ткань 150см",
+            "qtyPerUnit": 1.05,
+            "unit": "m"
+          },
+          {
+            "materialName": "Нить швейная (полиэстер)",
+            "qtyPerUnit": 0.003,
+            "unit": "kg"
+          }
         ]
       },
       {
@@ -935,10 +1037,21 @@
         "sold": 16600,
         "revenue": 481400000,
         "trend": 6,
-        "materialsUsed": ["Ring spun пряжа 30/1", "Интерлок трикотаж 185см"],
+        "materialsUsed": [
+          "Ring spun пряжа 30/1",
+          "Интерлок трикотаж 185см"
+        ],
         "recipe": [
-          { "materialName": "Ring spun пряжа 30/1", "qtyPerUnit": 1.12, "unit": "kg" },
-          { "materialName": "Интерлок трикотаж 185см", "qtyPerUnit": 0.05, "unit": "kg" }
+          {
+            "materialName": "Ring spun пряжа 30/1",
+            "qtyPerUnit": 1.12,
+            "unit": "kg"
+          },
+          {
+            "materialName": "Интерлок трикотаж 185см",
+            "qtyPerUnit": 0.05,
+            "unit": "kg"
+          }
         ]
       },
       {
@@ -971,11 +1084,26 @@
         "sold": 28000,
         "revenue": 1176000000,
         "trend": 22,
-        "materialsUsed": ["Хлопок грифте ткань", "Нить швейная"],
+        "materialsUsed": [
+          "Хлопок грифте ткань",
+          "Нить швейная"
+        ],
         "recipe": [
-          { "materialName": "Хлопок грифте ткань", "qtyPerUnit": 0.85, "unit": "m" },
-          { "materialName": "Нить швейная (полиэстер)", "qtyPerUnit": 0.018, "unit": "kg" },
-          { "materialName": "Синяя пуговица 12мм", "qtyPerUnit": 5, "unit": "pcs" }
+          {
+            "materialName": "Хлопок грифте ткань",
+            "qtyPerUnit": 0.85,
+            "unit": "m"
+          },
+          {
+            "materialName": "Нить швейная (полиэстер)",
+            "qtyPerUnit": 0.018,
+            "unit": "kg"
+          },
+          {
+            "materialName": "Синяя пуговица 12мм",
+            "qtyPerUnit": 5,
+            "unit": "pcs"
+          }
         ]
       }
     ],
@@ -1098,14 +1226,126 @@
       }
     ],
     "materials": [
-      { "id": 1, "name": "Хлопковая суровая ткань 240см", "category": "Ткань", "categoryKey": "fabric", "sku": "MAT-001", "supplier": "Fergana Cotton Mill", "color": "Суровый белый", "unit": "m", "price": 18000, "stock": 12600, "minStock": 4000, "status": "Достаточно", "statusKey": "ok" },
-      { "id": 2, "name": "Габардин ткань 150см", "category": "Ткань", "categoryKey": "fabric", "sku": "MAT-002", "supplier": "Namangan Weave", "color": "Тёмно-синий", "unit": "m", "price": 22000, "stock": 3600, "minStock": 4500, "status": "Мало", "statusKey": "low" },
-      { "id": 3, "name": "Ring spun пряжа 30/1", "category": "Пряжа", "categoryKey": "yarn", "sku": "MAT-003", "supplier": "Andijan Yarn House", "color": "Суровый белый", "unit": "kg", "price": 40000, "stock": 4400, "minStock": 1200, "status": "Достаточно", "statusKey": "ok" },
-      { "id": 4, "name": "Интерлок трикотаж 185см", "category": "Трикотаж", "categoryKey": "knitwear", "sku": "MAT-004", "supplier": "Tashkent Knit Lab", "color": "Серый меланж", "unit": "kg", "price": 29000, "stock": 5800, "minStock": 6000, "status": "Мало", "statusKey": "low" },
-      { "id": 5, "name": "Синяя пуговица 12мм", "category": "Фурнитура", "categoryKey": "accessories", "sku": "MAT-005", "supplier": "Button House UZ", "color": "Синий", "unit": "pcs", "price": 500, "stock": 45000, "minStock": 10000, "status": "Достаточно", "statusKey": "ok" },
-      { "id": 6, "name": "Молния YKK 20см", "category": "Фурнитура", "categoryKey": "accessories", "sku": "MAT-006", "supplier": "YKK Uzbekistan", "color": "Чёрный", "unit": "pcs", "price": 3500, "stock": 2800, "minStock": 3000, "status": "Мало", "statusKey": "low" },
-      { "id": 7, "name": "Швейная нитка (полиэстер)", "category": "Пряжа", "categoryKey": "yarn", "sku": "MAT-007", "supplier": "Tashkent Thread Co", "color": "Белый", "unit": "kg", "price": 35000, "stock": 980, "minStock": 500, "status": "Достаточно", "statusKey": "ok" },
-      { "id": 8, "name": "Подкладочная ткань", "category": "Ткань", "categoryKey": "fabric", "sku": "MAT-008", "supplier": "Samarkand Lining", "color": "Белый", "unit": "m", "price": 12000, "stock": 1800, "minStock": 2000, "status": "Мало", "statusKey": "low" }
+      {
+        "id": 1,
+        "name": "Хлопковая суровая ткань 240см",
+        "category": "Ткань",
+        "categoryKey": "fabric",
+        "sku": "MAT-001",
+        "supplier": "Fergana Cotton Mill",
+        "color": "Суровый белый",
+        "unit": "m",
+        "price": 18000,
+        "stock": 12600,
+        "minStock": 4000,
+        "status": "Достаточно",
+        "statusKey": "ok"
+      },
+      {
+        "id": 2,
+        "name": "Габардин ткань 150см",
+        "category": "Ткань",
+        "categoryKey": "fabric",
+        "sku": "MAT-002",
+        "supplier": "Namangan Weave",
+        "color": "Тёмно-синий",
+        "unit": "m",
+        "price": 22000,
+        "stock": 3600,
+        "minStock": 4500,
+        "status": "Мало",
+        "statusKey": "low"
+      },
+      {
+        "id": 3,
+        "name": "Ring spun пряжа 30/1",
+        "category": "Пряжа",
+        "categoryKey": "yarn",
+        "sku": "MAT-003",
+        "supplier": "Andijan Yarn House",
+        "color": "Суровый белый",
+        "unit": "kg",
+        "price": 40000,
+        "stock": 4400,
+        "minStock": 1200,
+        "status": "Достаточно",
+        "statusKey": "ok"
+      },
+      {
+        "id": 4,
+        "name": "Интерлок трикотаж 185см",
+        "category": "Трикотаж",
+        "categoryKey": "knitwear",
+        "sku": "MAT-004",
+        "supplier": "Tashkent Knit Lab",
+        "color": "Серый меланж",
+        "unit": "kg",
+        "price": 29000,
+        "stock": 5800,
+        "minStock": 6000,
+        "status": "Мало",
+        "statusKey": "low"
+      },
+      {
+        "id": 5,
+        "name": "Синяя пуговица 12мм",
+        "category": "Фурнитура",
+        "categoryKey": "accessories",
+        "sku": "MAT-005",
+        "supplier": "Button House UZ",
+        "color": "Синий",
+        "unit": "pcs",
+        "price": 500,
+        "stock": 45000,
+        "minStock": 10000,
+        "status": "Достаточно",
+        "statusKey": "ok"
+      },
+      {
+        "id": 6,
+        "name": "Молния YKK 20см",
+        "category": "Фурнитура",
+        "categoryKey": "accessories",
+        "sku": "MAT-006",
+        "supplier": "YKK Uzbekistan",
+        "color": "Чёрный",
+        "unit": "pcs",
+        "price": 3500,
+        "stock": 2800,
+        "minStock": 3000,
+        "status": "Мало",
+        "statusKey": "low"
+      },
+      {
+        "id": 7,
+        "name": "Швейная нитка (полиэстер)",
+        "category": "Пряжа",
+        "categoryKey": "yarn",
+        "sku": "MAT-007",
+        "supplier": "Tashkent Thread Co",
+        "color": "Белый",
+        "unit": "kg",
+        "price": 35000,
+        "stock": 980,
+        "minStock": 500,
+        "status": "Достаточно",
+        "statusKey": "ok"
+      },
+      {
+        "id": 8,
+        "name": "Подкладочная ткань",
+        "category": "Ткань",
+        "categoryKey": "fabric",
+        "sku": "MAT-008",
+        "supplier": "Samarkand Lining",
+        "color": "Белый",
+        "unit": "m",
+        "price": 12000,
+        "stock": 1800,
+        "minStock": 2000,
+        "status": "Мало",
+        "statusKey": "low"
+      }
     ],
     "productionRecords": [
       {
@@ -1176,26 +1416,220 @@
       }
     ],
     "productionBatches": [
-      { "id": 1, "dateLabel": "22 июня", "product": "Базовая белая футболка", "productId": 5, "producedQty": 500, "unit": "pcs", "employees": ["Nodira Saidova", "Bekzod Tursunov", "Mavluda Xoliqova"], "shift": "Дневная (08:00–17:00)", "orderId": "ORD-2406-026", "notes": "Первая партия — прошла контроль качества" },
-      { "id": 2, "dateLabel": "19 июня", "product": "Базовая белая футболка", "productId": 5, "producedQty": 350, "unit": "pcs", "employees": ["Nodira Saidova", "Dilnoza Yusupova"], "shift": "Дневная (08:00–17:00)", "orderId": "ORD-2406-026", "notes": "" },
-      { "id": 3, "dateLabel": "15 июня", "product": "Форменная одежда Габардин", "productId": 2, "producedQty": 210, "unit": "m", "employees": ["Bekzod Tursunov", "Mavluda Xoliqova"], "shift": "Вечерняя (17:00–22:00)", "orderId": "ORD-2406-021", "notes": "Первая партия комплекта формы" },
-      { "id": 4, "dateLabel": "10 июня", "product": "Базовая белая футболка", "productId": 5, "producedQty": 600, "unit": "pcs", "employees": ["Nodira Saidova", "Bekzod Tursunov", "Mavluda Xoliqova", "Dilnoza Yusupova"], "shift": "Дневная (08:00–17:00)", "orderId": null, "notes": "Производство для склада" },
-      { "id": 5, "dateLabel": "5 июня", "product": "Форменная одежда Габардин", "productId": 2, "producedQty": 180, "unit": "m", "employees": ["Bekzod Tursunov"], "shift": "Дневная (08:00–17:00)", "orderId": "ORD-2406-021", "notes": "" },
-      { "id": 6, "dateLabel": "28 мая", "product": "Базовая белая футболка", "productId": 5, "producedQty": 420, "unit": "pcs", "employees": ["Nodira Saidova", "Mavluda Xoliqova"], "shift": "Дневная (08:00–17:00)", "orderId": null, "notes": "Последняя партия мая" }
+      {
+        "id": 1,
+        "dateLabel": "22 июня",
+        "product": "Базовая белая футболка",
+        "productId": 5,
+        "producedQty": 500,
+        "unit": "pcs",
+        "employees": [
+          "Nodira Saidova",
+          "Bekzod Tursunov",
+          "Mavluda Xoliqova"
+        ],
+        "shift": "Дневная (08:00–17:00)",
+        "orderId": "ORD-2406-026",
+        "notes": "Первая партия — прошла контроль качества"
+      },
+      {
+        "id": 2,
+        "dateLabel": "19 июня",
+        "product": "Базовая белая футболка",
+        "productId": 5,
+        "producedQty": 350,
+        "unit": "pcs",
+        "employees": [
+          "Nodira Saidova",
+          "Dilnoza Yusupova"
+        ],
+        "shift": "Дневная (08:00–17:00)",
+        "orderId": "ORD-2406-026",
+        "notes": ""
+      },
+      {
+        "id": 3,
+        "dateLabel": "15 июня",
+        "product": "Форменная одежда Габардин",
+        "productId": 2,
+        "producedQty": 210,
+        "unit": "m",
+        "employees": [
+          "Bekzod Tursunov",
+          "Mavluda Xoliqova"
+        ],
+        "shift": "Вечерняя (17:00–22:00)",
+        "orderId": "ORD-2406-021",
+        "notes": "Первая партия комплекта формы"
+      },
+      {
+        "id": 4,
+        "dateLabel": "10 июня",
+        "product": "Базовая белая футболка",
+        "productId": 5,
+        "producedQty": 600,
+        "unit": "pcs",
+        "employees": [
+          "Nodira Saidova",
+          "Bekzod Tursunov",
+          "Mavluda Xoliqova",
+          "Dilnoza Yusupova"
+        ],
+        "shift": "Дневная (08:00–17:00)",
+        "orderId": null,
+        "notes": "Производство для склада"
+      },
+      {
+        "id": 5,
+        "dateLabel": "5 июня",
+        "product": "Форменная одежда Габардин",
+        "productId": 2,
+        "producedQty": 180,
+        "unit": "m",
+        "employees": [
+          "Bekzod Tursunov"
+        ],
+        "shift": "Дневная (08:00–17:00)",
+        "orderId": "ORD-2406-021",
+        "notes": ""
+      },
+      {
+        "id": 6,
+        "dateLabel": "28 мая",
+        "product": "Базовая белая футболка",
+        "productId": 5,
+        "producedQty": 420,
+        "unit": "pcs",
+        "employees": [
+          "Nodira Saidova",
+          "Mavluda Xoliqova"
+        ],
+        "shift": "Дневная (08:00–17:00)",
+        "orderId": null,
+        "notes": "Последняя партия мая"
+      }
     ],
     "pieceworkRecords": [
-      { "id": 1,  "employeeName": "Nodira Saidova",    "operationName": "Пошив воротника",   "product": "Базовая белая футболка",  "quantity": 340, "ratePerPiece": 800,  "unit": "pcs", "week": "1-я неделя" },
-      { "id": 2,  "employeeName": "Nodira Saidova",    "operationName": "Пошив рукавов",     "product": "Базовая белая футболка",  "quantity": 180, "ratePerPiece": 600,  "unit": "pcs", "week": "1-я неделя" },
-      { "id": 3,  "employeeName": "Nodira Saidova",    "operationName": "Пошив воротника",   "product": "Форменная одежда Габардин","quantity": 210, "ratePerPiece": 900,  "unit": "pcs", "week": "2-я неделя" },
-      { "id": 4,  "employeeName": "Bekzod Tursunov",   "operationName": "Боковой шов",       "product": "Базовая белая футболка",  "quantity": 520, "ratePerPiece": 500,  "unit": "pcs", "week": "1-я неделя" },
-      { "id": 5,  "employeeName": "Bekzod Tursunov",   "operationName": "Раскрой",           "product": "Форменная одежда Габардин","quantity": 200, "ratePerPiece": 200,  "unit": "pcs", "week": "1-я неделя" },
-      { "id": 6,  "employeeName": "Bekzod Tursunov",   "operationName": "Боковой шов",       "product": "Форменная одежда Габардин","quantity": 310, "ratePerPiece": 500,  "unit": "pcs", "week": "2-я неделя" },
-      { "id": 7,  "employeeName": "Mavluda Xoliqova",  "operationName": "Пришив пуговиц",    "product": "Базовая белая футболка",  "quantity": 1200,"ratePerPiece": 150,  "unit": "pcs", "week": "1-я неделя" },
-      { "id": 8,  "employeeName": "Mavluda Xoliqova",  "operationName": "Глажка",            "product": "Базовая белая футболка",  "quantity": 380, "ratePerPiece": 200,  "unit": "pcs", "week": "1-я неделя" },
-      { "id": 9,  "employeeName": "Mavluda Xoliqova",  "operationName": "Пришив пуговиц",    "product": "Форменная одежда Габардин","quantity": 640, "ratePerPiece": 150,  "unit": "pcs", "week": "2-я неделя" },
-      { "id": 10, "employeeName": "Dilnoza Yusupova",  "operationName": "Контроль качества", "product": "Базовая белая футболка",  "quantity": 620, "ratePerPiece": 300,  "unit": "pcs", "week": "1-я неделя" },
-      { "id": 11, "employeeName": "Dilnoza Yusupova",  "operationName": "Упаковка",          "product": "Базовая белая футболка",  "quantity": 480, "ratePerPiece": 100,  "unit": "pcs", "week": "1-я неделя" },
-      { "id": 12, "employeeName": "Dilnoza Yusupova",  "operationName": "Контроль качества", "product": "Форменная одежда Габардин","quantity": 390, "ratePerPiece": 300,  "unit": "pcs", "week": "2-я неделя" }
+      {
+        "id": 1,
+        "employeeName": "Nodira Saidova",
+        "operationName": "Пошив воротника",
+        "product": "Базовая белая футболка",
+        "quantity": 340,
+        "ratePerPiece": 800,
+        "unit": "pcs",
+        "week": "1-я неделя"
+      },
+      {
+        "id": 2,
+        "employeeName": "Nodira Saidova",
+        "operationName": "Пошив рукавов",
+        "product": "Базовая белая футболка",
+        "quantity": 180,
+        "ratePerPiece": 600,
+        "unit": "pcs",
+        "week": "1-я неделя"
+      },
+      {
+        "id": 3,
+        "employeeName": "Nodira Saidova",
+        "operationName": "Пошив воротника",
+        "product": "Форменная одежда Габардин",
+        "quantity": 210,
+        "ratePerPiece": 900,
+        "unit": "pcs",
+        "week": "2-я неделя"
+      },
+      {
+        "id": 4,
+        "employeeName": "Bekzod Tursunov",
+        "operationName": "Боковой шов",
+        "product": "Базовая белая футболка",
+        "quantity": 520,
+        "ratePerPiece": 500,
+        "unit": "pcs",
+        "week": "1-я неделя"
+      },
+      {
+        "id": 5,
+        "employeeName": "Bekzod Tursunov",
+        "operationName": "Раскрой",
+        "product": "Форменная одежда Габардин",
+        "quantity": 200,
+        "ratePerPiece": 200,
+        "unit": "pcs",
+        "week": "1-я неделя"
+      },
+      {
+        "id": 6,
+        "employeeName": "Bekzod Tursunov",
+        "operationName": "Боковой шов",
+        "product": "Форменная одежда Габардин",
+        "quantity": 310,
+        "ratePerPiece": 500,
+        "unit": "pcs",
+        "week": "2-я неделя"
+      },
+      {
+        "id": 7,
+        "employeeName": "Mavluda Xoliqova",
+        "operationName": "Пришив пуговиц",
+        "product": "Базовая белая футболка",
+        "quantity": 1200,
+        "ratePerPiece": 150,
+        "unit": "pcs",
+        "week": "1-я неделя"
+      },
+      {
+        "id": 8,
+        "employeeName": "Mavluda Xoliqova",
+        "operationName": "Глажка",
+        "product": "Базовая белая футболка",
+        "quantity": 380,
+        "ratePerPiece": 200,
+        "unit": "pcs",
+        "week": "1-я неделя"
+      },
+      {
+        "id": 9,
+        "employeeName": "Mavluda Xoliqova",
+        "operationName": "Пришив пуговиц",
+        "product": "Форменная одежда Габардин",
+        "quantity": 640,
+        "ratePerPiece": 150,
+        "unit": "pcs",
+        "week": "2-я неделя"
+      },
+      {
+        "id": 10,
+        "employeeName": "Dilnoza Yusupova",
+        "operationName": "Контроль качества",
+        "product": "Базовая белая футболка",
+        "quantity": 620,
+        "ratePerPiece": 300,
+        "unit": "pcs",
+        "week": "1-я неделя"
+      },
+      {
+        "id": 11,
+        "employeeName": "Dilnoza Yusupova",
+        "operationName": "Упаковка",
+        "product": "Базовая белая футболка",
+        "quantity": 480,
+        "ratePerPiece": 100,
+        "unit": "pcs",
+        "week": "1-я неделя"
+      },
+      {
+        "id": 12,
+        "employeeName": "Dilnoza Yusupova",
+        "operationName": "Контроль качества",
+        "product": "Форменная одежда Габардин",
+        "quantity": 390,
+        "ratePerPiece": 300,
+        "unit": "pcs",
+        "week": "2-я неделя"
+      }
     ],
     "revenueEntries": [
       {
@@ -1243,5 +1677,583 @@
         "amount": 86000000
       }
     ]
+  },
+  "kiosk": {
+    "brand": "Rivera посещаемость",
+    "title": "Киоск устройства",
+    "deviceTokenLabel": "Токен устройства",
+    "startButton": "Запустить киоск",
+    "adminLogin": "Вход администратора",
+    "cameFAB": "Пришёл",
+    "leftFAB": "Ушёл",
+    "changeToken": "Сменить токен",
+    "capturing": "Съёмка…",
+    "checkingIn": "Отмечаем приход…",
+    "checkingOut": "Отмечаем уход…",
+    "noFaceDetected": "Лицо не обнаружено. Попробуйте ещё раз.",
+    "faceNotRecognized": "Лицо не распознано. Попробуйте ещё раз.",
+    "checkFailed": "Не удалось отметить посещаемость",
+    "recordedIn": "{{name}} пришёл — {{time}}",
+    "recordedOut": "{{name}} ушёл — {{time}}"
+  },
+  "faceEnroll": {
+    "eyebrow": "Регистрация лица",
+    "title": "Регистрация через камеру",
+    "buttonLabel": "Регистрация через камеру",
+    "employeeLabel": "Сотрудник",
+    "searchPlaceholder": "Поиск по имени или коду",
+    "selectPlaceholder": "Выберите сотрудника…",
+    "pickEmployeeHint": "Выберите сотрудника, чтобы включить камеру",
+    "instructions": "Попросите сотрудника смотреть прямо в камеру и не двигаться 2 секунды.",
+    "saving": "Сохраняем лицо для {{name}}…",
+    "done": "Лицо для {{name}} успешно зарегистрировано",
+    "doneButton": "Готово",
+    "cancelButton": "Отмена",
+    "enrollFailed": "Не удалось зарегистрировать лицо"
+  },
+  "faceCamera": {
+    "loadingModels": "Загрузка системы распознавания лиц…",
+    "cameraDenied": "Доступ к камере запрещён или недоступен",
+    "modelsFailed": "Не удалось загрузить модели распознавания лиц"
+  },
+  "admin": {
+    "fields": {
+      "client": "Клиент",
+      "product": "Продукт",
+      "size": "Размер",
+      "color": "Цвет",
+      "quantity": "Количество",
+      "unitPrice": "Цена за единицу",
+      "currency": "Валюта",
+      "exchangeRate": "Курс",
+      "deliveryDate": "Дата доставки",
+      "status": "Статус",
+      "note": "Заметка",
+      "method": "Способ",
+      "amount": "Сумма",
+      "amountUzs": "Сумма (сум)",
+      "paymentDate": "Дата оплаты",
+      "returnDate": "Дата возврата",
+      "reason": "Причина",
+      "date": "Дата",
+      "material": "Материал",
+      "normPerUnit": "Норма на единицу",
+      "totalValue": "Общая стоимость",
+      "type": "Тип",
+      "batch": "Партия",
+      "sourceTransaction": "Исходная операция",
+      "normQuantity": "Норма количества",
+      "defect": "Брак",
+      "actualDelivered": "Фактически доставлено",
+      "deliveredDate": "Дата доставки",
+      "employee": "Сотрудник",
+      "name": "Название",
+      "start": "Начало",
+      "end": "Конец",
+      "lunchStart": "Начало обеда",
+      "lunchEnd": "Конец обеда",
+      "lateAfterMinutes": "Опоздание после (мин)",
+      "effectiveFrom": "Дата начала",
+      "effectiveTo": "Дата окончания",
+      "active": "Активен",
+      "encodingJson": "Вектор лица (JSON)",
+      "sourceImage": "Исходное фото",
+      "deviceToken": "Токен устройства",
+      "lastSeen": "Последняя активность",
+      "event": "Событие",
+      "time": "Время",
+      "device": "Устройство",
+      "confidence": "Уверенность",
+      "workDate": "Рабочий день",
+      "firstCheckIn": "Первый приход",
+      "lastCheckOut": "Последний уход",
+      "workedMinutes": "Отработано минут",
+      "manual": "Вручную",
+      "sequence": "Порядок",
+      "timeNormMinutes": "Норма времени (мин)",
+      "hourlyNorm": "Часовая норма",
+      "dailyNorm": "Дневная норма",
+      "monthlyNorm": "Месячная норма",
+      "pricePerUnit": "Цена за единицу",
+      "operation": "Операция",
+      "month": "Месяц",
+      "salaryType": "Тип зарплаты",
+      "finalAmount": "Итоговая сумма",
+      "username": "Имя пользователя",
+      "fullName": "Полное имя",
+      "phone": "Телефон",
+      "email": "Email",
+      "superadmin": "Суперадмин",
+      "password": "Пароль",
+      "user": "Пользователь",
+      "page": "Страница",
+      "level": "Уровень",
+      "key": "Ключ",
+      "valueJson": "Значение (JSON)",
+      "description": "Описание",
+      "trigger": "Триггер",
+      "started": "Начато",
+      "finished": "Завершено",
+      "message": "Сообщение",
+      "object": "Объект",
+      "action": "Действие",
+      "rows": "Строки",
+      "path": "Путь",
+      "id": "ID",
+      "metadata": "Метаданные",
+      "planned": "Запланировано",
+      "delivered": "Доставлено",
+      "path_field": "Путь",
+      "address": "Адрес",
+      "code": "Код",
+      "category": "Категория",
+      "unit": "Единица измерения",
+      "minStockLevel": "Минимальный запас",
+      "batchNumber": "Номер партии",
+      "startedDate": "Дата начала",
+      "hireDate": "Дата найма",
+      "employeeCode": "Код сотрудника",
+      "vatPercent": "Процент НДС",
+      "sizeRange": "Диапазон размеров",
+      "materialType": "Тип материала",
+      "priceWithTaxUzs": "Цена с НДС (сум)",
+      "priceWithoutTaxUzs": "Цена без НДС (сум)",
+      "priceWithTaxUsd": "Цена с НДС ($)",
+      "priceWithoutTaxUsd": "Цена без НДС ($)",
+      "orderNumber": "Номер заказа",
+      "orderDate": "Дата заказа",
+      "dueDate": "Срок",
+      "totalAmount": "Общая сумма",
+      "supplier": "Поставщик",
+      "purchaseDate": "Дата закупки",
+      "terminationDate": "Дата увольнения",
+      "startDate": "Дата начала",
+      "endDate": "Дата окончания",
+      "workEntry": "Запись работы",
+      "hourLabel": "Часовой интервал",
+      "cashAccount": "Кассовый счёт",
+      "invoiceNumber": "Номер счёта",
+      "balance": "Баланс"
+    },
+    "resources": {
+      "deliveries": {
+        "title": "Доставки клиентам",
+        "description": "Доставки готовой продукции, требующие подтверждения."
+      },
+      "payments": {
+        "title": "Платежи клиентов",
+        "description": "Наличные, карта, перевод и доллары."
+      },
+      "returns": {
+        "title": "Возвраты клиентов",
+        "description": "Возврат готовой продукции на склад, требует подтверждения."
+      },
+      "debts": {
+        "title": "Корректировки долга",
+        "description": "Ручные корректировки баланса клиента, требуют подтверждения."
+      },
+      "productNorms": {
+        "title": "Нормы материалов на продукт",
+        "description": "Расход материалов на единицу готовой продукции."
+      },
+      "materialStocks": {
+        "title": "Остатки материалов",
+        "description": "Расчётный остаток и стоимость материалов. Меняется только через подтверждённые операции."
+      },
+      "materialTransactions": {
+        "title": "Операции с материалами",
+        "description": "Приход, списание на производство, списание брака и дефекты."
+      },
+      "defectiveStocks": {
+        "title": "Остаток бракованных материалов",
+        "description": "Расчётный остаток бракованных материалов."
+      },
+      "defectiveTransactions": {
+        "title": "Операции с браком материалов",
+        "description": "Перевод в брак, требует подтверждения."
+      },
+      "finishedStocks": {
+        "title": "Остатки готовой продукции",
+        "description": "Остаток по размеру и цвету."
+      },
+      "finishedTransactions": {
+        "title": "Операции с готовой продукцией",
+        "description": "Производство, продажа, брак и возврат от клиента."
+      },
+      "batchItems": {
+        "title": "Состав партии",
+        "description": "Разбивка по размеру/цвету внутри партии."
+      },
+      "materialUsages": {
+        "title": "Расход материалов в производстве",
+        "description": "Норма, факт и брак по партии."
+      },
+      "schedules": {
+        "title": "Графики работы",
+        "description": "Смена, обед и правила опоздания сотрудника."
+      },
+      "faceEncodings": {
+        "title": "Данные лица сотрудника",
+        "description": "Вектор лица и фото, снятые через камеру."
+      },
+      "devices": {
+        "title": "Устройства учёта",
+        "description": "Токены киосков и их активность."
+      },
+      "attendanceEvents": {
+        "title": "События посещаемости",
+        "description": "Поток событий прихода/ухода (неизменяемый)."
+      },
+      "attendanceRecords": {
+        "title": "Записи посещаемости",
+        "description": "Дневной итог посещаемости и ручные правки."
+      },
+      "operationTypes": {
+        "title": "Виды сдельных операций",
+        "description": "Операции, нормы, порядок и расценки."
+      },
+      "workEntries": {
+        "title": "Дневные записи работ",
+        "description": "Сдельная выработка сотрудника и начисление."
+      },
+      "adjustments": {
+        "title": "Корректировки зарплаты",
+        "description": "Ежемесячные премии и штрафы."
+      },
+      "payrolls": {
+        "title": "Месячные начисления",
+        "description": "Статус расчёта, подтверждения, оплаты и разблокировки."
+      },
+      "users": {
+        "title": "Пользователи",
+        "description": "Учётные записи входа и статус суперадмина."
+      },
+      "permissions": {
+        "title": "Права доступа",
+        "description": "Право просмотра/управления для каждого пользователя."
+      },
+      "settings": {
+        "title": "Настройки бизнеса",
+        "description": "Настройки приложения в формате JSON."
+      },
+      "backups": {
+        "title": "Резервные копии",
+        "description": "История резервного копирования базы/медиа/окружения."
+      },
+      "audit": {
+        "title": "Журнал аудита",
+        "description": "Создание/изменение/архивация/подтверждения."
+      },
+      "exports": {
+        "title": "Журнал экспорта",
+        "description": "Кто, какую страницу и сколько строк экспортировал."
+      },
+      "security": {
+        "title": "Журнал безопасности",
+        "description": "Вход в систему и отклонённые запросы."
+      },
+      "stockLogs": {
+        "title": "Журнал склада",
+        "description": "История подтверждённых складских изменений."
+      },
+      "payrollLogs": {
+        "title": "Журнал зарплаты",
+        "description": "История изменений статуса зарплаты."
+      },
+      "attendanceLogs": {
+        "title": "Журнал посещаемости",
+        "description": "Изменения посещаемости и активность устройств."
+      },
+      "backupLogs": {
+        "title": "Журнал резервных копий",
+        "description": "События, связанные с резервным копированием."
+      },
+      "clientOrders": {
+        "title": "Заказы",
+        "description": "Официальные заказы клиентов."
+      },
+      "suppliers": {
+        "title": "Поставщики",
+        "description": "Список поставщиков сырья."
+      },
+      "materialPurchases": {
+        "title": "Закупки материалов",
+        "description": "Материалы, закупленные у поставщиков."
+      },
+      "warehouseLocations": {
+        "title": "Места склада",
+        "description": "Обозначения мест/стеллажей на складе."
+      },
+      "departments": {
+        "title": "Отделы",
+        "description": "Отделы сотрудников."
+      },
+      "employeeTerminations": {
+        "title": "Увольнения",
+        "description": "История увольнений сотрудников."
+      },
+      "leaveRequests": {
+        "title": "Заявки на отпуск",
+        "description": "Заявки сотрудников на отпуск."
+      },
+      "workHourBreakdowns": {
+        "title": "Почасовая разбивка",
+        "description": "Почасовая разбивка сдельных записей."
+      },
+      "cashAccounts": {
+        "title": "Кассовые счета",
+        "description": "Счета наличных средств (UZS/USD)."
+      },
+      "cashTransactions": {
+        "title": "Кассовые операции",
+        "description": "Приход/расход по кассе."
+      },
+      "expenses": {
+        "title": "Расходы",
+        "description": "Расходы компании."
+      },
+      "invoices": {
+        "title": "Счета-фактуры",
+        "description": "Счета-фактуры, выставленные клиентам."
+      }
+    },
+    "options": {
+      "paymentMethod": {
+        "cash": "Наличные",
+        "card": "Карта",
+        "bank_transfer": "Банковский перевод",
+        "usd_cash": "Доллары наличные"
+      },
+      "materialTxType": {
+        "in": "Приход",
+        "out_production": "Списание в производство",
+        "out_writeoff": "Списание",
+        "defect": "Брак"
+      },
+      "finishedTxType": {
+        "in_production": "С производства",
+        "out_client": "Клиенту",
+        "out_defect": "Брак",
+        "return_client": "Возврат клиента"
+      },
+      "adjustmentType": {
+        "bonus": "Премия",
+        "penalty": "Штраф"
+      },
+      "attendanceStatus": {
+        "present": "Присутствовал",
+        "late": "Опоздал",
+        "absent_excused": "Уваж. причина",
+        "absent_unexcused": "Неуваж. причина"
+      },
+      "permissionLevel": {
+        "view": "Просмотр",
+        "manage": "Управление"
+      },
+      "page": {
+        "dashboard": "Главная",
+        "clients": "Клиенты",
+        "products": "Продукты",
+        "materials": "Материалы",
+        "inventory": "Склад",
+        "production": "Производство",
+        "employees": "Сотрудники",
+        "attendance": "Посещаемость",
+        "payroll": "Зарплата",
+        "approvals": "Подтверждения",
+        "audit": "Аудит",
+        "security_logs": "Журнал безопасности",
+        "backups": "Резервные копии",
+        "settings": "Настройки",
+        "users": "Пользователи",
+        "finance": "Финансы"
+      },
+      "employeePosition": {
+        "seamstress": "Швея",
+        "driver": "Водитель",
+        "guard": "Охранник",
+        "other": "Другое"
+      },
+      "salaryType": {
+        "piece_rate": "Сдельная (за штуку)",
+        "fixed_daily": "Дневная фиксированная"
+      },
+      "materialUnit": {
+        "m": "Метр",
+        "piece": "Штука",
+        "kg": "Кг",
+        "linear_meter": "Погонный метр"
+      },
+      "productionStatus": {
+        "in_progress": "В процессе",
+        "partially_completed": "Частично завершено",
+        "completed": "Завершено"
+      },
+      "transactionStatus": {
+        "draft": "Черновик",
+        "pending_approval": "На подтверждении",
+        "approved": "Подтверждено",
+        "rejected": "Отклонено"
+      },
+      "movementNote": {
+        "incoming": "Приход",
+        "production": "Производство",
+        "client": "Клиент",
+        "materials": "Материалы"
+      },
+      "eventType": {
+        "check_in": "Приход",
+        "check_out": "Уход"
+      },
+      "employeeStatus": {
+        "active": "Активен",
+        "inactive": "Неактивен"
+      },
+      "orderStatus": {
+        "draft": "Черновик",
+        "confirmed": "Подтверждён",
+        "completed": "Завершён",
+        "cancelled": "Отменён"
+      },
+      "cashTxType": {
+        "in": "Приход",
+        "out": "Расход"
+      },
+      "invoiceStatus": {
+        "draft": "Черновик",
+        "sent": "Отправлен",
+        "paid": "Оплачен",
+        "cancelled": "Отменён"
+      },
+      "approvalAction": {
+        "client_delivery": "Доставка клиенту",
+        "client_return": "Возврат клиента",
+        "client_debt_adjustment": "Корректировка долга",
+        "leave_request": "Заявка на отпуск",
+        "cash_transaction": "Кассовая операция",
+        "expense": "Расход",
+        "material_purchase": "Закупка материала",
+        "production_material_issue": "Выдача материалов",
+        "production_warehouse_delivery": "Доставка на склад",
+        "material_transaction": "Движение материала",
+        "defective_material_transaction": "Бракованный материал",
+        "finished_goods_transaction": "Движение готовой продукции"
+      }
+    },
+    "ui": {
+      "backendResource": "Раздел backend",
+      "exportXlsx": "Экспорт в Excel",
+      "refresh": "Обновить",
+      "create": "Создать",
+      "includeArchived": "Показать архивные",
+      "searchPlaceholder": "Поиск: {{title}}",
+      "noRecords": "Нет записей",
+      "recordsCount": "Записей: {{count}}",
+      "actions": "Действия",
+      "edit": "Изменить",
+      "restore": "Восстановить",
+      "archive": "Архивировать",
+      "selectPlaceholder": "Выберите…",
+      "cancel": "Отмена",
+      "saving": "Сохранение…",
+      "save": "Сохранить",
+      "createPanel": "Создание",
+      "editPanel": "Редактирование",
+      "yes": "Да",
+      "no": "Нет",
+      "loading": "Загрузка…",
+      "archiveConfirm": "Архивировать запись «{{title}}»?",
+      "archivedOk": "Успешно архивировано",
+      "restoredOk": "Успешно восстановлено",
+      "savedOk": "Успешно сохранено",
+      "actionCompleted": "{{label}} выполнено",
+      "requestFailed": "Ошибка запроса",
+      "fieldRequired": "Поле «{{field}}» обязательно",
+      "requiredFieldsMissing": "Заполните все обязательные поля"
+    },
+    "page": {
+      "operationsGroups": {
+        "clients": "Финансы клиентов",
+        "inventory": "Склад",
+        "production": "Производство",
+        "attendance": "Посещаемость",
+        "payroll": "Зарплата",
+        "materials": "Материалы",
+        "employees": "Сотрудники",
+        "finance": "Финансы"
+      },
+      "systemGroups": {
+        "access": "Доступ",
+        "configuration": "Настройки",
+        "audit": "Аудит",
+        "security": "Безопасность"
+      },
+      "operations": {
+        "eyebrow": "Полные операции backend",
+        "title": "Расширенное управление",
+        "description": "Финансы клиентов, контроль склада, детали производства, посещаемость и зарплата."
+      },
+      "system": {
+        "eyebrow": "Администрирование",
+        "title": "Управление системой",
+        "description": "Пользователи, права, настройки, резервные копии и аудит."
+      },
+      "approve": "Подтвердить",
+      "markPaid": "Отметить оплаченным",
+      "unlock": "Разблокировать",
+      "calculateMonth": "Рассчитать месяц",
+      "openKiosk": "Открыть киоск посещаемости",
+      "runBackupNow": "Сделать резервную копию",
+      "promptMonth": "Месяц зарплаты (YYYY-MM)"
+    }
+  },
+  "approvals": {
+    "eyebrow": "Рабочий процесс",
+    "title": "Подтверждения",
+    "description": "Проверка складских, доставочных, возвратных и производственных операций, требующих подтверждения.",
+    "pendingCount": "{{count}} в ожидании",
+    "approvedCount": "{{count}} подтверждено",
+    "rejectedCount": "{{count}} отклонено",
+    "columns": {
+      "page": "Страница",
+      "action": "Действие",
+      "object": "Объект",
+      "created": "Создано",
+      "status": "Статус",
+      "actions": "Действия"
+    },
+    "approve": "Подтвердить",
+    "reject": "Отклонить",
+    "rejectReasonPrompt": "Причина отклонения"
+  },
+  "entityModal": {
+    "titles": {
+      "material": "Материал",
+      "batch": "Партия производства",
+      "payment": "Платеж клиента",
+      "stockMovement": "Операция с материалом"
+    },
+    "create": "Создать",
+    "edit": "Изменить"
+  },
+  "dialog": {
+    "rejectReasonTitle": "Причина отклонения",
+    "rejectReasonPlaceholder": "Введите причину...",
+    "monthTitle": "Выберите месяц",
+    "deliverQuantityTitle": "Доставка на склад",
+    "deliverQuantityMessage": "Введите доставленное количество",
+    "deliverQuantityPlaceholder": "Количество",
+    "deliverInvalidQuantity": "Количество должно быть положительным целым числом",
+    "issueMaterialsFailed": "Не удалось выполнить запрос на выдачу материалов",
+    "deliverFailed": "Не удалось выполнить запрос на доставку",
+    "issueMaterialsSuccess": "Запрос на выдачу материалов отправлен (ожидает подтверждения)",
+    "deliverSuccess": "Запрос на доставку отправлен (ожидает подтверждения)",
+    "approveFailed": "Не удалось подтвердить",
+    "rejectFailed": "Не удалось отклонить",
+    "deleteFailed": "Не удалось удалить"
+  },
+  "auth": {
+    "sessionExpired": "Сессия истекла. Пожалуйста, войдите снова.",
+    "loginFailed": "Не удалось войти. Проверьте логин и пароль."
   }
 }

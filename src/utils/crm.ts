@@ -2,7 +2,7 @@ import type { PageId, Product, StatusTone, StockMovement } from '../types/crm';
 
 export function getPageFromPath(pathname: string): PageId {
   const path = pathname.replace(/^\/+/, '').split('/')[0];
-  const pages: PageId[] = ['dashboard', 'clients', 'orders', 'production', 'materials', 'products', 'warehouse', 'staff', 'finance'];
+  const pages: PageId[] = ['dashboard', 'clients', 'orders', 'production', 'materials', 'products', 'warehouse', 'staff', 'finance', 'approvals', 'system'];
   return pages.includes(path as PageId) ? (path as PageId) : 'dashboard';
 }
 
@@ -22,16 +22,16 @@ export function hexToRgba(hexColor: string, alpha: number): string {
 }
 
 export function statusTone(statusKey: string): StatusTone {
-  if (statusKey === 'won' || statusKey === 'contract' || statusKey === 'onTime') return 'success';
-  if (statusKey === 'followUp' || statusKey === 'sample' || statusKey === 'late') return 'warning';
+  if (statusKey === 'won' || statusKey === 'contract' || statusKey === 'onTime' || statusKey === 'clear') return 'success';
+  if (statusKey === 'followUp' || statusKey === 'sample' || statusKey === 'late' || statusKey === 'hasBalance') return 'warning';
   if (statusKey === 'leftEarly') return 'danger';
   if (statusKey === 'newLead' || statusKey === 'remote') return 'info';
   return 'neutral';
 }
 
 export function orderStatusTone(statusKey: string): StatusTone {
-  if (statusKey === 'delivered' || statusKey === 'confirmed') return 'success';
-  if (statusKey === 'pending' || statusKey === 'production') return 'warning';
+  if (statusKey === 'delivered' || statusKey === 'completed') return 'success';
+  if (statusKey === 'pending' || statusKey === 'production' || statusKey === 'confirmed') return 'warning';
   if (statusKey === 'cancelled') return 'danger';
   if (statusKey === 'draft') return 'neutral';
   return 'info';
@@ -65,22 +65,45 @@ export function normalizeCategoryCode(value: string) {
     .toUpperCase();
 }
 
-export function exportCsv(name: string, rows: Array<Array<unknown>>) {
-  if (typeof window === 'undefined') return;
-  const csv = rows
-    .map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
-    .join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${name.toLowerCase().replace(/[^a-z0-9]+/gi, '-') || 'rivera-export'}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 export function unitLabel(unit: Product['unit'], t: (key: string) => string) {
   if (unit === 'm') return t('common.meters');
   if (unit === 'kg') return t('common.kg');
   return t('common.pcs');
+}
+
+type Translator = (key: string, options?: Record<string, unknown>) => string;
+
+/** Translates a statusKey through the shared `statuses.*` dictionary. */
+export function statusLabel(t: Translator, statusKey: string) {
+  return t(`statuses.${statusKey}`, { defaultValue: statusKey.replaceAll('_', ' ') });
+}
+
+/** Translates a raw backend enum value (e.g. employee position, salary type, material unit name) through `admin.options.<domain>.*`. */
+export function optionLabel(t: Translator, domain: string, value: string) {
+  return t(`admin.options.${domain}.${value}`, { defaultValue: value.replaceAll('_', ' ') });
+}
+
+/** Formats an ISO date/datetime string (`2026-06-30` or `2026-06-30T14:00`) as a compact
+ *  human-readable date (`30 Iyun 2026`) in the current UI language. Falls back to the raw
+ *  value for anything that isn't a plain ISO date. */
+export function formatDisplayDate(value: string | null | undefined, t: Translator): string {
+  if (!value) return '—';
+  const datePart = value.split('T')[0];
+  const segments = datePart.split('-');
+  if (segments.length !== 3) return value;
+  const [year, month, day] = segments.map(Number);
+  if (!year || !month || !day) return value;
+  const monthName = t(`common.months.${month - 1}`, { defaultValue: String(month) });
+  return `${day} ${monthName} ${year}`;
+}
+
+/** Like `formatDisplayDate`, but also appends the local time-of-day (for audit-log style
+ *  timestamps such as `created_at` where the exact moment matters, not just the day). */
+export function formatDisplayDateTime(value: string | null | undefined, t: Translator): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const time = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  return `${formatDisplayDate(isoDate, t)}, ${time}`;
 }

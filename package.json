@@ -12,6 +12,7 @@
   "dependencies": {
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.27",
+    "face-api.js": "^0.22.2",
     "i18next": "^25.10.5",
     "postcss": "^8.5.8",
     "react": "^19.2.4",

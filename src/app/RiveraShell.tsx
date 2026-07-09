@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FiArchive,
@@ -86,10 +86,12 @@ import type {
 } from '../types/crm';
 import {
   calculateInventory,
+  formatDisplayDate,
   getPageFromPath,
   hexToRgba,
-  normalizeCategoryCode,
+  optionLabel,
   orderStatusTone,
+  statusLabel,
   statusTone,
   unitLabel,
 } from '../utils/crm';
@@ -102,6 +104,14 @@ import {
   SelectField,
   StatusBadge,
 } from '../components/ui';
+import { useDialog } from '../components/DialogProvider';
+import { useToast } from '../components/ToastProvider';
+import { Dropdown, DatePicker } from '../components/FormControls';
+import { actions, api, ApiError, hasSession, login, logout, onSessionExpired, resources } from '../api/client';
+import { EMPTY_DATA, loadAppData, type AppData } from '../api/data';
+import type { ApiCurrentUser } from '../api/types';
+import { PermissionsProvider } from '../components/PermissionsProvider';
+import { canViewNavPage, ENTITY_KIND_BACKEND_PAGE, hasPagePermission } from '../lib/permissions';
 
 const DashboardPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.DashboardPage })));
 const ClientsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ClientsPage })));
@@ -112,6 +122,9 @@ const StaffPage = lazy(() => import('../pages/CrmPages').then(module => ({ defau
 const ProductsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ProductsPage })));
 const WarehousePage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.WarehousePage })));
 const FinancePage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.FinancePage })));
+const ApprovalsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ApprovalsPage })));
+const SystemPage = lazy(() => import('../pages/BackendPages').then(module => ({ default: module.SystemPage })));
+const AttendanceKioskPage = lazy(() => import('../pages/BackendPages').then(module => ({ default: module.AttendanceKioskPage })));
 
 function getPageFromLocation(): PageId {
   if (typeof window === 'undefined') return 'dashboard';
@@ -145,7 +158,9 @@ function initAccentOnLoad() {
 
 function App() {
   const { t, i18n } = useTranslation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { alert, prompt } = useDialog();
+  const { toast } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState(hasSession);
   const [activePage, setActivePage] = useState<PageId>(getPageFromLocation);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeDesign, setActiveDesign] = useState<DesignVariant>(getStoredDesignVariant);
@@ -154,44 +169,64 @@ function App() {
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ModalState | null>(null);
-  const [createdCategories, setCreatedCategories] = useState<ProductCategory[]>([]);
-  const [editedCategories, setEditedCategories] = useState<Record<string, ProductCategory>>({});
-  const [deletedItems, setDeletedItems] = useState<Record<EntityKind, EntityId[]>>({
-    client: [],
-    staff: [],
-    product: [],
-    category: [],
-    order: [],
-  });
+  const [appData, setAppData] = useState<AppData>(EMPTY_DATA);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [currentUser, setCurrentUser] = useState<ApiCurrentUser | null>(null);
+  const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, movementHistory, revenueEntries, expenseEntries, productionRecords, materials: rawMaterials, pieceworkRecords, productionBatches, staffFlow, approvals, operationTypeOptions } = appData;
 
-  const rawClients = readObjects<Client>(t, 'mock.clients');
-  const rawStaff = readObjects<StaffMember>(t, 'mock.staff');
-  const rawProducts = readObjects<Product>(t, 'mock.products');
-  const rawOrders = readObjects<Order>(t, 'mock.orders');
-  const rawProductCategories = readObjects<ProductCategory>(t, 'mock.productCategories');
-  const stockIn = readObjects<StockMovement>(t, 'mock.stockIn');
-  const stockOut = readObjects<StockMovement>(t, 'mock.stockOut');
-  const movementHistory = readObjects<StockMovement>(t, 'mock.movementHistory');
-  const revenueEntries = readObjects<FinanceEntry>(t, 'mock.revenueEntries');
-  const expenseEntries = readObjects<FinanceEntry>(t, 'mock.expenseEntries');
-  const productionRecords = readObjects<ProductionRecord>(t, 'mock.productionRecords');
-  const rawMaterials = readObjects<Material>(t, 'mock.materials');
-  const pieceworkRecords = readObjects<PieceworkRecord>(t, 'mock.pieceworkRecords');
-  const productionBatches = readObjects<ProductionBatch>(t, 'mock.productionBatches');
-  const mergedProductCategories = rawProductCategories
-    .map(category => editedCategories[category.id] ?? category)
-    .concat(createdCategories.map(category => editedCategories[category.id] ?? category));
-  const clients = rawClients.filter(client => !deletedItems.client.includes(client.id));
-  const staff = rawStaff.filter(member => !deletedItems.staff.includes(member.id));
-  const orders = rawOrders.filter(order => !deletedItems.order.includes(order.id));
-  const productCategories = mergedProductCategories.filter(category => !deletedItems.category.includes(category.id));
-  const inventoryByProduct = calculateInventory(stockIn, stockOut);
-  const products = rawProducts
-    .filter(product => !deletedItems.product.includes(product.id))
-    .map(product => ({ ...product, stock: inventoryByProduct[product.name] ?? product.stock }));
-  const categoryAnalytics = readObjects<CategoryDatum>(t, 'mock.categoryAnalytics');
-  const months = readObjects<string>(t, 'mock.months');
-  const weekDays = readObjects<string>(t, 'mock.weekDays');
+  const refreshData = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setIsLoadingData(true);
+    try {
+      setAppData(await loadAppData());
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 401)) {
+        toast(error instanceof Error ? error.message : t('admin.ui.requestFailed'), 'danger');
+      }
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [isAuthenticated, t, toast]);
+
+  useEffect(() => {
+    void refreshData();
+  }, [refreshData]);
+
+  useEffect(() => onSessionExpired(() => {
+    setIsAuthenticated(false);
+    toast(t('auth.sessionExpired'), 'danger');
+  }), [t, toast]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCurrentUser(null);
+      return;
+    }
+    // Re-checks on every navigation, not just on login, so a session that died
+    // server-side (expired/blacklisted token) is caught the moment the user
+    // clicks anywhere instead of only on the next data-fetching action.
+    void actions.authMe<ApiCurrentUser>().then(setCurrentUser).catch(() => setCurrentUser(null));
+  }, [isAuthenticated, activePage]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    // Safety net for tabs left open and idle: periodically, and whenever the tab
+    // regains focus, re-validate the session even without user navigation.
+    const revalidate = () => { void actions.authMe<ApiCurrentUser>().catch(() => {}); };
+    const intervalId = window.setInterval(revalidate, 5 * 60 * 1000);
+    const onVisibilityChange = () => { if (document.visibilityState === 'visible') revalidate(); };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!currentUser || canViewNavPage(currentUser, activePage)) return;
+    const fallback = navItems.find(item => canViewNavPage(currentUser, item.id));
+    if (fallback) navigate(fallback.id);
+  }, [currentUser, activePage]);
 
   const money = useMemo(
     () =>
@@ -201,26 +236,19 @@ function App() {
     [i18n.language],
   );
 
-  const totalOrderRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const revenueWeights = [0.12, 0.14, 0.13, 0.16, 0.19, 0.26];
-  const revenueData = months.map((month, index) => ({
-    month,
-    revenue: Math.round(totalOrderRevenue * revenueWeights[index]),
-    orders: Math.max(1, Math.round(orders.length * (index + 1) * 0.8)),
-  }));
+  const orderMonths = [...new Set(orders.map(order => order.orderDate.slice(0, 7)))].sort().slice(-6);
+  const revenueData = orderMonths.map(month => {
+    const rows = orders.filter(order => order.orderDate.startsWith(month));
+    return { month, revenue: rows.reduce((sum, row) => sum + row.totalAmount, 0), orders: rows.length };
+  });
 
-  const staffFlow = weekDays.map((day, index) => ({
-    day,
-    came: [22, 24, 23, 25, 24][index],
-    late: [3, 2, 4, 1, 2][index],
-    left: [20, 23, 22, 24, 21][index],
-  }));
-
-  const totalStock = products.reduce((sum, product) => sum + product.stock, 0);
-  const lowStockCount = products.filter(product => product.stock <= product.minStock).length;
+  const totalStock = appData.summary?.warehouse.finished_goods_total_units ?? products.reduce((sum, product) => sum + product.stock, 0);
+  const lowStockCount = appData.summary?.warehouse.low_stock_materials_count ?? products.filter(product => product.stock <= product.minStock).length;
   const pipelineValue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
   const onDutyCount = staff.filter(member => member.statusKey !== 'leftEarly').length;
+  const priorityClients = appData.topClientIds.map(id => clients.find(client => String(client.id) === id)).filter((client): client is Client => Boolean(client));
   const activeMeta = navItems.find(item => item.id === activePage) ?? navItems[0];
+  const visibleNavItems = currentUser ? navItems.filter(item => canViewNavPage(currentUser, item.id)) : navItems;
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -253,8 +281,9 @@ function App() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const isLoginPath = window.location.pathname.replace(/\/+$/, '') === '/login';
+    const isKioskPath = window.location.pathname.replace(/\/+$/, '') === '/attendance-kiosk';
 
-    if (!isAuthenticated && !isLoginPath) {
+    if (!isAuthenticated && !isLoginPath && !isKioskPath) {
       window.history.replaceState(null, '', '/login');
       return;
     }
@@ -306,17 +335,68 @@ function App() {
     setSidebarOpen(false);
   }
 
+  function currentCreateKind(): EntityKind | null {
+    if (activePage === 'dashboard' || activePage === 'approvals' || activePage === 'system') return null;
+    return activePage === 'staff'
+      ? 'staff'
+      : activePage === 'materials'
+        ? 'material'
+        : activePage === 'production'
+          ? 'batch'
+          : activePage === 'warehouse'
+            ? 'stockMovement'
+            : activePage === 'finance'
+              ? 'payment'
+      : activePage === 'products'
+        ? 'product'
+        : activePage === 'orders'
+          ? 'order'
+          : 'client';
+  }
+
+  const createKindForCurrentPage = currentCreateKind();
+  const canCreateOnCurrentPage = Boolean(createKindForCurrentPage) && hasPagePermission(currentUser, ENTITY_KIND_BACKEND_PAGE[createKindForCurrentPage!], 'manage');
+
   function openCreateModal() {
-    if (activePage === 'dashboard' || activePage === 'warehouse' || activePage === 'finance' || activePage === 'materials' || activePage === 'production') return;
-    const kind: EntityKind =
-      activePage === 'staff'
-        ? 'staff'
-        : activePage === 'products'
-          ? 'product'
-          : activePage === 'orders'
-            ? 'order'
-            : 'client';
-    setModal({ kind, mode: 'create' });
+    if (!createKindForCurrentPage || !canCreateOnCurrentPage) return;
+    setModal({ kind: createKindForCurrentPage, mode: 'create' });
+  }
+
+  const entityResource: Record<EntityKind, string> = {
+    client: resources.clients,
+    staff: resources.employees,
+    product: resources.products,
+    category: resources.productCategories,
+    order: resources.clientOrders,
+    material: resources.materials,
+    batch: resources.productionBatches,
+    payment: resources.clientPayments,
+    stockMovement: resources.materialTransactions,
+  };
+
+  async function saveEntity(target: ModalState, payload: Record<string, unknown>) {
+    const cleanPayload = { ...payload };
+    if (target.kind === 'product' && !cleanPayload.category) cleanPayload.category = null;
+    if (target.kind === 'staff' && !cleanPayload.daily_rate) cleanPayload.daily_rate = null;
+    if ((target.kind === 'order' || target.kind === 'payment') && !cleanPayload.exchange_rate) cleanPayload.exchange_rate = null;
+    if (target.kind === 'order' && !cleanPayload.due_date) cleanPayload.due_date = null;
+    if (target.kind === 'stockMovement' && !cleanPayload.related_production_batch) cleanPayload.related_production_batch = null;
+    if (target.mode === 'edit' && target.item) {
+      await api.update(entityResource[target.kind], target.item.id, cleanPayload);
+    } else {
+      await api.create(entityResource[target.kind], cleanPayload);
+    }
+    await refreshData();
+  }
+
+  async function deleteEntity(target: ModalState) {
+    if (!target.item) return;
+    await api.remove(entityResource[target.kind], target.item.id);
+    await refreshData();
+  }
+
+  if (typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === '/attendance-kiosk') {
+    return <Suspense fallback={<div className="grid min-h-screen place-items-center">Loading…</div>}><AttendanceKioskPage /></Suspense>;
   }
 
   if (!isAuthenticated) {
@@ -325,7 +405,8 @@ function App() {
         activeDesign={activeDesign}
         onDesignChange={handleDesignChange}
         onLanguageChange={handleLanguageChange}
-        onLogin={() => {
+        onLogin={async (username, password) => {
+          await login(username, password);
           setIsAuthenticated(true);
           setActivePage('dashboard');
           if (typeof window !== 'undefined') {
@@ -338,6 +419,7 @@ function App() {
   }
 
   return (
+    <PermissionsProvider user={currentUser}>
     <div className="app-shell--nova relative flex h-dvh w-full overflow-hidden bg-background-default" style={shellBackgroundStyle}>
       <div
         className={[
@@ -371,7 +453,7 @@ function App() {
             {t('navigation.group')}
           </p>
           <nav className="grid gap-1.5">
-            {navItems.map(item => {
+            {visibleNavItems.map(item => {
               const Icon = item.icon;
               const isActive = item.id === activePage;
               return (
@@ -414,19 +496,21 @@ function App() {
                 {themeMode === 'dark' ? <FiMoon className="h-4 w-4" /> : <FiSun className="h-4 w-4" />}
                 {t('theme.toggle')}
               </button>
-              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => window.location.reload()}>
-                <FiRefreshCcw className="h-4 w-4" />
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50" onClick={() => void refreshData()} disabled={isLoadingData}>
+                <FiRefreshCcw className={['h-4 w-4', isLoadingData ? 'animate-spin' : ''].join(' ')} />
                 {t('common.refresh')}
               </button>
-              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => window.alert(t('common.noNotifications'))}>
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => void alert(t('common.noNotifications'))}>
                 <FiBell className="h-4 w-4" />
                 {t('common.notifications')}
               </button>
-              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary-strong" onClick={openCreateModal}>
-                <FiPlus className="h-4 w-4" />
-                {t('common.create')}
-              </button>
-              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-danger transition hover:bg-danger-bg" onClick={() => setIsAuthenticated(false)}>
+              {canCreateOnCurrentPage ? (
+                <button className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary-strong" onClick={openCreateModal}>
+                  <FiPlus className="h-4 w-4" />
+                  {t('common.create')}
+                </button>
+              ) : null}
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-danger transition hover:bg-danger-bg" onClick={() => { void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}>
                 <FiLogOut className="h-4 w-4" />
                 {t('common.logout')}
               </button>
@@ -467,14 +551,21 @@ function App() {
             <IconButton label={t('theme.toggle')} onClick={() => setThemeMode(current => current === 'dark' ? 'light' : 'dark')}>
               {themeMode === 'dark' ? <FiMoon /> : <FiSun />}
             </IconButton>
-            <IconButton label={t('common.refresh')} onClick={() => window.location.reload()}><FiRefreshCcw /></IconButton>
-            <IconButton label={t('common.notifications')} onClick={() => window.alert(t('common.noNotifications'))}><FiBell /></IconButton>
-            <button className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary-strong" onClick={openCreateModal}>
-              <FiPlus className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('common.create')}</span>
-            </button>
-            <IconButton label={t('common.logout')} onClick={() => setIsAuthenticated(false)}><FiLogOut /></IconButton>
+            <IconButton label={t('common.refresh')} onClick={() => void refreshData()} disabled={isLoadingData}><FiRefreshCcw className={isLoadingData ? 'animate-spin' : ''} /></IconButton>
+            <IconButton label={t('common.notifications')} onClick={() => void alert(t('common.noNotifications'))}><FiBell /></IconButton>
+            {canCreateOnCurrentPage ? (
+              <button className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary-strong" onClick={openCreateModal}>
+                <FiPlus className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('common.create')}</span>
+              </button>
+            ) : null}
+            <IconButton label={t('common.logout')} onClick={() => { void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}><FiLogOut /></IconButton>
           </div>
+          {isLoadingData ? (
+            <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden" aria-hidden="true">
+              <div className="h-full w-1/3 rounded-full bg-primary animate-loadingBar" />
+            </div>
+          ) : null}
         </header>
 
         <main className="relative flex-1 overflow-y-auto px-3 pb-5 pt-3 min-[640px]:px-4 min-[960px]:px-7 min-[960px]:pb-8">
@@ -483,6 +574,7 @@ function App() {
             {activePage === 'dashboard' && (
               <DashboardPage
                 clients={clients}
+                priorityClients={priorityClients}
                 products={products}
                 materials={rawMaterials}
                 staff={staff}
@@ -504,10 +596,43 @@ function App() {
               <OrdersPage orders={orders} productionRecords={productionRecords} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
             )}
             {activePage === 'production' && (
-              <ProductionPage batches={productionBatches} products={products} materials={rawMaterials} formatMoney={formatMoney} />
+              <ProductionPage
+                batches={productionBatches}
+                products={products}
+                materials={rawMaterials}
+                staff={staff}
+                operationTypes={operationTypeOptions}
+                formatMoney={formatMoney}
+                onCreate={() => setModal({ kind: 'batch', mode: 'create' })}
+                openModal={setModal}
+                openDelete={setPendingDelete}
+                onWorkEntrySaved={() => void refreshData()}
+                onIssue={async id => {
+                  try {
+                    await actions.issueMaterials(String(id));
+                    await refreshData();
+                    toast(t('dialog.issueMaterialsSuccess'), 'success');
+                  } catch (error) {
+                    toast(error instanceof Error ? error.message : t('dialog.issueMaterialsFailed'), 'danger');
+                  }
+                }}
+                onDeliver={async id => {
+                  try {
+                    const quantityText = await prompt({ title: t('dialog.deliverQuantityTitle'), message: t('dialog.deliverQuantityMessage'), placeholder: t('dialog.deliverQuantityPlaceholder'), inputType: 'number', min: 1, required: true });
+                    if (!quantityText) return;
+                    const quantity = Number(quantityText);
+                    if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(t('dialog.deliverInvalidQuantity'));
+                    await actions.deliverBatch(String(id), { quantity, date: new Date().toISOString().slice(0, 10) });
+                    await refreshData();
+                    toast(t('dialog.deliverSuccess'), 'success');
+                  } catch (error) {
+                    toast(error instanceof Error ? error.message : t('dialog.deliverFailed'), 'danger');
+                  }
+                }}
+              />
             )}
             {activePage === 'materials' && (
-              <MaterialsPage materials={rawMaterials} formatMoney={formatMoney} />
+              <MaterialsPage materials={rawMaterials} formatMoney={formatMoney} onCreate={() => setModal({ kind: 'material', mode: 'create' })} openModal={setModal} openDelete={setPendingDelete} />
             )}
             {activePage === 'staff' && (
               <StaffPage staff={staff} staffFlow={staffFlow} pieceworkRecords={pieceworkRecords} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
@@ -517,11 +642,13 @@ function App() {
                 products={products}
                 categoryAnalytics={categoryAnalytics}
                 categories={productCategories}
+                materials={rawMaterials}
                 totalStock={totalStock}
                 lowStockCount={lowStockCount}
                 formatMoney={formatMoney}
                 openModal={setModal}
                 openDelete={setPendingDelete}
+                onDataChanged={() => void refreshData()}
               />
             )}
             {activePage === 'warehouse' && (
@@ -533,11 +660,32 @@ function App() {
                 totalStock={totalStock}
                 lowStockCount={lowStockCount}
                 formatMoney={formatMoney}
+                onCreate={() => setModal({ kind: 'stockMovement', mode: 'create' })}
               />
             )}
             {activePage === 'finance' && (
-              <FinancePage revenueEntries={revenueEntries} expenseEntries={expenseEntries} revenueData={revenueData} formatMoney={formatMoney} />
+              <FinancePage revenueEntries={revenueEntries} expenseEntries={expenseEntries} revenueData={revenueData} formatMoney={formatMoney} onCreate={() => setModal({ kind: 'payment', mode: 'create' })} />
             )}
+            {activePage === 'approvals' && (
+              <ApprovalsPage
+                approvals={approvals}
+                materials={rawMaterials}
+                products={products}
+                onApprove={async id => {
+                  try { await actions.approve(id); await refreshData(); }
+                  catch (error) {
+                    toast(error instanceof Error ? error.message : t('dialog.approveFailed'), 'danger');
+                  }
+                }}
+                onReject={async (id, reason) => {
+                  try { await actions.reject(id, reason); await refreshData(); }
+                  catch (error) {
+                    toast(error instanceof Error ? error.message : t('dialog.rejectFailed'), 'danger');
+                  }
+                }}
+              />
+            )}
+            {activePage === 'system' && <SystemPage />}
             </Suspense>
           </div>
         </main>
@@ -549,14 +697,11 @@ function App() {
           onClose={() => setModal(null)}
           formatMoney={formatMoney}
           categories={productCategories}
-          onSaveCategory={(category) => {
-            const exists = mergedProductCategories.some(item => item.id === category.id);
-            if (exists) {
-              setEditedCategories(current => ({ ...current, [category.id]: category }));
-            } else {
-              setCreatedCategories(current => [...current, category]);
-            }
-          }}
+          clients={clients}
+          products={products}
+          materials={rawMaterials}
+          batches={productionBatches}
+          onSave={saveEntity}
           onEdit={(nextModal) => setModal(nextModal)}
           onDelete={(nextModal) => setPendingDelete(nextModal)}
         />
@@ -566,14 +711,12 @@ function App() {
           modal={pendingDelete}
           onCancel={() => setPendingDelete(null)}
           onConfirm={() => {
-            if (pendingDelete.item) {
-              setDeletedItems(current => ({
-                ...current,
-                [pendingDelete.kind]: [...current[pendingDelete.kind], pendingDelete.item!.id],
-              }));
-            }
-            setPendingDelete(null);
-            setModal(null);
+            void deleteEntity(pendingDelete)
+              .then(() => { setPendingDelete(null); setModal(null); })
+              .catch(error => {
+                toast(error instanceof Error ? error.message : t('dialog.deleteFailed'), 'danger');
+                setPendingDelete(null);
+              });
           }}
         />
       ) : null}
@@ -585,6 +728,7 @@ function App() {
         />
       ) : null}
     </div>
+    </PermissionsProvider>
   );
 }
 
@@ -592,11 +736,15 @@ function LoginPage({ activeDesign, onDesignChange, onLanguageChange, onLogin, fo
   activeDesign: DesignVariant;
   onDesignChange: (design: DesignVariant) => void;
   onLanguageChange: (language: SupportedLanguage) => void;
-  onLogin: () => void;
+  onLogin: (username: string, password: string) => Promise<void>;
   formatMoney: (value: number) => string;
 }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isNovaDesign = activeDesign === 'nova';
 
   const designStyles = isNovaDesign
@@ -737,9 +885,16 @@ function LoginPage({ activeDesign, onDesignChange, onLanguageChange, onLogin, fo
               border: designStyles.cardBorder,
               boxShadow: designStyles.cardShadow,
             }}
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
-              onLogin();
+              setIsSubmitting(true);
+              try {
+                await onLogin(username.trim(), password);
+              } catch (error) {
+                toast(error instanceof Error ? error.message : t('auth.loginFailed'), 'danger');
+              } finally {
+                setIsSubmitting(false);
+              }
             }}
           >
             <div className="mb-7 flex items-center justify-between gap-3">
@@ -760,14 +915,18 @@ function LoginPage({ activeDesign, onDesignChange, onLanguageChange, onLogin, fo
 
             <div className="mt-6 grid gap-4">
               <label className="grid gap-2 text-sm font-semibold" style={{ color: designStyles.labelColor }}>
-                {t('common.email')}
+                {t('common.username')}
                 <span className="relative">
                   <FiUser className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: designStyles.fieldIcon }} />
                   <input
                     className="h-12 w-full rounded-2xl border pl-10 pr-3 text-sm font-medium outline-none transition focus:ring-4 focus:ring-primary/15"
                     placeholder={t('login.emailPlaceholder')}
                     style={{ background: designStyles.fieldBackground, borderColor: designStyles.fieldBorder, color: designStyles.inputText }}
-                    type="email"
+                    type="text"
+                    autoComplete="username"
+                    value={username}
+                    onChange={event => setUsername(event.target.value)}
+                    required
                   />
                 </span>
               </label>
@@ -780,6 +939,10 @@ function LoginPage({ activeDesign, onDesignChange, onLanguageChange, onLogin, fo
                     placeholder={t('login.passwordPlaceholder')}
                     style={{ background: designStyles.fieldBackground, borderColor: designStyles.fieldBorder, color: designStyles.inputText }}
                     type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={event => setPassword(event.target.value)}
+                    required
                   />
                   <button
                     type="button"
@@ -795,15 +958,17 @@ function LoginPage({ activeDesign, onDesignChange, onLanguageChange, onLogin, fo
             </div>
 
             <button
-              className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-bold text-white transition hover:scale-[1.01]"
+              className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-bold text-white transition"
               style={{ background: designStyles.ctaBackground, boxShadow: designStyles.ctaShadow }}
+              disabled={isSubmitting}
             >
-              {t('login.submit')}
+              {isSubmitting ? t('common.loading') : t('login.submit')}
               <FiArrowRight className="h-4 w-4" />
             </button>
             <p className="mt-4 text-center text-xs leading-5" style={{ color: designStyles.footerColor }}>
               {t('login.hint')}
             </p>
+            <a href="/attendance-kiosk" className="mt-3 block text-center text-xs font-bold text-primary">Attendance kiosk</a>
           </form>
         </div>
       </section>
@@ -811,8 +976,9 @@ function LoginPage({ activeDesign, onDesignChange, onLanguageChange, onLogin, fo
   );
 }
 
-function EntityModal({ modal, onClose, formatMoney, categories, onSaveCategory, onEdit, onDelete }: { modal: ModalState; onClose: () => void; formatMoney: (value: number) => string; categories: ProductCategory[]; onSaveCategory: (category: ProductCategory) => void; onEdit: (modal: ModalState) => void; onDelete: (modal: ModalState) => void }) {
+function EntityModal({ modal, onClose, formatMoney, categories, clients, products, materials, batches, onSave, onEdit, onDelete }: { modal: ModalState; onClose: () => void; formatMoney: (value: number) => string; categories: ProductCategory[]; clients: Client[]; products: Product[]; materials: Material[]; batches: ProductionBatch[]; onSave: (modal: ModalState, payload: Record<string, unknown>) => Promise<void>; onEdit: (modal: ModalState) => void; onDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const namespace =
     modal.kind === 'client'
       ? 'clients'
@@ -823,27 +989,16 @@ function EntityModal({ modal, onClose, formatMoney, categories, onSaveCategory, 
           : modal.kind === 'order'
             ? 'orders'
             : 'products';
-  const title = t(`${namespace}.modal.${modal.mode}Title`);
+  const operationalTitles: Partial<Record<EntityKind, string>> = {
+    material: t('entityModal.titles.material'), batch: t('entityModal.titles.batch'),
+    payment: t('entityModal.titles.payment'), stockMovement: t('entityModal.titles.stockMovement'),
+  };
+  const operationalModePrefix = modal.mode === 'edit' ? t('entityModal.edit') : modal.mode === 'view' ? t('common.view') : t('entityModal.create');
+  const title = operationalTitles[modal.kind] ? `${operationalModePrefix} ${operationalTitles[modal.kind]}` : t(`${namespace}.modal.${modal.mode}Title`);
   const summary = t(`${namespace}.modal.summary`);
   const nextStep = t(`${namespace}.modal.nextStep`);
-  const formRows = getFormRows(modal, formatMoney, t);
-  const [categoryDraft, setCategoryDraft] = useState<ProductCategory | null>(null);
-
-  useEffect(() => {
-    if (modal.kind !== 'category' || modal.mode === 'view') {
-      setCategoryDraft(null);
-      return;
-    }
-
-    const item = modal.item as ProductCategory | undefined;
-    setCategoryDraft(item ?? {
-      id: `cat-${Date.now()}`,
-      name: '',
-      code: '',
-      description: '',
-      sortOrder: categories.length + 1,
-    });
-  }, [categories.length, modal]);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   return (
     <div
@@ -882,18 +1037,8 @@ function EntityModal({ modal, onClose, formatMoney, categories, onSaveCategory, 
             ))}
             <div className="rounded-xl bg-primary/10 p-4 text-sm font-semibold leading-6 text-text-secondary ring-1 ring-primary/15 sm:col-span-2">{nextStep}</div>
           </div>
-        ) : modal.kind === 'product' ? (
-          <ProductEditPanel product={modal.item as Product | undefined} categories={categories} />
-        ) : modal.kind === 'category' ? (
-          <CategoryEditPanel category={categoryDraft ?? (modal.item as ProductCategory | undefined)} onChange={setCategoryDraft} />
         ) : (
-          <div className="rounded-xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40">
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-            {formRows.map(row => (
-              <Field key={row.label} label={row.label} placeholder={t('common.notRequired')} defaultValue={row.value} />
-            ))}
-          </div>
-          </div>
+          <ApiEntityForm ref={formRef} modal={modal} categories={categories} clients={clients} products={products} materials={materials} batches={batches} />
         )}
 
         <div className="mt-5 flex gap-2">
@@ -913,13 +1058,23 @@ function EntityModal({ modal, onClose, formatMoney, categories, onSaveCategory, 
             {t('common.cancel')}
           </button>
           {modal.mode !== 'view' ? (
-            <button className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary-accent" onClick={() => {
-              if (modal.kind === 'category' && categoryDraft) {
-                onSaveCategory(categoryDraft);
+            <button disabled={isSaving} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary-accent disabled:opacity-60" onClick={() => {
+              if (!formRef.current?.reportValidity()) return;
+              const missingHidden = Array.from(formRef.current.querySelectorAll<HTMLInputElement>('input[type="hidden"][required]')).find(el => !el.value);
+              if (missingHidden) {
+                toast(t('admin.ui.requiredFieldsMissing'), 'danger');
+                return;
               }
-              onClose();
+              const payload = Object.fromEntries(new FormData(formRef.current).entries());
+              setIsSaving(true);
+              void onSave(modal, payload)
+                .then(onClose)
+                .catch(error => {
+                  toast(error instanceof Error ? error.message : t('admin.ui.requestFailed'), 'danger');
+                })
+                .finally(() => setIsSaving(false));
             }}>
-              {t('common.save')}
+              {isSaving ? t('common.loading') : t('common.save')}
             </button>
           ) : null}
         </div>
@@ -927,6 +1082,120 @@ function EntityModal({ modal, onClose, formatMoney, categories, onSaveCategory, 
     </div>
   );
 }
+
+const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categories: ProductCategory[]; clients: Client[]; products: Product[]; materials: Material[]; batches: ProductionBatch[] }>(
+  function ApiEntityForm({ modal, categories, clients, products, materials, batches }, ref) {
+    const { t } = useTranslation();
+    const f = (key: string) => t(`admin.fields.${key}`);
+    const raw = (modal.item?.api || {}) as Record<string, unknown>;
+    const value = (name: string, fallback = '') => String(raw[name] ?? fallback);
+    const today = new Date().toISOString().slice(0, 10);
+    const inputClass = 'h-11 w-full rounded-xl border border-border-soft/60 bg-surface-card px-3 text-sm font-medium text-text-primary outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20';
+    const FieldInput = ({ name, label, type = 'text', required = false, fallback = '', step }: { name: string; label: string; type?: string; required?: boolean; fallback?: string; step?: string }) => (
+      <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+        {label}
+        {type === 'date' ? <DatePicker name={name} required={required} defaultValue={value(name, fallback)} /> : <input className={inputClass} name={name} type={type} required={required} defaultValue={value(name, fallback)} step={step} />}
+      </label>
+    );
+    const SelectInput = ({ name, label, options, required = false, fallback = '' }: { name: string; label: string; options: Array<{ value: string; label: string }>; required?: boolean; fallback?: string }) => (
+      <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+        {label}
+        <Dropdown name={name} required={required} defaultValue={value(name, fallback)} options={options} />
+      </label>
+    );
+    const TextArea = ({ name, label }: { name: string; label: string }) => (
+      <label className="grid gap-1.5 text-sm font-bold text-text-secondary sm:col-span-2">
+        {label}
+        <textarea className={`${inputClass} min-h-24 py-3`} name={name} defaultValue={value(name)} />
+      </label>
+    );
+
+    return (
+      <form ref={ref} className="rounded-xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+          {modal.kind === 'client' ? <>
+            <FieldInput name="full_name" label={f('fullName')} fallback={(modal.item as Client | undefined)?.name} required />
+            <FieldInput name="phone" label={f('phone')} fallback={(modal.item as Client | undefined)?.phone} />
+            <TextArea name="address" label={f('address')} />
+            <TextArea name="note" label={f('note')} />
+          </> : null}
+          {modal.kind === 'category' ? <>
+            <FieldInput name="name" label={f('category')} fallback={(modal.item as ProductCategory | undefined)?.name} required />
+          </> : null}
+          {modal.kind === 'product' ? <>
+            <FieldInput name="name" label={f('name')} fallback={(modal.item as Product | undefined)?.name} required />
+            <FieldInput name="code" label={f('code')} fallback={(modal.item as Product | undefined)?.sku} />
+            <SelectInput name="category" label={f('category')} options={categories.map(row => ({ value: String(row.id), label: row.name }))} />
+            <FieldInput name="size_range" label={f('sizeRange')} />
+            <FieldInput name="material_type" label={f('materialType')} />
+            <FieldInput name="color" label={f('color')} fallback={(modal.item as Product | undefined)?.color} />
+            <FieldInput name="unit_price_with_tax_uzs" label={f('priceWithTaxUzs')} type="number" step="0.01" fallback="0" />
+            <FieldInput name="unit_price_without_tax_uzs" label={f('priceWithoutTaxUzs')} type="number" step="0.01" fallback="0" />
+            <FieldInput name="unit_price_with_tax_usd" label={f('priceWithTaxUsd')} type="number" step="0.01" fallback="0" />
+            <FieldInput name="unit_price_without_tax_usd" label={f('priceWithoutTaxUsd')} type="number" step="0.01" fallback="0" />
+            <FieldInput name="vat_percent" label={f('vatPercent')} type="number" step="0.01" fallback="12" />
+          </> : null}
+          {modal.kind === 'staff' ? <>
+            <FieldInput name="full_name" label={f('fullName')} fallback={(modal.item as StaffMember | undefined)?.name} required />
+            <FieldInput name="employee_code" label={f('employeeCode')} required />
+            <FieldInput name="phone" label={f('phone')} fallback={(modal.item as StaffMember | undefined)?.phone} />
+            <SelectInput name="position" label={t('staff.columns.position')} required fallback="other" options={['seamstress', 'driver', 'guard', 'other'].map(value => ({ value, label: optionLabel(t, 'employeePosition', value) }))} />
+            <SelectInput name="salary_type" label={f('salaryType')} required fallback="fixed_daily" options={['piece_rate', 'fixed_daily'].map(value => ({ value, label: optionLabel(t, 'salaryType', value) }))} />
+            <FieldInput name="daily_rate" label={t('staff.columns.salary')} type="number" step="0.01" />
+            <FieldInput name="hire_date" label={f('hireDate')} type="date" required fallback={today} />
+            <SelectInput name="status" label={f('status')} required fallback="active" options={['active', 'inactive'].map(value => ({ value, label: optionLabel(t, 'employeeStatus', value) }))} />
+            <TextArea name="address" label={f('address')} />
+            <TextArea name="note" label={f('note')} />
+          </> : null}
+          {modal.kind === 'order' ? <>
+            <SelectInput name="client" label={f('client')} required fallback={(modal.item as Order | undefined)?.clientId} options={clients.map(row => ({ value: String(row.id), label: row.name }))} />
+            <FieldInput name="order_number" label={f('orderNumber')} required fallback={(modal.item as Order | undefined)?.orderId} />
+            <FieldInput name="order_date" label={f('orderDate')} type="date" required fallback={today} />
+            <FieldInput name="due_date" label={f('dueDate')} type="date" />
+            <SelectInput name="status" label={f('status')} required fallback="draft" options={['draft', 'confirmed', 'completed', 'cancelled'].map(value => ({ value, label: optionLabel(t, 'orderStatus', value) }))} />
+            <FieldInput name="total_amount" label={f('totalAmount')} type="number" step="0.01" fallback="0" />
+            <SelectInput name="currency" label={f('currency')} required fallback="UZS" options={[{ value: 'UZS', label: 'UZS' }, { value: 'USD', label: 'USD' }]} />
+            <FieldInput name="exchange_rate" label={f('exchangeRate')} type="number" step="0.0001" />
+            <TextArea name="note" label={f('note')} />
+          </> : null}
+          {modal.kind === 'material' ? <>
+            <FieldInput name="name" label={f('name')} required />
+            <FieldInput name="code" label={f('code')} />
+            <SelectInput name="unit" label={f('unit')} required fallback="m" options={['m', 'piece', 'kg', 'linear_meter'].map(value => ({ value, label: optionLabel(t, 'materialUnit', value) }))} />
+            <FieldInput name="unit_price" label={f('unitPrice')} type="number" step="0.01" fallback="0" />
+            <FieldInput name="min_stock_level" label={f('minStockLevel')} type="number" step="0.0001" fallback="0" />
+          </> : null}
+          {modal.kind === 'batch' ? <>
+            <SelectInput name="product" label={f('product')} required options={products.map(row => ({ value: String(row.id), label: row.name }))} />
+            <FieldInput name="batch_number" label={f('batchNumber')} required />
+            <FieldInput name="started_date" label={f('startedDate')} type="date" required fallback={today} />
+            <FieldInput name="planned_quantity" label={f('planned')} type="number" required fallback="1" />
+            <FieldInput name="delivered_to_warehouse" label={f('delivered')} type="number" fallback="0" />
+            <TextArea name="note" label={f('note')} />
+          </> : null}
+          {modal.kind === 'payment' ? <>
+            <SelectInput name="client" label={f('client')} required options={clients.map(row => ({ value: String(row.id), label: row.name }))} />
+            <SelectInput name="payment_method" label={f('method')} required fallback="cash" options={['cash', 'card', 'bank_transfer', 'usd_cash'].map(value => ({ value, label: optionLabel(t, 'paymentMethod', value) }))} />
+            <FieldInput name="amount" label={f('amount')} type="number" step="0.01" required />
+            <SelectInput name="currency" label={f('currency')} required fallback="UZS" options={[{ value: 'UZS', label: 'UZS' }, { value: 'USD', label: 'USD' }]} />
+            <FieldInput name="exchange_rate" label={f('exchangeRate')} type="number" step="0.0001" />
+            <FieldInput name="payment_date" label={f('paymentDate')} type="date" required fallback={today} />
+            <TextArea name="note" label={f('note')} />
+          </> : null}
+          {modal.kind === 'stockMovement' ? <>
+            <SelectInput name="material" label={f('material')} required options={materials.map(row => ({ value: String(row.id), label: row.name }))} />
+            <SelectInput name="transaction_type" label={f('type')} required fallback="in" options={['in', 'out_production', 'out_writeoff', 'defect'].map(value => ({ value, label: optionLabel(t, 'materialTxType', value) }))} />
+            <FieldInput name="quantity" label={f('quantity')} type="number" step="0.0001" required />
+            <FieldInput name="unit_price" label={f('unitPrice')} type="number" step="0.01" fallback="0" />
+            <FieldInput name="date" label={f('date')} type="date" required fallback={today} />
+            <SelectInput name="related_production_batch" label={f('batch')} options={batches.map(row => ({ value: String(row.id), label: row.orderId || row.product }))} />
+            <TextArea name="note" label={f('note')} />
+          </> : null}
+        </div>
+      </form>
+    );
+  },
+);
 
 function DeleteConfirmDialog({ modal, onCancel, onConfirm }: { modal: ModalState; onCancel: () => void; onConfirm: () => void }) {
   const { t } = useTranslation();
@@ -939,6 +1208,10 @@ function DeleteConfirmDialog({ modal, onCancel, onConfirm }: { modal: ModalState
           ? (modal.item as ProductCategory | undefined)?.name
           : modal.kind === 'order'
             ? (modal.item as Order | undefined)?.orderId
+            : modal.kind === 'material'
+              ? (modal.item as Material | undefined)?.name
+              : modal.kind === 'batch'
+                ? (modal.item as ProductionBatch | undefined)?.orderId
             : (modal.item as Product | undefined)?.name;
 
   return (
@@ -1027,8 +1300,8 @@ function CustomizePanel({ accent, onAccentChange, onClose }: { accent: string; o
           </div>
           <div className="mt-1 rounded-xl bg-surface-subtle p-3 text-xs text-text-muted">
             <span className="mr-1 inline-block h-3 w-3 rounded-sm align-middle" style={{ backgroundColor: 'rgb(var(--color-primary))' }} />
-            Hozirgi rang: <span className="font-bold text-text-primary">{t(`customize.presets.${BACKGROUND_COLOR_PRESETS.find(p => p.value === accent)?.key ?? 'indigo'}`)}</span>
-            &nbsp;·&nbsp;Tugmalar, havolalar va faol elementlarga qo'llaniladi
+            {t('customize.currentColor')}: <span className="font-bold text-text-primary">{t(`customize.presets.${BACKGROUND_COLOR_PRESETS.find(p => p.value === accent)?.key ?? 'indigo'}`)}</span>
+            &nbsp;·&nbsp;{t('customize.usageHint')}
           </div>
         </div>
 
@@ -1051,10 +1324,10 @@ function detailRows(modal: ModalState, formatMoney: (value: number) => string, t
     return [
       { label: t('clients.columns.client'), value: item.name },
       { label: t('clients.columns.fabric'), value: item.fabric },
-      { label: t('clients.columns.status'), value: item.status },
+      { label: t('clients.columns.status'), value: statusLabel(t, item.statusKey) },
       { label: t('clients.columns.manager'), value: item.manager },
       { label: t('clients.columns.value'), value: formatMoney(item.value) },
-      { label: t('clients.columns.lastContact'), value: item.lastContact },
+      { label: t('clients.columns.lastContact'), value: formatDisplayDate(item.lastContact, t) },
     ];
   }
 
@@ -1062,10 +1335,11 @@ function detailRows(modal: ModalState, formatMoney: (value: number) => string, t
     const item = modal.item as StaffMember;
     return [
       { label: t('staff.columns.staff'), value: item.name },
-      { label: t('staff.columns.shift'), value: item.shift },
+      { label: t('staff.columns.position'), value: optionLabel(t, 'employeePosition', item.role) },
+      { label: t('staff.columns.shift'), value: optionLabel(t, 'salaryType', item.shift) },
       { label: t('staff.columns.arrival'), value: item.arrival },
       { label: t('staff.columns.leaving'), value: item.leaving },
-      { label: t('staff.columns.status'), value: item.status },
+      { label: t('staff.columns.status'), value: statusLabel(t, item.statusKey) },
       { label: t('staff.columns.attendance'), value: `${item.attendance}%` },
     ];
   }
@@ -1085,14 +1359,35 @@ function detailRows(modal: ModalState, formatMoney: (value: number) => string, t
     return [
       { label: t('orders.columns.orderId'), value: item.orderId },
       { label: t('orders.columns.client'), value: item.client },
-      { label: t('orders.columns.product'), value: item.product },
-      { label: t('orders.columns.quantity'), value: item.quantity },
-      { label: t('orders.form.unitPrice'), value: formatMoney(item.unitPrice) },
+      { label: t('orders.columns.orderDate'), value: formatDisplayDate(item.orderDate, t) },
+      { label: t('orders.columns.dueDate'), value: formatDisplayDate(item.dueDate, t) },
       { label: t('orders.columns.total'), value: formatMoney(item.totalAmount) },
-      { label: t('orders.columns.manager'), value: item.manager },
-      { label: t('orders.columns.deliveryDate'), value: item.deliveryDate },
-      { label: t('orders.columns.status'), value: item.status },
+      { label: t('orders.columns.status'), value: statusLabel(t, item.statusKey) },
       { label: t('orders.form.notes'), value: item.notes },
+    ];
+  }
+
+  if (modal.kind === 'material') {
+    const item = modal.item as Material;
+    return [
+      { label: t('materials.columns.name'), value: item.name },
+      { label: t('admin.fields.code'), value: item.sku },
+      { label: t('admin.fields.supplier'), value: item.supplier },
+      { label: t('materials.columns.stock'), value: `${item.stock.toLocaleString()} ${unitLabel(item.unit, t)}` },
+      { label: t('materials.columns.price'), value: formatMoney(item.price) },
+      { label: t('materials.columns.status'), value: statusLabel(t, item.statusKey) },
+    ];
+  }
+
+  if (modal.kind === 'batch') {
+    const item = modal.item as ProductionBatch;
+    return [
+      { label: t('production.batch.order'), value: item.orderId ?? '' },
+      { label: t('admin.fields.product'), value: item.product },
+      { label: t('production.stock.currentStock'), value: `${item.producedQty.toLocaleString()} ${unitLabel(item.unit, t)}` },
+      { label: t('admin.fields.status'), value: optionLabel(t, 'productionStatus', item.shift) },
+      { label: t('production.batch.employees'), value: item.employees.length ? item.employees.join(', ') : t('production.batch.noEmployees') },
+      { label: t('admin.fields.note'), value: item.notes },
     ];
   }
 
@@ -1115,290 +1410,6 @@ function detailRows(modal: ModalState, formatMoney: (value: number) => string, t
   ];
 }
 
-function getFormRows(modal: ModalState, formatMoney: (value: number) => string, t: ReturnType<typeof useTranslation>['t']) {
-  if (modal.kind === 'client') {
-    const item = modal.item as Client | undefined;
-    return [
-      { label: t('clients.columns.client'), value: item?.name ?? '' },
-      { label: t('common.email'), value: item?.phone ?? '' },
-      { label: t('clients.columns.fabric'), value: item?.fabric ?? '' },
-      { label: t('clients.columns.value'), value: item ? formatMoney(item.value) : '' },
-    ];
-  }
-
-  if (modal.kind === 'staff') {
-    const item = modal.item as StaffMember | undefined;
-    return [
-      { label: t('staff.columns.staff'), value: item?.name ?? '' },
-      { label: t('staff.columns.shift'), value: item?.shift ?? '' },
-      { label: t('staff.columns.arrival'), value: item?.arrival ?? '' },
-      { label: t('staff.columns.leaving'), value: item?.leaving ?? '' },
-    ];
-  }
-
-  if (modal.kind === 'category') {
-    const item = modal.item as ProductCategory | undefined;
-    return [
-      { label: t('products.categoryColumns.category'), value: item?.name ?? '' },
-      { label: t('products.categoryColumns.code'), value: item?.code ?? '' },
-      { label: t('products.categoryColumns.description'), value: item?.description ?? '' },
-      { label: t('products.categoryColumns.sortOrder'), value: item ? String(item.sortOrder) : '' },
-    ];
-  }
-
-  if (modal.kind === 'order') {
-    const item = modal.item as Order | undefined;
-    return [
-      { label: t('orders.columns.client'), value: item?.client ?? '' },
-      { label: t('orders.columns.product'), value: item?.product ?? '' },
-      { label: t('orders.columns.quantity'), value: item?.quantity ?? '' },
-      { label: t('orders.form.unitPrice'), value: item ? String(item.unitPrice) : '' },
-      { label: t('orders.columns.deliveryDate'), value: item?.deliveryDate ?? '' },
-      { label: t('orders.form.notes'), value: item?.notes ?? '' },
-    ];
-  }
-
-  const item = modal.item as Product | undefined;
-  return [
-    { label: t('products.columns.product'), value: item?.name ?? '' },
-    { label: t('products.columns.sku'), value: item?.sku ?? '' },
-    { label: t('products.columns.stock'), value: item ? `${item.stock.toLocaleString()} ${unitLabel(item.unit, t)}` : '' },
-    { label: t('products.columns.revenue'), value: item ? formatMoney(item.revenue) : '' },
-  ];
-}
-
-function CategoryEditPanel({ category, onChange }: { category?: ProductCategory; onChange: (category: ProductCategory) => void }) {
-  const { t } = useTranslation();
-  const [name, setName] = useState(category?.name ?? '');
-  const [description, setDescription] = useState(category?.description ?? '');
-  const [sortOrder, setSortOrder] = useState(category?.sortOrder ? String(category.sortOrder) : '');
-  const generatedCode = normalizeCategoryCode(name || category?.code || '');
-
-  useEffect(() => {
-    onChange({
-      id: category?.id ?? `cat-${Date.now()}`,
-      name,
-      code: generatedCode,
-      description,
-      sortOrder: Number(sortOrder) || 1,
-    });
-  }, [category?.id, description, generatedCode, name, onChange, sortOrder]);
-
-  return (
-    <div className="grid gap-4">
-      <section className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40">
-        <div className="mb-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">{t('products.categoryModal.form.details')}</p>
-          <p className="mt-1 text-sm text-text-secondary">{t('products.categoryModal.form.detailsHint')}</p>
-        </div>
-        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-          <label className="form-field--nova grid min-w-0 gap-1.5 rounded-xl bg-surface-subtle p-3 text-sm font-bold text-text-secondary ring-1 ring-border-soft/45">
-            {t('products.categoryColumns.category')}
-            <input
-              className="form-field__input--nova h-11 w-full rounded-xl border border-border-soft/60 bg-surface-card px-3 text-sm font-medium text-text-primary placeholder:text-text-muted outline-none transition duration-fast focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              placeholder={t('products.form.categoryPlaceholder')}
-              value={name}
-              onChange={event => setName(event.target.value)}
-            />
-          </label>
-          <label className="form-field--nova grid min-w-0 gap-1.5 rounded-xl bg-surface-subtle p-3 text-sm font-bold text-text-secondary ring-1 ring-border-soft/45">
-            {t('products.categoryColumns.code')}
-            <input
-              className="form-field__input--nova h-11 w-full rounded-xl border border-border-soft/60 bg-surface-card px-3 text-sm font-medium text-text-primary outline-none transition duration-fast focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              value={generatedCode}
-              readOnly
-            />
-          </label>
-          <label className="form-field--nova grid min-w-0 gap-1.5 rounded-xl bg-surface-subtle p-3 text-sm font-bold text-text-secondary ring-1 ring-border-soft/45 sm:col-span-2">
-            {t('products.categoryColumns.description')}
-            <textarea
-              className="form-field__input--nova min-h-28 w-full resize-none rounded-xl border border-border-soft/60 bg-surface-card px-3 py-3 text-sm font-medium text-text-primary placeholder:text-text-muted outline-none transition duration-fast focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              placeholder={t('common.notRequired')}
-              value={description}
-              onChange={event => setDescription(event.target.value)}
-            />
-          </label>
-          <label className="form-field--nova grid min-w-0 gap-1.5 rounded-xl bg-surface-subtle p-3 text-sm font-bold text-text-secondary ring-1 ring-border-soft/45">
-            {t('products.categoryColumns.sortOrder')}
-            <input
-              className="form-field__input--nova h-11 w-full rounded-xl border border-border-soft/60 bg-surface-card px-3 text-sm font-medium text-text-primary placeholder:text-text-muted outline-none transition duration-fast focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              placeholder="1"
-              type="number"
-              value={sortOrder}
-              onChange={event => setSortOrder(event.target.value)}
-            />
-          </label>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function ProductEditPanel({ product, categories }: { product?: Product; categories: ProductCategory[] }) {
-  const { t } = useTranslation();
-  const [categoryOptions, setCategoryOptions] = useState(categories);
-  const [categoryId, setCategoryId] = useState(product?.categoryId ?? categories[0]?.id ?? '');
-  const [draftCategory, setDraftCategory] = useState('');
-  const selectedCategory = categoryOptions.find(category => category.id === categoryId) ?? categoryOptions[0];
-  const gallery = product?.gallery?.length ? product.gallery : product?.imageUrl ? [product.imageUrl] : [];
-
-  function addCategory() {
-    const name = draftCategory.trim();
-    if (!name) return;
-    const nextCategory: ProductCategory = {
-      id: `cat-${Date.now()}`,
-      name,
-      code: normalizeCategoryCode(name),
-      description: t('products.form.customCategory'),
-      sortOrder: categoryOptions.length + 1,
-    };
-    setCategoryOptions(current => [...current, nextCategory]);
-    setCategoryId(nextCategory.id);
-    setDraftCategory('');
-  }
-
-  return (
-    <div className="grid gap-4">
-      <section className="overflow-hidden rounded-2xl bg-surface-card shadow-sm ring-1 ring-border-soft/40">
-        <div className="relative h-52 bg-surface-muted">
-          {product?.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
-          ) : (
-            <div className="grid h-full place-items-center bg-primary/8 text-primary">
-              <FiPackage className="h-10 w-10" />
-            </div>
-          )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">{product?.sku ?? t('products.form.newSku')}</p>
-            <h4 className="mt-1 text-lg font-extrabold text-white">{product?.name ?? t('products.form.newProduct')}</h4>
-          </div>
-        </div>
-        <div className="grid gap-3 p-4">
-          <div className="grid grid-cols-3 gap-2">
-            {gallery.slice(0, 3).map(image => (
-              <button key={image} type="button" className="h-20 overflow-hidden rounded-xl ring-1 ring-border-soft/50 transition hover:-translate-y-0.5 hover:ring-primary/40" onClick={() => window.open(image, '_blank', 'noopener,noreferrer')}>
-                <img src={image} alt={product?.name ?? t('products.form.gallery')} className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <button type="button" className="inline-flex h-10 items-center justify-center rounded-xl bg-primary/10 px-3 text-xs font-extrabold text-text-accent ring-1 ring-primary/15 transition hover:bg-primary/15" onClick={() => product?.imageUrl && window.open(product.imageUrl, '_blank', 'noopener,noreferrer')}>
-              {t('products.form.primaryImage')}
-            </button>
-            <button type="button" className="inline-flex h-10 items-center justify-center rounded-xl bg-surface-subtle px-3 text-xs font-extrabold text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary" onClick={() => window.alert(t('products.form.galleryAction'))}>
-              {t('products.form.addGallery')}
-            </button>
-            <button type="button" className="inline-flex h-10 items-center justify-center rounded-xl bg-danger-bg px-3 text-xs font-extrabold text-danger ring-1 ring-danger/15 transition hover:bg-danger/10" onClick={() => window.alert(t('products.form.removeImageAction'))}>
-              {t('products.form.removeImage')}
-            </button>
-          </div>
-          <p className="text-xs font-semibold text-text-muted">{t('products.form.imageHint')}</p>
-        </div>
-      </section>
-
-      <section className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">{t('products.form.details')}</p>
-            <p className="mt-1 text-sm text-text-secondary">{t('products.form.detailsHint')}</p>
-          </div>
-          <StatusBadge tone={product?.stock && product.stock <= product.minStock ? 'warning' : 'success'}>
-            {product?.status ?? t('products.form.active')}
-          </StatusBadge>
-        </div>
-        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-          <Field label={t('products.columns.product')} placeholder={t('common.notRequired')} defaultValue={product?.name ?? ''} />
-          <Field label={t('products.columns.sku')} placeholder={t('products.form.newSku')} defaultValue={product?.sku ?? ''} />
-          <Field label={t('products.form.price')} placeholder="0" type="number" defaultValue={product ? String(product.price) : ''} />
-          <Field label={t('products.columns.stock')} placeholder="0" type="number" defaultValue={product ? String(product.stock) : ''} />
-          <Field label={t('products.form.minStock')} placeholder="0" type="number" defaultValue={product ? String(product.minStock) : ''} />
-          <Field label={t('products.form.supplier')} placeholder={t('common.notRequired')} defaultValue={product?.supplier ?? ''} />
-          <Field label={t('products.form.warehouse')} placeholder={t('common.notRequired')} defaultValue={product?.warehouse ?? ''} />
-          <Field label={t('products.form.color')} placeholder={t('common.notRequired')} defaultValue={product?.color ?? ''} />
-          <Field label={t('products.form.composition')} placeholder={t('common.notRequired')} defaultValue={product?.composition ?? ''} />
-          <Field label={t('products.form.gsm')} placeholder="120" type="number" defaultValue={product ? String(product.gsm) : ''} />
-          <Field label={t('products.form.width')} placeholder="160 cm" defaultValue={product?.width ?? ''} />
-          <SelectField
-            label={t('products.columns.category')}
-            value={categoryId}
-            onChange={setCategoryId}
-            options={categoryOptions.map(category => ({ value: category.id, label: category.name }))}
-            stretch
-          />
-          <div className="min-w-0 sm:col-span-2">
-            <TextAreaField label={t('products.form.description')} placeholder={t('common.notRequired')} defaultValue={product?.description ?? selectedCategory?.description ?? ''} />
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">{t('products.form.categories')}</p>
-            <p className="mt-1 text-sm text-text-secondary">{t('products.form.categoriesHint')}</p>
-          </div>
-        </div>
-        <div className="grid gap-3">
-          <div className="flex flex-wrap gap-2">
-            {categoryOptions.map(category => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => setCategoryId(category.id)}
-                className={[
-                  'rounded-pill px-3 py-1.5 text-xs font-extrabold ring-1 transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_-26px_rgb(var(--color-primary)/0.55)]',
-                  categoryId === category.id ? 'bg-primary text-primary-foreground ring-primary/30' : 'bg-surface-subtle text-text-secondary ring-border-soft/60 hover:bg-primary/10 hover:text-text-primary',
-                ].join(' ')}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input
-              value={draftCategory}
-              onChange={event => setDraftCategory(event.target.value)}
-              placeholder={t('products.form.categoryPlaceholder')}
-              className="h-11 flex-1 rounded-xl border border-border-soft/60 bg-surface-card px-3 text-sm font-medium text-text-primary placeholder:text-text-muted outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-            />
-            <button type="button" onClick={addCategory} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:bg-primary-strong">
-              <FiPlus className="h-4 w-4" />
-              {t('products.form.addCategory')}
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-3 rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40 sm:grid-cols-2">
-        <SwitchRow label={t('products.form.isActive')} defaultChecked={product?.isActive ?? true} />
-        <SwitchRow label={t('products.form.isRecommended')} defaultChecked={product?.isRecommended ?? false} />
-      </section>
-    </div>
-  );
-}
-
-function TextAreaField({ label, placeholder, defaultValue = '' }: { label: string; placeholder: string; defaultValue?: string }) {
-  return (
-    <label className="form-field--nova grid min-w-0 gap-1.5 rounded-xl bg-surface-subtle p-3 text-sm font-bold text-text-secondary ring-1 ring-border-soft/45">
-      {label}
-      <textarea className="form-field__input--nova min-h-28 w-full resize-none rounded-xl border border-border-soft/60 bg-surface-card px-3 py-3 text-sm font-medium text-text-primary placeholder:text-text-muted outline-none transition duration-fast focus:border-primary/50 focus:ring-2 focus:ring-primary/20" placeholder={placeholder} defaultValue={defaultValue} />
-    </label>
-  );
-}
-
-function SwitchRow({ label, defaultChecked }: { label: string; defaultChecked: boolean }) {
-  const [checked, setChecked] = useState(defaultChecked);
-
-  return (
-    <button type="button" onClick={() => setChecked(current => !current)} className="flex items-center justify-between gap-4 rounded-xl bg-surface-subtle px-3 py-3 text-left ring-1 ring-border-soft/45 transition hover:bg-primary/8">
-      <span className="text-sm font-bold text-text-primary">{label}</span>
-      <span className={['relative h-7 w-12 rounded-pill p-1 transition', checked ? 'bg-primary' : 'bg-surface-muted'].join(' ')}>
-        <span className={['block h-5 w-5 rounded-full bg-white shadow-sm transition', checked ? 'translate-x-5' : 'translate-x-0'].join(' ')} />
-      </span>
-    </button>
-  );
-}
-
 function toneClasses(tone: StatusTone) {
   const classes: Record<StatusTone, string> = {
     success: 'bg-success-bg text-success',
@@ -1419,10 +1430,6 @@ function trendToneClasses(tone: StatusTone) {
     neutral: 'border-neutral/10 bg-neutral-bg text-neutral',
   };
   return classes[tone];
-}
-
-function readObjects<T>(t: ReturnType<typeof useTranslation>['t'], key: string): T[] {
-  return t(key, { returnObjects: true }) as T[];
 }
 
 export default App;

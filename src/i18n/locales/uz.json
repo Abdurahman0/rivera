@@ -22,6 +22,7 @@
     "login": "Kirish",
     "logout": "Chiqish",
     "email": "Email",
+    "username": "Foydalanuvchi nomi",
     "password": "Parol",
     "remember": "Eslab qolish",
     "refresh": "Yangilash",
@@ -48,7 +49,22 @@
     "sum": "so'm",
     "pcs": "dona",
     "meters": "metr",
-    "kg": "kg"
+    "kg": "kg",
+    "confirm": "Tasdiqlash",
+    "months": {
+      "0": "Yanvar",
+      "1": "Fevral",
+      "2": "Mart",
+      "3": "Aprel",
+      "4": "May",
+      "5": "Iyun",
+      "6": "Iyul",
+      "7": "Avgust",
+      "8": "Sentabr",
+      "9": "Oktabr",
+      "10": "Noyabr",
+      "11": "Dekabr"
+    }
   },
   "deleteDialog": {
     "eyebrow": "Tasdiqlash",
@@ -74,18 +90,20 @@
       "fuchsia": "Fuksiya",
       "amber": "Amber",
       "slate": "Slate"
-    }
+    },
+    "currentColor": "Hozirgi rang",
+    "usageHint": "Tugmalar, havolalar va faol elementlarga qo'llaniladi"
   },
   "login": {
     "eyebrow": "To'qimachilik operatsiyalari",
     "title": "Ishlab chiqarish, mijozlar va sklad bir joyda.",
     "description": "Rivera Textile CRM buyurtmalar, xodimlar kelib-ketishi, mato zaxiralari va mahsulot analitikasini boshqarish uchun tayyor demo.",
     "cardTitle": "Tizimga kirish",
-    "cardSubtitle": "Demo ma'lumotlari bilan panelni oching.",
-    "emailPlaceholder": "admin@rivera.uz",
+    "cardSubtitle": "Backend foydalanuvchi ma'lumotlari bilan kiring.",
+    "emailPlaceholder": "admin",
     "passwordPlaceholder": "Parol",
     "submit": "CRM ga kirish",
-    "hint": "Demo rejim: istalgan email va parol bilan kirishingiz mumkin.",
+    "hint": "Faol backend hisobining foydalanuvchi nomi va parolini kiriting.",
     "metricOrders": "Faol buyurtmalar",
     "metricStock": "Skladdagi mato",
     "metricOutput": "Oylik ishlab chiqarish"
@@ -127,6 +145,18 @@
     "finance": {
       "label": "Moliya",
       "caption": "Pul oqimi"
+    },
+    "approvals": {
+      "label": "Tasdiqlar",
+      "caption": "Kutilayotgan amallar"
+    },
+    "operations": {
+      "label": "Kengaytirilgan",
+      "caption": "Barcha operatsiyalar"
+    },
+    "system": {
+      "label": "Tizim",
+      "caption": "Sozlamalar va nazorat"
     }
   },
   "dashboard": {
@@ -186,7 +216,8 @@
       "editTitle": "Materialni tahrirlash",
       "summary": "Xom ashyo turi, ta'minotchi, joriy zaxira va minimal chegara.",
       "nextStep": "Keyingi qadam: ta'minotchiga buyurtma yuborish."
-    }
+    },
+    "purchases": "Xaridlar"
   },
   "clients": {
     "eyebrow": "CRM pipeline",
@@ -273,7 +304,10 @@
         "week": "Hafta"
       },
       "earned": "Jami daromad",
-      "pieces": "dona bajarildi"
+      "pieces": "dona bajarildi",
+      "tabs": {
+        "summary": "Umumiy"
+      }
     },
     "salary": {
       "title": "Ish haqi hisob-kitobi",
@@ -302,6 +336,20 @@
       "editTitle": "Xodimni tahrirlash",
       "summary": "Xodimning smenasi, davomati va bugungi kelib-ketish holati.",
       "nextStep": "Keyingi qadam: smena jadvalini tekshirish va HR izohini qo'shish."
+    },
+    "detail": {
+      "toggleOpen": "Batafsil ko'rish",
+      "toggleClose": "Yopish",
+      "monthStats": "Bu oy ko'rsatkichlari",
+      "arrivalTime": "Kelish vaqti",
+      "leaving": "Ketish",
+      "baseSalary": "Asosiy oylik",
+      "pieceworkIncome": "Akkord daromad",
+      "pieceworkOperations": "Akkord operatsiyalari",
+      "noPieceworkData": "Bu xodim uchun akkord ma'lumotlari yo'q",
+      "total": "Jami",
+      "pieceworkBadge": "akkord",
+      "overview": "Umumiy"
     }
   },
   "products": {
@@ -333,7 +381,8 @@
       "totalUsed": "Jami sarflangan",
       "noRecipe": "Bu mahsulot uchun resept kiritilmagan",
       "totalCount": "xil material ishlatildi",
-      "panelTitle": "Resept va material sarfi"
+      "panelTitle": "Resept va material sarfi",
+      "addMaterial": "Material qo'shish"
     },
     "movementTitle": "Harakat tarixi",
     "stockColumns": {
@@ -441,7 +490,9 @@
     },
     "lowStockYes": "Ogohlantirish",
     "lowStockNo": "Yetarli",
-    "searchPlaceholder": "Mahsulot, xodim, mijoz yoki manba bo'yicha qidirish..."
+    "searchPlaceholder": "Mahsulot, xodim, mijoz yoki manba bo'yicha qidirish...",
+    "movementIn": "+ Kirim",
+    "movementOut": "− Chiqim"
   },
   "orders": {
     "eyebrow": "Buyurtmalar",
@@ -491,7 +542,9 @@
       "total": "Jami summa",
       "manager": "Menejer",
       "deliveryDate": "Yetkazish sanasi",
-      "status": "Status"
+      "status": "Status",
+      "orderDate": "Buyurtma sanasi",
+      "dueDate": "Muddati"
     },
     "form": {
       "unitPrice": "Birlik narxi",
@@ -501,7 +554,7 @@
       "viewTitle": "Buyurtma kartasi",
       "createTitle": "Yangi buyurtma",
       "editTitle": "Buyurtmani tahrirlash",
-      "summary": "Mijoz, mahsulot, miqdor, narx va yetkazib berish rejasini boshqarish.",
+      "summary": "Mijoz, buyurtma raqami, sana va summani boshqarish.",
       "nextStep": "Keyingi qadam: ishlab chiqarish rejasi va sklad qoldig'ini tekshirish."
     }
   },
@@ -524,13 +577,19 @@
       "materialsCaption": "Hisoblangan sarflar"
     },
     "batch": {
-      "produced": "dona ishlab chiqarildi",
+      "produced": "ishlab chiqarildi",
       "materials": "Material sarfi",
-      "employees": "Ishchilar",
+      "employees": "Xodimlar",
       "shift": "Smena",
       "order": "Buyurtma",
       "noRecipe": "Bu mahsulot uchun resept yo'q — material sarfi hisoblanmaydi",
-      "noNotes": "Izoh yo'q"
+      "noNotes": "Izoh yo'q",
+      "issueMaterials": "Material chiqarish",
+      "deliver": "Yetkazish",
+      "noEmployees": "Xodim biriktirilmagan",
+      "addEmployee": "Xodim qo'shish",
+      "workEntrySaved": "Ish yozuvi saqlandi",
+      "detail": "Batafsil"
     },
     "stock": {
       "title": "Tayyor mahsulot zaxirasi",
@@ -572,7 +631,8 @@
       "category": "Kategoriya",
       "description": "Tavsif",
       "amount": "Summa"
-    }
+    },
+    "expensesCaption": "Joriy oy xarajatlari"
   },
   "statuses": {
     "newLead": "Yangi lead",
@@ -583,7 +643,20 @@
     "onTime": "Vaqtida",
     "late": "Kechikdi",
     "leftEarly": "Erta ketdi",
-    "remote": "Masofadan"
+    "remote": "Masofadan",
+    "hasBalance": "Qarzi bor",
+    "clear": "Toza",
+    "ok": "Yetarli",
+    "low": "Kam qoldi",
+    "outOfStock": "Tugagan",
+    "pending": "Kutilmoqda",
+    "approved": "Tasdiqlandi",
+    "rejected": "Rad etildi",
+    "delivered": "Yetkazildi",
+    "cancelled": "Bekor qilindi",
+    "draft": "Qoralama",
+    "confirmed": "Tasdiqlangan",
+    "completed": "Bajarilgan"
   },
   "mock": {
     "months": [
@@ -855,7 +928,10 @@
         "sold": 31200,
         "revenue": 1092000000,
         "trend": 18,
-        "materialsUsed": ["Paxta grifte mato", "Tikish ipi"]
+        "materialsUsed": [
+          "Paxta grifte mato",
+          "Tikish ipi"
+        ]
       },
       {
         "id": 2,
@@ -887,10 +963,22 @@
         "sold": 20500,
         "revenue": 697000000,
         "trend": -4,
-        "materialsUsed": ["Gabardin mato", "YKK fermuar", "Ko'k tugma"],
+        "materialsUsed": [
+          "Gabardin mato",
+          "YKK fermuar",
+          "Ko'k tugma"
+        ],
         "recipe": [
-          { "materialName": "Gabardin mato 150cm", "qtyPerUnit": 1.05, "unit": "m" },
-          { "materialName": "Tikish ipi (polyester)", "qtyPerUnit": 0.003, "unit": "kg" }
+          {
+            "materialName": "Gabardin mato 150cm",
+            "qtyPerUnit": 1.05,
+            "unit": "m"
+          },
+          {
+            "materialName": "Tikish ipi (polyester)",
+            "qtyPerUnit": 0.003,
+            "unit": "kg"
+          }
         ]
       },
       {
@@ -954,10 +1042,21 @@
         "sold": 16600,
         "revenue": 481400000,
         "trend": 6,
-        "materialsUsed": ["Ring spun ip 30/1", "Interlok trikotaj 185cm"],
+        "materialsUsed": [
+          "Ring spun ip 30/1",
+          "Interlok trikotaj 185cm"
+        ],
         "recipe": [
-          { "materialName": "Ring spun ip 30/1", "qtyPerUnit": 1.12, "unit": "kg" },
-          { "materialName": "Interlok trikotaj 185cm", "qtyPerUnit": 0.05, "unit": "kg" }
+          {
+            "materialName": "Ring spun ip 30/1",
+            "qtyPerUnit": 1.12,
+            "unit": "kg"
+          },
+          {
+            "materialName": "Interlok trikotaj 185cm",
+            "qtyPerUnit": 0.05,
+            "unit": "kg"
+          }
         ]
       },
       {
@@ -990,11 +1089,26 @@
         "sold": 28000,
         "revenue": 1176000000,
         "trend": 22,
-        "materialsUsed": ["Paxta grifte mato", "Tikish ipi"],
+        "materialsUsed": [
+          "Paxta grifte mato",
+          "Tikish ipi"
+        ],
         "recipe": [
-          { "materialName": "Paxta grifte mato", "qtyPerUnit": 0.85, "unit": "m" },
-          { "materialName": "Tikish ipi (polyester)", "qtyPerUnit": 0.018, "unit": "kg" },
-          { "materialName": "Ko'k tugma 12mm", "qtyPerUnit": 5, "unit": "pcs" }
+          {
+            "materialName": "Paxta grifte mato",
+            "qtyPerUnit": 0.85,
+            "unit": "m"
+          },
+          {
+            "materialName": "Tikish ipi (polyester)",
+            "qtyPerUnit": 0.018,
+            "unit": "kg"
+          },
+          {
+            "materialName": "Ko'k tugma 12mm",
+            "qtyPerUnit": 5,
+            "unit": "pcs"
+          }
         ]
       }
     ],
@@ -1308,61 +1422,219 @@
     ],
     "productionBatches": [
       {
-        "id": 1, "dateLabel": "22-Iyun", "product": "Basic oq futbolka", "productId": 5,
-        "producedQty": 500, "unit": "pcs",
-        "employees": ["Nodira Saidova", "Bekzod Tursunov", "Mavluda Xoliqova"],
-        "shift": "Kunduzgi (08:00–17:00)", "orderId": "ORD-2406-026",
+        "id": 1,
+        "dateLabel": "22-Iyun",
+        "product": "Basic oq futbolka",
+        "productId": 5,
+        "producedQty": 500,
+        "unit": "pcs",
+        "employees": [
+          "Nodira Saidova",
+          "Bekzod Tursunov",
+          "Mavluda Xoliqova"
+        ],
+        "shift": "Kunduzgi (08:00–17:00)",
+        "orderId": "ORD-2406-026",
         "notes": "Birinchi partiya — sifat nazoratidan o'tdi"
       },
       {
-        "id": 2, "dateLabel": "19-Iyun", "product": "Basic oq futbolka", "productId": 5,
-        "producedQty": 350, "unit": "pcs",
-        "employees": ["Nodira Saidova", "Dilnoza Yusupova"],
-        "shift": "Kunduzgi (08:00–17:00)", "orderId": "ORD-2406-026",
+        "id": 2,
+        "dateLabel": "19-Iyun",
+        "product": "Basic oq futbolka",
+        "productId": 5,
+        "producedQty": 350,
+        "unit": "pcs",
+        "employees": [
+          "Nodira Saidova",
+          "Dilnoza Yusupova"
+        ],
+        "shift": "Kunduzgi (08:00–17:00)",
+        "orderId": "ORD-2406-026",
         "notes": ""
       },
       {
-        "id": 3, "dateLabel": "15-Iyun", "product": "Gabardin forma matosi", "productId": 2,
-        "producedQty": 210, "unit": "m",
-        "employees": ["Bekzod Tursunov", "Mavluda Xoliqova"],
-        "shift": "Kechki (17:00–22:00)", "orderId": "ORD-2406-021",
+        "id": 3,
+        "dateLabel": "15-Iyun",
+        "product": "Gabardin forma matosi",
+        "productId": 2,
+        "producedQty": 210,
+        "unit": "m",
+        "employees": [
+          "Bekzod Tursunov",
+          "Mavluda Xoliqova"
+        ],
+        "shift": "Kechki (17:00–22:00)",
+        "orderId": "ORD-2406-021",
         "notes": "Forma to'plamining birinchi partiyasi"
       },
       {
-        "id": 4, "dateLabel": "10-Iyun", "product": "Basic oq futbolka", "productId": 5,
-        "producedQty": 600, "unit": "pcs",
-        "employees": ["Nodira Saidova", "Bekzod Tursunov", "Mavluda Xoliqova", "Dilnoza Yusupova"],
-        "shift": "Kunduzgi (08:00–17:00)", "orderId": null,
+        "id": 4,
+        "dateLabel": "10-Iyun",
+        "product": "Basic oq futbolka",
+        "productId": 5,
+        "producedQty": 600,
+        "unit": "pcs",
+        "employees": [
+          "Nodira Saidova",
+          "Bekzod Tursunov",
+          "Mavluda Xoliqova",
+          "Dilnoza Yusupova"
+        ],
+        "shift": "Kunduzgi (08:00–17:00)",
+        "orderId": null,
         "notes": "Ombor zaxirasi uchun ishlab chiqarildi"
       },
       {
-        "id": 5, "dateLabel": "5-Iyun", "product": "Gabardin forma matosi", "productId": 2,
-        "producedQty": 180, "unit": "m",
-        "employees": ["Bekzod Tursunov"],
-        "shift": "Kunduzgi (08:00–17:00)", "orderId": "ORD-2406-021",
+        "id": 5,
+        "dateLabel": "5-Iyun",
+        "product": "Gabardin forma matosi",
+        "productId": 2,
+        "producedQty": 180,
+        "unit": "m",
+        "employees": [
+          "Bekzod Tursunov"
+        ],
+        "shift": "Kunduzgi (08:00–17:00)",
+        "orderId": "ORD-2406-021",
         "notes": ""
       },
       {
-        "id": 6, "dateLabel": "28-May", "product": "Basic oq futbolka", "productId": 5,
-        "producedQty": 420, "unit": "pcs",
-        "employees": ["Nodira Saidova", "Mavluda Xoliqova"],
-        "shift": "Kunduzgi (08:00–17:00)", "orderId": null,
+        "id": 6,
+        "dateLabel": "28-May",
+        "product": "Basic oq futbolka",
+        "productId": 5,
+        "producedQty": 420,
+        "unit": "pcs",
+        "employees": [
+          "Nodira Saidova",
+          "Mavluda Xoliqova"
+        ],
+        "shift": "Kunduzgi (08:00–17:00)",
+        "orderId": null,
         "notes": "May oyi oxirgi partiyasi"
       }
     ],
     "pieceworkRecords": [
-      { "id": 1,  "employeeName": "Nodira Saidova",    "operationName": "Yoqa tikish",     "product": "Basic oq futbolka",   "quantity": 340, "ratePerPiece": 800,  "unit": "pcs", "week": "1-hafta" },
-      { "id": 2,  "employeeName": "Nodira Saidova",    "operationName": "Yeng tikish",     "product": "Basic oq futbolka",   "quantity": 180, "ratePerPiece": 600,  "unit": "pcs", "week": "1-hafta" },
-      { "id": 3,  "employeeName": "Nodira Saidova",    "operationName": "Yoqa tikish",     "product": "Gabardin forma matosi","quantity": 210, "ratePerPiece": 900,  "unit": "pcs", "week": "2-hafta" },
-      { "id": 4,  "employeeName": "Bekzod Tursunov",   "operationName": "Yon chok tikish", "product": "Basic oq futbolka",   "quantity": 520, "ratePerPiece": 500,  "unit": "pcs", "week": "1-hafta" },
-      { "id": 5,  "employeeName": "Bekzod Tursunov",   "operationName": "Kesish",          "product": "Gabardin forma matosi","quantity": 200, "ratePerPiece": 200,  "unit": "pcs", "week": "1-hafta" },
-      { "id": 6,  "employeeName": "Bekzod Tursunov",   "operationName": "Yon chok tikish", "product": "Gabardin forma matosi","quantity": 310, "ratePerPiece": 500,  "unit": "pcs", "week": "2-hafta" },
-      { "id": 7,  "employeeName": "Mavluda Xoliqova",  "operationName": "Tugma qadash",    "product": "Basic oq futbolka",   "quantity": 1200,"ratePerPiece": 150,  "unit": "pcs", "week": "1-hafta" },
-      { "id": 8,  "employeeName": "Mavluda Xoliqova",  "operationName": "Dazmollash",      "product": "Basic oq futbolka",   "quantity": 380, "ratePerPiece": 200,  "unit": "pcs", "week": "1-hafta" },
-      { "id": 9,  "employeeName": "Mavluda Xoliqova",  "operationName": "Tugma qadash",    "product": "Gabardin forma matosi","quantity": 640, "ratePerPiece": 150,  "unit": "pcs", "week": "2-hafta" },
-      { "id": 10, "employeeName": "Dilnoza Yusupova",  "operationName": "Sifat tekshiruv", "product": "Basic oq futbolka",   "quantity": 620, "ratePerPiece": 300,  "unit": "pcs", "week": "1-hafta" },
-      { "id": 11, "employeeName": "Dilnoza Yusupova",  "operationName": "Qadoqlash",       "product": "Basic oq futbolka",   "quantity": 480, "ratePerPiece": 100,  "unit": "pcs", "week": "1-hafta" },
-      { "id": 12, "employeeName": "Dilnoza Yusupova",  "operationName": "Sifat tekshiruv", "product": "Gabardin forma matosi","quantity": 390, "ratePerPiece": 300,  "unit": "pcs", "week": "2-hafta" }
+      {
+        "id": 1,
+        "employeeName": "Nodira Saidova",
+        "operationName": "Yoqa tikish",
+        "product": "Basic oq futbolka",
+        "quantity": 340,
+        "ratePerPiece": 800,
+        "unit": "pcs",
+        "week": "1-hafta"
+      },
+      {
+        "id": 2,
+        "employeeName": "Nodira Saidova",
+        "operationName": "Yeng tikish",
+        "product": "Basic oq futbolka",
+        "quantity": 180,
+        "ratePerPiece": 600,
+        "unit": "pcs",
+        "week": "1-hafta"
+      },
+      {
+        "id": 3,
+        "employeeName": "Nodira Saidova",
+        "operationName": "Yoqa tikish",
+        "product": "Gabardin forma matosi",
+        "quantity": 210,
+        "ratePerPiece": 900,
+        "unit": "pcs",
+        "week": "2-hafta"
+      },
+      {
+        "id": 4,
+        "employeeName": "Bekzod Tursunov",
+        "operationName": "Yon chok tikish",
+        "product": "Basic oq futbolka",
+        "quantity": 520,
+        "ratePerPiece": 500,
+        "unit": "pcs",
+        "week": "1-hafta"
+      },
+      {
+        "id": 5,
+        "employeeName": "Bekzod Tursunov",
+        "operationName": "Kesish",
+        "product": "Gabardin forma matosi",
+        "quantity": 200,
+        "ratePerPiece": 200,
+        "unit": "pcs",
+        "week": "1-hafta"
+      },
+      {
+        "id": 6,
+        "employeeName": "Bekzod Tursunov",
+        "operationName": "Yon chok tikish",
+        "product": "Gabardin forma matosi",
+        "quantity": 310,
+        "ratePerPiece": 500,
+        "unit": "pcs",
+        "week": "2-hafta"
+      },
+      {
+        "id": 7,
+        "employeeName": "Mavluda Xoliqova",
+        "operationName": "Tugma qadash",
+        "product": "Basic oq futbolka",
+        "quantity": 1200,
+        "ratePerPiece": 150,
+        "unit": "pcs",
+        "week": "1-hafta"
+      },
+      {
+        "id": 8,
+        "employeeName": "Mavluda Xoliqova",
+        "operationName": "Dazmollash",
+        "product": "Basic oq futbolka",
+        "quantity": 380,
+        "ratePerPiece": 200,
+        "unit": "pcs",
+        "week": "1-hafta"
+      },
+      {
+        "id": 9,
+        "employeeName": "Mavluda Xoliqova",
+        "operationName": "Tugma qadash",
+        "product": "Gabardin forma matosi",
+        "quantity": 640,
+        "ratePerPiece": 150,
+        "unit": "pcs",
+        "week": "2-hafta"
+      },
+      {
+        "id": 10,
+        "employeeName": "Dilnoza Yusupova",
+        "operationName": "Sifat tekshiruv",
+        "product": "Basic oq futbolka",
+        "quantity": 620,
+        "ratePerPiece": 300,
+        "unit": "pcs",
+        "week": "1-hafta"
+      },
+      {
+        "id": 11,
+        "employeeName": "Dilnoza Yusupova",
+        "operationName": "Qadoqlash",
+        "product": "Basic oq futbolka",
+        "quantity": 480,
+        "ratePerPiece": 100,
+        "unit": "pcs",
+        "week": "1-hafta"
+      },
+      {
+        "id": 12,
+        "employeeName": "Dilnoza Yusupova",
+        "operationName": "Sifat tekshiruv",
+        "product": "Gabardin forma matosi",
+        "quantity": 390,
+        "ratePerPiece": 300,
+        "unit": "pcs",
+        "week": "2-hafta"
+      }
     ],
     "revenueEntries": [
       {
@@ -1410,5 +1682,583 @@
         "amount": 86000000
       }
     ]
+  },
+  "kiosk": {
+    "brand": "Rivera davomat",
+    "title": "Qurilma kioski",
+    "deviceTokenLabel": "Qurilma tokeni",
+    "startButton": "Kioskni ishga tushirish",
+    "adminLogin": "Administrator kirishi",
+    "cameFAB": "Keldim",
+    "leftFAB": "Ketdim",
+    "changeToken": "Tokenni almashtirish",
+    "capturing": "Suratga olinmoqda…",
+    "checkingIn": "Kirim qayd etilmoqda…",
+    "checkingOut": "Chiqim qayd etilmoqda…",
+    "noFaceDetected": "Yuz aniqlanmadi. Qaytadan urinib ko'ring.",
+    "faceNotRecognized": "Yuz tanilmadi. Qaytadan urinib ko'ring.",
+    "checkFailed": "Davomatni belgilab bo'lmadi",
+    "recordedIn": "{{name}} keldi — {{time}}",
+    "recordedOut": "{{name}} ketdi — {{time}}"
+  },
+  "faceEnroll": {
+    "eyebrow": "Yuzni ro'yxatga olish",
+    "title": "Kamera orqali ro'yxatga olish",
+    "buttonLabel": "Kamera orqali ro'yxatga olish",
+    "employeeLabel": "Xodim",
+    "searchPlaceholder": "Ism yoki kod bo'yicha qidiring",
+    "selectPlaceholder": "Xodimni tanlang…",
+    "pickEmployeeHint": "Kamerani ishga tushirish uchun xodimni tanlang",
+    "instructions": "Xodimdan kameraga to'g'ridan-to'g'ri qarab, 2 soniya harakatsiz turishini so'rang.",
+    "saving": "{{name}} uchun yuz saqlanmoqda…",
+    "done": "{{name}} uchun yuz muvaffaqiyatli ro'yxatga olindi",
+    "doneButton": "Tayyor",
+    "cancelButton": "Bekor qilish",
+    "enrollFailed": "Ro'yxatga olib bo'lmadi"
+  },
+  "faceCamera": {
+    "loadingModels": "Yuzni tanish tizimi yuklanmoqda…",
+    "cameraDenied": "Kameraga ruxsat berilmadi yoki mavjud emas",
+    "modelsFailed": "Yuzni tanish modellarini yuklab bo'lmadi"
+  },
+  "admin": {
+    "fields": {
+      "client": "Mijoz",
+      "product": "Mahsulot",
+      "size": "O'lcham",
+      "color": "Rang",
+      "quantity": "Miqdor",
+      "unitPrice": "Birlik narxi",
+      "currency": "Valyuta",
+      "exchangeRate": "Kurs",
+      "deliveryDate": "Yetkazish sanasi",
+      "status": "Holat",
+      "note": "Izoh",
+      "method": "Usul",
+      "amount": "Summa",
+      "amountUzs": "Summa (so'm)",
+      "paymentDate": "To'lov sanasi",
+      "returnDate": "Qaytarish sanasi",
+      "reason": "Sabab",
+      "date": "Sana",
+      "material": "Material",
+      "normPerUnit": "Birlikka norma",
+      "totalValue": "Umumiy qiymat",
+      "type": "Turi",
+      "batch": "Partiya",
+      "sourceTransaction": "Manba operatsiyasi",
+      "normQuantity": "Norma miqdori",
+      "defect": "Brak",
+      "actualDelivered": "Haqiqatda yetkazildi",
+      "deliveredDate": "Yetkazilgan sana",
+      "employee": "Xodim",
+      "name": "Nomi",
+      "start": "Boshlanishi",
+      "end": "Tugashi",
+      "lunchStart": "Tushlik boshlanishi",
+      "lunchEnd": "Tushlik tugashi",
+      "lateAfterMinutes": "Necha daqiqadan keyin kech",
+      "effectiveFrom": "Boshlanish sanasi",
+      "effectiveTo": "Tugash sanasi",
+      "active": "Faol",
+      "encodingJson": "Yuz vektori (JSON)",
+      "sourceImage": "Manba surat",
+      "deviceToken": "Qurilma tokeni",
+      "lastSeen": "Oxirgi faollik",
+      "event": "Hodisa",
+      "time": "Vaqt",
+      "device": "Qurilma",
+      "confidence": "Ishonch darajasi",
+      "workDate": "Ish kuni",
+      "firstCheckIn": "Birinchi kirish",
+      "lastCheckOut": "Oxirgi chiqish",
+      "workedMinutes": "Ishlagan daqiqa",
+      "manual": "Qo'lda",
+      "sequence": "Tartib",
+      "timeNormMinutes": "Vaqt normasi (daq)",
+      "hourlyNorm": "Soatlik norma",
+      "dailyNorm": "Kunlik norma",
+      "monthlyNorm": "Oylik norma",
+      "pricePerUnit": "Birlik narxi",
+      "operation": "Operatsiya",
+      "month": "Oy",
+      "salaryType": "Maosh turi",
+      "finalAmount": "Yakuniy summa",
+      "username": "Foydalanuvchi nomi",
+      "fullName": "To'liq ism",
+      "phone": "Telefon",
+      "email": "Email",
+      "superadmin": "Superadmin",
+      "password": "Parol",
+      "user": "Foydalanuvchi",
+      "page": "Sahifa",
+      "level": "Daraja",
+      "key": "Kalit",
+      "valueJson": "Qiymat (JSON)",
+      "description": "Tavsif",
+      "trigger": "Ishga tushirish sababi",
+      "started": "Boshlandi",
+      "finished": "Tugadi",
+      "message": "Xabar",
+      "object": "Obyekt",
+      "action": "Amal",
+      "rows": "Qatorlar",
+      "path": "Yo'l",
+      "id": "ID",
+      "metadata": "Qo'shimcha ma'lumot",
+      "planned": "Rejalashtirilgan",
+      "delivered": "Yetkazilgan",
+      "path_field": "Yo'l",
+      "address": "Manzil",
+      "code": "Kod",
+      "category": "Kategoriya",
+      "unit": "O'lchov birligi",
+      "minStockLevel": "Minimal zaxira",
+      "batchNumber": "Partiya raqami",
+      "startedDate": "Boshlangan sana",
+      "hireDate": "Ishga olingan sana",
+      "employeeCode": "Xodim kodi",
+      "vatPercent": "QQS foizi",
+      "sizeRange": "O'lcham oralig'i",
+      "materialType": "Material turi",
+      "priceWithTaxUzs": "QQS bilan narx (so'm)",
+      "priceWithoutTaxUzs": "QQS siz narx (so'm)",
+      "priceWithTaxUsd": "QQS bilan narx ($)",
+      "priceWithoutTaxUsd": "QQS siz narx ($)",
+      "orderNumber": "Buyurtma raqami",
+      "orderDate": "Buyurtma sanasi",
+      "dueDate": "Muddati",
+      "totalAmount": "Umumiy summa",
+      "supplier": "Yetkazib beruvchi",
+      "purchaseDate": "Xarid sanasi",
+      "terminationDate": "Ishdan bo'shatilgan sana",
+      "startDate": "Boshlanish sanasi",
+      "endDate": "Tugash sanasi",
+      "workEntry": "Ish yozuvi",
+      "hourLabel": "Soat oralig'i",
+      "cashAccount": "Kassa hisobi",
+      "invoiceNumber": "Hisob-faktura raqami",
+      "balance": "Balans"
+    },
+    "resources": {
+      "deliveries": {
+        "title": "Mijozlarga yetkazishlar",
+        "description": "Tasdiqlash talab qiladigan tayyor mahsulot yetkazishlari."
+      },
+      "payments": {
+        "title": "Mijoz to'lovlari",
+        "description": "Naqd, karta, o'tkazma va dollar to'lovlari."
+      },
+      "returns": {
+        "title": "Mijoz qaytarishlari",
+        "description": "Tayyor mahsulotni omborga qaytaruvchi tasdiqlash talab qiluvchi amallar."
+      },
+      "debts": {
+        "title": "Qarz tuzatishlari",
+        "description": "Mijoz balansiga qo'lda kiritiladigan, tasdiqlash talab qiluvchi tuzatishlar."
+      },
+      "productNorms": {
+        "title": "Mahsulot material normalari",
+        "description": "Har bir tayyor birlik uchun material sarfi."
+      },
+      "materialStocks": {
+        "title": "Material qoldiqlari",
+        "description": "Hisoblangan material qoldig'i va qiymati. Faqat tasdiqlangan operatsiyalar orqali o'zgaradi."
+      },
+      "materialTransactions": {
+        "title": "Material operatsiyalari",
+        "description": "Kirim, ishlab chiqarishga chiqim, hisobdan chiqarish va brak."
+      },
+      "defectiveStocks": {
+        "title": "Brak material qoldig'i",
+        "description": "Hisoblangan brak materiallar qoldig'i."
+      },
+      "defectiveTransactions": {
+        "title": "Brak material operatsiyalari",
+        "description": "Brak qoldiqqa o'tkazishni tasdiqlash talab qiluvchi amallar."
+      },
+      "finishedStocks": {
+        "title": "Tayyor mahsulot qoldig'i",
+        "description": "O'lcham va rang bo'yicha hisoblangan mahsulot qoldig'i."
+      },
+      "finishedTransactions": {
+        "title": "Tayyor mahsulot operatsiyalari",
+        "description": "Ishlab chiqarish, sotish, brak va mijoz qaytarish harakatlari."
+      },
+      "batchItems": {
+        "title": "Ishlab chiqarish partiya tarkibi",
+        "description": "Partiya ichidagi o'lcham/rang taqsimoti."
+      },
+      "materialUsages": {
+        "title": "Ishlab chiqarishda material sarfi",
+        "description": "Partiya bo'yicha norma, haqiqiy yetkazma va brak miqdori."
+      },
+      "schedules": {
+        "title": "Ish jadvallari",
+        "description": "Xodim smenasi, tushlik va kechikish qoidalari."
+      },
+      "faceEncodings": {
+        "title": "Xodim yuz ma'lumotlari",
+        "description": "Kamera orqali ro'yxatga olingan yuz vektori va surat."
+      },
+      "devices": {
+        "title": "Davomat qurilmalari",
+        "description": "Kiosk/qurilma tokenlari va faollik holati."
+      },
+      "attendanceEvents": {
+        "title": "Davomat hodisalari",
+        "description": "Kirish/chiqish hodisalari oqimi (o'zgartirib bo'lmaydi)."
+      },
+      "attendanceRecords": {
+        "title": "Davomat yozuvlari",
+        "description": "Kunlik davomat jamlanmasi va qo'lda tuzatishlar."
+      },
+      "operationTypes": {
+        "title": "Akkord amaliyot turlari",
+        "description": "Amaliyotlar, normalar, tartib va narxlar."
+      },
+      "workEntries": {
+        "title": "Kunlik ish yozuvlari",
+        "description": "Xodim akkord ishlab chiqarishi va hisoblangan to'lov."
+      },
+      "adjustments": {
+        "title": "Maosh tuzatishlari",
+        "description": "Oylik mukofot va jarimalar."
+      },
+      "payrolls": {
+        "title": "Oylik hisob-kitoblar",
+        "description": "Hisoblangan, tasdiqlangan, to'langan va qayta ochilgan holat."
+      },
+      "users": {
+        "title": "Foydalanuvchilar",
+        "description": "Tizimga kirish hisoblari va superadmin holati."
+      },
+      "permissions": {
+        "title": "Sahifa huquqlari",
+        "description": "Har bir foydalanuvchi uchun ko'rish/boshqarish huquqi."
+      },
+      "settings": {
+        "title": "Biznes sozlamalari",
+        "description": "JSON ko'rinishidagi ilova sozlamalari."
+      },
+      "backups": {
+        "title": "Zaxira nusxalar",
+        "description": "Baza/media/muhit zaxira nusxalash tarixi."
+      },
+      "audit": {
+        "title": "Audit jurnali",
+        "description": "Yaratish/tahrirlash/arxivlash/tasdiqlash faoliyati."
+      },
+      "exports": {
+        "title": "Eksport jurnali",
+        "description": "Kim, qaysi sahifani va necha qatorni eksport qilgani."
+      },
+      "security": {
+        "title": "Xavfsizlik jurnali",
+        "description": "Tizimga kirish va rad etilgan so'rovlar."
+      },
+      "stockLogs": {
+        "title": "Ombor jurnali",
+        "description": "Tasdiqlangan ombor o'zgarishlari tarixi."
+      },
+      "payrollLogs": {
+        "title": "Maosh jurnali",
+        "description": "Maosh holati o'zgarishlari tarixi."
+      },
+      "attendanceLogs": {
+        "title": "Davomat jurnali",
+        "description": "Davomat o'zgarishlari va qurilma faolligi."
+      },
+      "backupLogs": {
+        "title": "Zaxira jurnali",
+        "description": "Zaxira nusxalash bilan bog'liq voqealar."
+      },
+      "clientOrders": {
+        "title": "Buyurtmalar",
+        "description": "Mijozlarning rasmiy buyurtmalari."
+      },
+      "suppliers": {
+        "title": "Yetkazib beruvchilar",
+        "description": "Xomashyo yetkazib beruvchilar ro'yxati."
+      },
+      "materialPurchases": {
+        "title": "Material xaridlari",
+        "description": "Yetkazib beruvchilardan xarid qilingan materiallar."
+      },
+      "warehouseLocations": {
+        "title": "Ombor joylari",
+        "description": "Ombordagi joy/stellaj belgilari."
+      },
+      "departments": {
+        "title": "Bo'limlar",
+        "description": "Xodimlar bo'limlari."
+      },
+      "employeeTerminations": {
+        "title": "Ishdan bo'shatishlar",
+        "description": "Xodimlarning ishdan bo'shatilish tarixi."
+      },
+      "leaveRequests": {
+        "title": "Ta'til so'rovlari",
+        "description": "Xodimlarning ta'til so'rovlari."
+      },
+      "workHourBreakdowns": {
+        "title": "Soatlik taqsimot",
+        "description": "Ishbay ish yozuvlarining soatlik taqsimoti."
+      },
+      "cashAccounts": {
+        "title": "Kassa hisoblari",
+        "description": "Naqd pul hisoblari (UZS/USD)."
+      },
+      "cashTransactions": {
+        "title": "Kassa tranzaksiyalari",
+        "description": "Kassadagi kirim/chiqim harakatlari."
+      },
+      "expenses": {
+        "title": "Xarajatlar",
+        "description": "Kompaniya xarajatlari."
+      },
+      "invoices": {
+        "title": "Hisob-fakturalar",
+        "description": "Mijozlarga taqdim etilgan hisob-fakturalar."
+      }
+    },
+    "options": {
+      "paymentMethod": {
+        "cash": "Naqd",
+        "card": "Karta",
+        "bank_transfer": "Bank o'tkazmasi",
+        "usd_cash": "Dollar naqd"
+      },
+      "materialTxType": {
+        "in": "Kirim",
+        "out_production": "Ishlab chiqarishga chiqim",
+        "out_writeoff": "Hisobdan chiqarish",
+        "defect": "Brak"
+      },
+      "finishedTxType": {
+        "in_production": "Ishlab chiqarishdan",
+        "out_client": "Mijozga",
+        "out_defect": "Brak",
+        "return_client": "Mijoz qaytarishi"
+      },
+      "adjustmentType": {
+        "bonus": "Mukofot",
+        "penalty": "Jarima"
+      },
+      "attendanceStatus": {
+        "present": "Keldi",
+        "late": "Kechikdi",
+        "absent_excused": "Sababli kelmadi",
+        "absent_unexcused": "Sababsiz kelmadi"
+      },
+      "permissionLevel": {
+        "view": "Ko'rish",
+        "manage": "Boshqarish"
+      },
+      "page": {
+        "dashboard": "Bosh sahifa",
+        "clients": "Mijozlar",
+        "products": "Mahsulotlar",
+        "materials": "Materiallar",
+        "inventory": "Ombor",
+        "production": "Ishlab chiqarish",
+        "employees": "Xodimlar",
+        "attendance": "Davomat",
+        "payroll": "Ish haqi",
+        "approvals": "Tasdiqlar",
+        "audit": "Audit",
+        "security_logs": "Xavfsizlik jurnali",
+        "backups": "Zaxira nusxalar",
+        "settings": "Sozlamalar",
+        "users": "Foydalanuvchilar",
+        "finance": "Moliya"
+      },
+      "employeePosition": {
+        "seamstress": "Tikuvchi",
+        "driver": "Haydovchi",
+        "guard": "Qorovul",
+        "other": "Boshqa"
+      },
+      "salaryType": {
+        "piece_rate": "Akkord (donaga)",
+        "fixed_daily": "Kunlik belgilangan"
+      },
+      "materialUnit": {
+        "m": "Metr",
+        "piece": "Dona",
+        "kg": "Kg",
+        "linear_meter": "Chiziqli metr"
+      },
+      "productionStatus": {
+        "in_progress": "Jarayonda",
+        "partially_completed": "Qisman tugallangan",
+        "completed": "Tugallangan"
+      },
+      "transactionStatus": {
+        "draft": "Qoralama",
+        "pending_approval": "Tasdiqlanmoqda",
+        "approved": "Tasdiqlangan",
+        "rejected": "Rad etilgan"
+      },
+      "movementNote": {
+        "incoming": "Kirim",
+        "production": "Ishlab chiqarish",
+        "client": "Mijoz",
+        "materials": "Materiallar"
+      },
+      "eventType": {
+        "check_in": "Kirish",
+        "check_out": "Chiqish"
+      },
+      "employeeStatus": {
+        "active": "Faol",
+        "inactive": "Nofaol"
+      },
+      "orderStatus": {
+        "draft": "Qoralama",
+        "confirmed": "Tasdiqlangan",
+        "completed": "Bajarilgan",
+        "cancelled": "Bekor qilingan"
+      },
+      "cashTxType": {
+        "in": "Kirim",
+        "out": "Chiqim"
+      },
+      "invoiceStatus": {
+        "draft": "Qoralama",
+        "sent": "Yuborilgan",
+        "paid": "To'langan",
+        "cancelled": "Bekor qilingan"
+      },
+      "approvalAction": {
+        "client_delivery": "Mijozga yetkazish",
+        "client_return": "Mijoz qaytarishi",
+        "client_debt_adjustment": "Qarz tuzatish",
+        "leave_request": "Ta'til so'rovi",
+        "cash_transaction": "Kassa tranzaksiyasi",
+        "expense": "Xarajat",
+        "material_purchase": "Material xaridi",
+        "production_material_issue": "Material chiqarish",
+        "production_warehouse_delivery": "Omborga yetkazish",
+        "material_transaction": "Material harakati",
+        "defective_material_transaction": "Nikoh materiali",
+        "finished_goods_transaction": "Tayyor mahsulot harakati"
+      }
+    },
+    "ui": {
+      "backendResource": "Backend bo'limi",
+      "exportXlsx": "Excel eksport",
+      "refresh": "Yangilash",
+      "create": "Yaratish",
+      "includeArchived": "Arxivlanganlarni ko'rsatish",
+      "searchPlaceholder": "{{title}} ichida qidirish",
+      "noRecords": "Yozuvlar yo'q",
+      "recordsCount": "{{count}} ta yozuv",
+      "actions": "Amallar",
+      "edit": "Tahrirlash",
+      "restore": "Tiklash",
+      "archive": "Arxivlash",
+      "selectPlaceholder": "Tanlang…",
+      "cancel": "Bekor qilish",
+      "saving": "Saqlanmoqda…",
+      "save": "Saqlash",
+      "createPanel": "Yaratish",
+      "editPanel": "Tahrirlash",
+      "yes": "Ha",
+      "no": "Yo'q",
+      "loading": "Yuklanmoqda…",
+      "archiveConfirm": "{{title}} yozuvini arxivlaysizmi?",
+      "archivedOk": "Muvaffaqiyatli arxivlandi",
+      "restoredOk": "Muvaffaqiyatli tiklandi",
+      "savedOk": "Muvaffaqiyatli saqlandi",
+      "actionCompleted": "{{label}} bajarildi",
+      "requestFailed": "So'rov bajarilmadi",
+      "fieldRequired": "{{field}} maydoni to'ldirilishi shart",
+      "requiredFieldsMissing": "Barcha majburiy maydonlarni to'ldiring"
+    },
+    "page": {
+      "operationsGroups": {
+        "clients": "Mijoz moliyasi",
+        "inventory": "Ombor",
+        "production": "Ishlab chiqarish",
+        "attendance": "Davomat",
+        "payroll": "Ish haqi",
+        "materials": "Materiallar",
+        "employees": "Xodimlar",
+        "finance": "Moliya"
+      },
+      "systemGroups": {
+        "access": "Kirish huquqi",
+        "configuration": "Sozlamalar",
+        "audit": "Audit",
+        "security": "Xavfsizlik"
+      },
+      "operations": {
+        "eyebrow": "To'liq backend operatsiyalari",
+        "title": "Kengaytirilgan boshqaruv",
+        "description": "Mijoz moliyasi, ombor nazorati, ishlab chiqarish tafsilotlari, davomat va ish haqi."
+      },
+      "system": {
+        "eyebrow": "Boshqaruv",
+        "title": "Tizim boshqaruvi",
+        "description": "Foydalanuvchilar, huquqlar, sozlamalar, zaxira nusxalar va audit."
+      },
+      "approve": "Tasdiqlash",
+      "markPaid": "To'landi deb belgilash",
+      "unlock": "Qulfdan chiqarish",
+      "calculateMonth": "Oyni hisoblash",
+      "openKiosk": "Davomat kioskini ochish",
+      "runBackupNow": "Zaxira nusxa olish",
+      "promptMonth": "Ish haqi oyi (YYYY-MM)"
+    }
+  },
+  "approvals": {
+    "eyebrow": "Ish jarayoni",
+    "title": "Tasdiqlar",
+    "description": "Tasdiqlash talab qiladigan ombor, yetkazish, qaytarish va ishlab chiqarish amallarini ko'rib chiqish.",
+    "pendingCount": "{{count}} kutilmoqda",
+    "approvedCount": "{{count}} tasdiqlangan",
+    "rejectedCount": "{{count}} rad etilgan",
+    "columns": {
+      "page": "Sahifa",
+      "action": "Amal",
+      "object": "Obyekt",
+      "created": "Yaratildi",
+      "status": "Holat",
+      "actions": "Amallar"
+    },
+    "approve": "Tasdiqlash",
+    "reject": "Rad etish",
+    "rejectReasonPrompt": "Rad etish sababi"
+  },
+  "entityModal": {
+    "titles": {
+      "material": "Material",
+      "batch": "Ishlab chiqarish partiyasi",
+      "payment": "Mijoz to'lovi",
+      "stockMovement": "Material operatsiyasi"
+    },
+    "create": "Yaratish",
+    "edit": "Tahrirlash"
+  },
+  "dialog": {
+    "rejectReasonTitle": "Rad etish sababi",
+    "rejectReasonPlaceholder": "Sababni yozing...",
+    "monthTitle": "Oyni tanlang",
+    "deliverQuantityTitle": "Omborga yetkazish",
+    "deliverQuantityMessage": "Yetkazilgan miqdorni kiriting",
+    "deliverQuantityPlaceholder": "Miqdor",
+    "deliverInvalidQuantity": "Miqdor musbat butun son bo'lishi kerak",
+    "issueMaterialsFailed": "Material chiqarish so'rovi bajarilmadi",
+    "deliverFailed": "Yetkazish so'rovi bajarilmadi",
+    "issueMaterialsSuccess": "Materiallar chiqarish so'rovi yuborildi (tasdiqlash kutilmoqda)",
+    "deliverSuccess": "Yetkazish so'rovi yuborildi (tasdiqlash kutilmoqda)",
+    "approveFailed": "Tasdiqlash so'rovi bajarilmadi",
+    "rejectFailed": "Rad etish so'rovi bajarilmadi",
+    "deleteFailed": "O'chirish so'rovi bajarilmadi"
+  },
+  "auth": {
+    "sessionExpired": "Sessiya muddati tugadi. Iltimos, qayta kiring.",
+    "loginFailed": "Kirish amalga oshmadi. Login yoki parolni tekshiring."
   }
 }
