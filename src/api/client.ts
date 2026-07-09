@@ -179,14 +179,6 @@ export async function downloadExport(resource: string) {
   URL.revokeObjectURL(url);
 }
 
-function dashboardQuery(params: { start_date?: string; end_date?: string } = {}) {
-  const query = new URLSearchParams();
-  if (params.start_date) query.set('start_date', params.start_date);
-  if (params.end_date) query.set('end_date', params.end_date);
-  const value = query.toString();
-  return value ? `?${value}` : '';
-}
-
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, payload?: ApiPayload) => request<T>(path, { method: 'POST', body: body(payload) }),
@@ -222,13 +214,8 @@ export const actions = {
   approve: (id: string) => api.post(`/approvals/${id}/approve/`),
   reject: (id: string, reason: string) => api.post(`/approvals/${id}/reject/`, { reason }),
   runBackup: () => api.post('/backups/run_now/'),
-  dashboardSummary: <T>(params?: { start_date?: string; end_date?: string }) => api.get<T>(`/dashboard/summary/${dashboardQuery(params)}`),
-  topClients: <T>(limit = 10, params: { start_date?: string; end_date?: string } = {}) => {
-    const query = new URLSearchParams({ limit: String(limit) });
-    if (params.start_date) query.set('start_date', params.start_date);
-    if (params.end_date) query.set('end_date', params.end_date);
-    return api.get<T>(`/dashboard/top_clients/?${query.toString()}`);
-  },
+  dashboardSummary: <T>() => api.get<T>('/dashboard/summary/'),
+  topClients: <T>(limit = 10) => api.get<T>(`/dashboard/top_clients/?limit=${limit}`),
   authMe: <T>() => api.get<T>('/auth/me/'),
   deviceAttendanceCheck: <T>(payload: FormData | Record<string, unknown>) => api.post<T>('/attendance-events/check/', payload),
   issueMaterials: <T>(batchId: string) => api.post<T>(`/production-batches/${batchId}/issue_materials/`),

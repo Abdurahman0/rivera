@@ -1,6 +1,6 @@
 import { actions, api, ApiError, resources } from './client';
 import { adaptOperationalData, type FrontendData, type OperationalApiData } from './adapters';
-import type { DashboardDateRange, PageId } from '../types/crm';
+import type { PageId } from '../types/crm';
 import type {
   ApiAttendanceRecord,
   ApiApproval,
@@ -113,22 +113,18 @@ async function allowedList<T>(resource: string) {
   }
 }
 
-function dashboardParams(dateRange?: DashboardDateRange) {
-  return dateRange ? { start_date: dateRange.startDate, end_date: dateRange.endDate } : undefined;
-}
-
-async function allowedSummary(dateRange?: DashboardDateRange) {
+async function allowedSummary() {
   try {
-    return await actions.dashboardSummary<ApiDashboardSummary>(dashboardParams(dateRange));
+    return await actions.dashboardSummary<ApiDashboardSummary>();
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) return null;
     throw error;
   }
 }
 
-async function allowedTopClients(dateRange?: DashboardDateRange) {
+async function allowedTopClients() {
   try {
-    return await actions.topClients<Array<{ client: string }>>(10, dashboardParams(dateRange) ?? {});
+    return await actions.topClients<Array<{ client: string }>>(10);
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) return [];
     throw error;
@@ -142,17 +138,16 @@ async function loadOperationalData(page: PageId): Promise<OperationalApiData> {
   return { ...EMPTY_OPERATIONAL_DATA, ...Object.fromEntries(entries) } as OperationalApiData;
 }
 
-export async function loadAppData(page: PageId, dashboardDateRange?: DashboardDateRange): Promise<AppData> {
+export async function loadAppData(page: PageId): Promise<AppData> {
   const shouldLoadSummary = page === 'dashboard' || page === 'warehouse';
   const shouldLoadApprovals = page === 'approvals';
   const shouldLoadTopClients = page === 'dashboard';
-  const dateRange = page === 'dashboard' ? dashboardDateRange : undefined;
 
   const [operational, summary, approvals, topClients] = await Promise.all([
     loadOperationalData(page),
-    shouldLoadSummary ? allowedSummary(dateRange) : Promise.resolve(null),
+    shouldLoadSummary ? allowedSummary() : Promise.resolve(null),
     shouldLoadApprovals ? allowedList<ApiApproval>(resources.approvals) : Promise.resolve([]),
-    shouldLoadTopClients ? allowedTopClients(dateRange) : Promise.resolve([]),
+    shouldLoadTopClients ? allowedTopClients() : Promise.resolve([]),
   ]);
 
   return { ...adaptOperationalData(operational), summary, approvals, topClientIds: topClients.map(row => row.client) };

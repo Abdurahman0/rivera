@@ -195,13 +195,13 @@ function App() {
   const dataLoadId = useRef(0);
   const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, movementHistory, revenueEntries, expenseEntries, productionRecords, materials: rawMaterials, pieceworkRecords, productionBatches, staffFlow, approvals, operationTypeOptions } = appData;
 
-  const refreshData = useCallback(async (page: PageId = activePage, dateRange: DashboardDateRange = dashboardDateRange) => {
+  const refreshData = useCallback(async (page: PageId = activePage) => {
     if (!isAuthenticated) return;
     const requestId = dataLoadId.current + 1;
     dataLoadId.current = requestId;
     setIsLoadingData(true);
     try {
-      const nextData = await loadAppData(page, page === 'dashboard' ? dateRange : undefined);
+      const nextData = await loadAppData(page);
       if (requestId === dataLoadId.current) {
         setAppData(nextData);
       }
@@ -214,11 +214,11 @@ function App() {
         setIsLoadingData(false);
       }
     }
-  }, [activePage, dashboardDateRange, isAuthenticated, t, toast]);
+  }, [activePage, isAuthenticated, t, toast]);
 
   useEffect(() => {
-    void refreshData(activePage, dashboardDateRange);
-  }, [activePage, dashboardDateRange, refreshData]);
+    void refreshData(activePage);
+  }, [activePage, refreshData]);
 
   useEffect(() => onSessionExpired(() => {
     dataLoadId.current += 1;
