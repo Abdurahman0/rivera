@@ -435,7 +435,7 @@ export function DataTable({ columns, rows, onRowClick }: { columns: string[]; ro
       return <span className="block min-w-0 max-w-full truncate" title={value}>{cell}</span>;
     }
 
-    return cell;
+    return <span className="block min-w-0 max-w-full overflow-hidden">{cell}</span>;
   };
 
   return (

@@ -319,7 +319,7 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
                     <tr key={String(row.id)} className="border-t border-border-soft/20 hover:bg-surface-subtle/50">
                       {tableFields.map(field => {
                         const value = cellValue(t, row, field, lookups);
-                        return <td key={field.name} className="min-w-0 overflow-hidden px-4 py-3 text-text-secondary"><span className="line-clamp-2 min-w-0 [overflow-wrap:anywhere]" title={value}>{value}</span></td>;
+                        return <td key={field.name} className="min-w-0 overflow-hidden px-4 py-3 text-text-secondary"><span className="block min-w-0 max-w-full truncate" title={value}>{value}</span></td>;
                       })}
                       <td className="px-4 py-3"><div className="flex flex-wrap gap-1.5">
                         {actions.filter(action => !action.show || action.show(row)).map(action => <button key={action.label} className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${action.tone === 'danger' ? 'bg-danger-bg text-danger' : action.tone === 'warning' ? 'bg-warning-bg text-warning' : action.tone === 'success' ? 'bg-success-bg text-success' : 'bg-primary/10 text-primary'}`} onClick={() => void runAction(action.label, () => action.run(row))}>{t(action.label)}</button>)}
