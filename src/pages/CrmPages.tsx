@@ -105,20 +105,23 @@ function isoDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-function dashboardRangePreset(preset: 'thisMonth' | 'lastMonth' | 'last30Days' | 'today'): DashboardDateRange {
-  const today = new Date();
-  if (preset === 'today') return { startDate: isoDate(today), endDate: isoDate(today) };
+type DashboardRangePreset = 'thisMonth' | 'lastMonth' | 'last30Days' | 'today';
+
+function dashboardRangePreset(preset: DashboardRangePreset, endDateValue?: string): DashboardDateRange {
+  const today = endDateValue ? new Date(`${endDateValue}T00:00:00`) : new Date();
+  const safeToday = Number.isNaN(today.getTime()) ? new Date() : today;
+  if (preset === 'today') return { startDate: isoDate(safeToday), endDate: isoDate(safeToday) };
   if (preset === 'last30Days') {
-    const start = new Date(today);
+    const start = new Date(safeToday);
     start.setDate(start.getDate() - 29);
-    return { startDate: isoDate(start), endDate: isoDate(today) };
+    return { startDate: isoDate(start), endDate: isoDate(safeToday) };
   }
   if (preset === 'lastMonth') {
-    const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const end = new Date(today.getFullYear(), today.getMonth(), 0);
+    const start = new Date(safeToday.getFullYear(), safeToday.getMonth() - 1, 1);
+    const end = new Date(safeToday.getFullYear(), safeToday.getMonth(), 0);
     return { startDate: isoDate(start), endDate: isoDate(end) };
   }
-  return { startDate: isoDate(new Date(today.getFullYear(), today.getMonth(), 1)), endDate: isoDate(today) };
+  return { startDate: isoDate(new Date(safeToday.getFullYear(), safeToday.getMonth(), 1)), endDate: isoDate(safeToday) };
 }
 
 export function DashboardPage({ clients, priorityClients, products, materials, staff, categoryAnalytics, revenueData, totalStock, lowStockCount, pipelineValue, onDutyCount, staffTotal, formatMoney, openModal, dateRange, onDateRangeChange }: {
@@ -142,48 +145,39 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const lowStockMaterials = materials.filter(m => m.stock <= m.minStock);
-  const presets = ['thisMonth', 'lastMonth', 'last30Days', 'today'] as const;
-  const updateStartDate = (startDate: string) => onDateRangeChange({
-    startDate,
-    endDate: dateRange.endDate < startDate ? startDate : dateRange.endDate,
-  });
-  const updateEndDate = (endDate: string) => onDateRangeChange({
-    startDate: dateRange.startDate > endDate ? endDate : dateRange.startDate,
-    endDate,
-  });
+  const presets: DashboardRangePreset[] = ['thisMonth', 'last30Days', 'lastMonth', 'today'];
+  const activePreset = presets.find(preset => {
+    const range = dashboardRangePreset(preset, dateRange.endDate);
+    return dateRange.startDate === range.startDate && dateRange.endDate === range.endDate;
+  }) ?? 'thisMonth';
+  const changePreset = (preset: DashboardRangePreset) => onDateRangeChange(dashboardRangePreset(preset, dateRange.endDate));
+  const changeEndDate = (endDate: string) => onDateRangeChange(dashboardRangePreset(activePreset, endDate));
 
   return (
     <div className="grid gap-5">
       <PageHeader eyebrow={t('dashboard.eyebrow')} title={t('dashboard.title')} description={t('dashboard.description')} />
-      <div className="flex flex-col gap-3 rounded-xl bg-surface-card p-3 shadow-sm ring-1 ring-border-soft/35 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-card p-2 shadow-sm ring-1 ring-border-soft/35">
+        <div className="flex min-w-0 flex-wrap gap-1">
           {presets.map(preset => {
-            const range = dashboardRangePreset(preset);
-            const active = dateRange.startDate === range.startDate && dateRange.endDate === range.endDate;
+            const active = activePreset === preset;
             return (
               <button
                 key={preset}
                 type="button"
                 className={[
-                  'inline-flex min-h-10 items-center rounded-xl px-3 text-xs font-extrabold transition',
+                  'inline-flex h-8 items-center rounded-lg px-2.5 text-[11px] font-extrabold transition',
                   active ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-surface-subtle text-text-secondary hover:bg-primary/10 hover:text-text-primary',
                 ].join(' ')}
-                onClick={() => onDateRangeChange(range)}
+                onClick={() => changePreset(preset)}
               >
                 {t(`dashboard.filters.${preset}`)}
               </button>
             );
           })}
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[360px]">
-          <label className="grid gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted">
-            {t('dashboard.filters.startDate')}
-            <DatePicker value={dateRange.startDate} onChange={updateStartDate} />
-          </label>
-          <label className="grid gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted">
-            {t('dashboard.filters.endDate')}
-            <DatePicker value={dateRange.endDate} onChange={updateEndDate} />
-          </label>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="hidden text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted sm:inline">{t('dashboard.filters.until')}</span>
+          <DatePicker value={dateRange.endDate} onChange={changeEndDate} className="w-[154px]" />
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

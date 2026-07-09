@@ -169,7 +169,8 @@
       "last30Days": "30 kun",
       "today": "Bugun",
       "startDate": "Boshlanish",
-      "endDate": "Tugash"
+      "endDate": "Tugash",
+      "until": "Gacha"
     },
     "metrics": {
       "pipeline": "Buyurtmalar qiymati",
