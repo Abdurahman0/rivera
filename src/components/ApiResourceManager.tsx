@@ -312,12 +312,15 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
               ))}
             </div>
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[760px] text-sm">
-                <thead><tr className="bg-surface-subtle text-left text-[11px] uppercase tracking-wide text-text-muted">{tableFields.map(field => <th key={field.name} className="px-4 py-3">{t(field.label)}</th>)}<th className="px-4 py-3">{t('admin.ui.actions')}</th></tr></thead>
+              <table className="w-full min-w-[760px] table-fixed text-sm">
+                <thead><tr className="bg-surface-subtle text-left text-[11px] uppercase tracking-wide text-text-muted">{tableFields.map(field => <th key={field.name} className="px-4 py-3"><span className="block truncate" title={t(field.label)}>{t(field.label)}</span></th>)}<th className="w-[150px] px-4 py-3">{t('admin.ui.actions')}</th></tr></thead>
                 <tbody>
                   {filteredRows.map(row => (
                     <tr key={String(row.id)} className="border-t border-border-soft/20 hover:bg-surface-subtle/50">
-                      {tableFields.map(field => <td key={field.name} className="max-w-[260px] px-4 py-3 text-text-secondary"><span className="line-clamp-2">{cellValue(t, row, field, lookups)}</span></td>)}
+                      {tableFields.map(field => {
+                        const value = cellValue(t, row, field, lookups);
+                        return <td key={field.name} className="min-w-0 overflow-hidden px-4 py-3 text-text-secondary"><span className="line-clamp-2 min-w-0 [overflow-wrap:anywhere]" title={value}>{value}</span></td>;
+                      })}
                       <td className="px-4 py-3"><div className="flex flex-wrap gap-1.5">
                         {actions.filter(action => !action.show || action.show(row)).map(action => <button key={action.label} className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${action.tone === 'danger' ? 'bg-danger-bg text-danger' : action.tone === 'warning' ? 'bg-warning-bg text-warning' : action.tone === 'success' ? 'bg-success-bg text-success' : 'bg-primary/10 text-primary'}`} onClick={() => void runAction(action.label, () => action.run(row))}>{t(action.label)}</button>)}
                         {!config.readOnly && config.allowEdit !== false && !row.is_archived ? <button className="rounded-lg bg-primary/10 p-2 text-primary" title={t('admin.ui.edit')} onClick={() => setEditing(row)}><FiEdit2 /></button> : null}

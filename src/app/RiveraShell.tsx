@@ -68,6 +68,7 @@ import {
 import type {
   CategoryDatum,
   Client,
+  DashboardDateRange,
   EntityId,
   EntityKind,
   FinanceEntry,
@@ -156,6 +157,24 @@ function initAccentOnLoad() {
   return accent;
 }
 
+function toIsoDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function monthStartIso(date = new Date()) {
+  return toIsoDate(new Date(date.getFullYear(), date.getMonth(), 1));
+}
+
+function currentMonthRange(): DashboardDateRange {
+  return { startDate: monthStartIso(), endDate: toIsoDate(new Date()) };
+}
+
+function isWithinDateRange(value: string | undefined, range: DashboardDateRange) {
+  if (!value) return false;
+  const date = value.slice(0, 10);
+  return date >= range.startDate && date <= range.endDate;
+}
+
 function App() {
   const { t, i18n } = useTranslation();
   const { alert, prompt } = useDialog();
@@ -172,27 +191,38 @@ function App() {
   const [appData, setAppData] = useState<AppData>(EMPTY_DATA);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [currentUser, setCurrentUser] = useState<ApiCurrentUser | null>(null);
+  const [dashboardDateRange, setDashboardDateRange] = useState<DashboardDateRange>(currentMonthRange);
+  const dataLoadId = useRef(0);
   const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, movementHistory, revenueEntries, expenseEntries, productionRecords, materials: rawMaterials, pieceworkRecords, productionBatches, staffFlow, approvals, operationTypeOptions } = appData;
 
-  const refreshData = useCallback(async () => {
+  const refreshData = useCallback(async (page: PageId = activePage, dateRange: DashboardDateRange = dashboardDateRange) => {
     if (!isAuthenticated) return;
+    const requestId = dataLoadId.current + 1;
+    dataLoadId.current = requestId;
     setIsLoadingData(true);
     try {
-      setAppData(await loadAppData());
+      const nextData = await loadAppData(page, page === 'dashboard' ? dateRange : undefined);
+      if (requestId === dataLoadId.current) {
+        setAppData(nextData);
+      }
     } catch (error) {
-      if (!(error instanceof ApiError && error.status === 401)) {
+      if (requestId === dataLoadId.current && !(error instanceof ApiError && error.status === 401)) {
         toast(error instanceof Error ? error.message : t('admin.ui.requestFailed'), 'danger');
       }
     } finally {
-      setIsLoadingData(false);
+      if (requestId === dataLoadId.current) {
+        setIsLoadingData(false);
+      }
     }
-  }, [isAuthenticated, t, toast]);
+  }, [activePage, dashboardDateRange, isAuthenticated, t, toast]);
 
   useEffect(() => {
-    void refreshData();
-  }, [refreshData]);
+    void refreshData(activePage, dashboardDateRange);
+  }, [activePage, dashboardDateRange, refreshData]);
 
   useEffect(() => onSessionExpired(() => {
+    dataLoadId.current += 1;
+    setAppData(EMPTY_DATA);
     setIsAuthenticated(false);
     toast(t('auth.sessionExpired'), 'danger');
   }), [t, toast]);
@@ -236,15 +266,17 @@ function App() {
     [i18n.language],
   );
 
-  const orderMonths = [...new Set(orders.map(order => order.orderDate.slice(0, 7)))].sort().slice(-6);
+  const dashboardClients = clients.filter(client => isWithinDateRange(String(client.api?.created_at ?? client.lastContact), dashboardDateRange));
+  const dashboardOrders = orders.filter(order => isWithinDateRange(order.orderDate, dashboardDateRange));
+  const orderMonths = [...new Set(dashboardOrders.map(order => order.orderDate.slice(0, 7)))].sort().slice(-6);
   const revenueData = orderMonths.map(month => {
-    const rows = orders.filter(order => order.orderDate.startsWith(month));
+    const rows = dashboardOrders.filter(order => order.orderDate.startsWith(month));
     return { month, revenue: rows.reduce((sum, row) => sum + row.totalAmount, 0), orders: rows.length };
   });
 
   const totalStock = appData.summary?.warehouse.finished_goods_total_units ?? products.reduce((sum, product) => sum + product.stock, 0);
   const lowStockCount = appData.summary?.warehouse.low_stock_materials_count ?? products.filter(product => product.stock <= product.minStock).length;
-  const pipelineValue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const pipelineValue = dashboardOrders.reduce((sum, order) => sum + order.totalAmount, 0);
   const onDutyCount = staff.filter(member => member.statusKey !== 'leftEarly').length;
   const priorityClients = appData.topClientIds.map(id => clients.find(client => String(client.id) === id)).filter((client): client is Client => Boolean(client));
   const activeMeta = navItems.find(item => item.id === activePage) ?? navItems[0];
@@ -510,7 +542,7 @@ function App() {
                   {t('common.create')}
                 </button>
               ) : null}
-              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-danger transition hover:bg-danger-bg" onClick={() => { void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}>
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-danger transition hover:bg-danger-bg" onClick={() => { dataLoadId.current += 1; void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}>
                 <FiLogOut className="h-4 w-4" />
                 {t('common.logout')}
               </button>
@@ -559,7 +591,7 @@ function App() {
                 <span className="hidden sm:inline">{t('common.create')}</span>
               </button>
             ) : null}
-            <IconButton label={t('common.logout')} onClick={() => { void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}><FiLogOut /></IconButton>
+            <IconButton label={t('common.logout')} onClick={() => { dataLoadId.current += 1; void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}><FiLogOut /></IconButton>
           </div>
           {isLoadingData ? (
             <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden" aria-hidden="true">
@@ -573,7 +605,7 @@ function App() {
             <Suspense fallback={<div className="app-card--nova p-5 text-sm font-semibold text-text-secondary">{t('common.loading')}</div>}>
             {activePage === 'dashboard' && (
               <DashboardPage
-                clients={clients}
+                clients={dashboardClients}
                 priorityClients={priorityClients}
                 products={products}
                 materials={rawMaterials}
@@ -587,6 +619,8 @@ function App() {
                 staffTotal={staff.length}
                 formatMoney={formatMoney}
                 openModal={setModal}
+                dateRange={dashboardDateRange}
+                onDateRangeChange={setDashboardDateRange}
               />
             )}
             {activePage === 'clients' && (

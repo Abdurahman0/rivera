@@ -4,6 +4,11 @@ export type ModalMode = 'view' | 'create' | 'edit';
 export type EntityKind = 'client' | 'staff' | 'product' | 'category' | 'order' | 'material' | 'batch' | 'payment' | 'stockMovement';
 export type EntityId = number | string;
 
+export interface DashboardDateRange {
+  startDate: string;
+  endDate: string;
+}
+
 export interface Material {
   id: EntityId;
   name: string;

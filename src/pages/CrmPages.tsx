@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { CategoryDatum, Client, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StockMovement } from '../types/crm';
+import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StockMovement } from '../types/crm';
 import { formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
@@ -101,7 +101,27 @@ export function ApprovalsPage({ approvals, materials, products, onApprove, onRej
   );
 }
 
-export function DashboardPage({ clients, priorityClients, products, materials, staff, categoryAnalytics, revenueData, totalStock, lowStockCount, pipelineValue, onDutyCount, staffTotal, formatMoney, openModal }: {
+function isoDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function dashboardRangePreset(preset: 'thisMonth' | 'lastMonth' | 'last30Days' | 'today'): DashboardDateRange {
+  const today = new Date();
+  if (preset === 'today') return { startDate: isoDate(today), endDate: isoDate(today) };
+  if (preset === 'last30Days') {
+    const start = new Date(today);
+    start.setDate(start.getDate() - 29);
+    return { startDate: isoDate(start), endDate: isoDate(today) };
+  }
+  if (preset === 'lastMonth') {
+    const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const end = new Date(today.getFullYear(), today.getMonth(), 0);
+    return { startDate: isoDate(start), endDate: isoDate(end) };
+  }
+  return { startDate: isoDate(new Date(today.getFullYear(), today.getMonth(), 1)), endDate: isoDate(today) };
+}
+
+export function DashboardPage({ clients, priorityClients, products, materials, staff, categoryAnalytics, revenueData, totalStock, lowStockCount, pipelineValue, onDutyCount, staffTotal, formatMoney, openModal, dateRange, onDateRangeChange }: {
   clients: Client[];
   priorityClients: Client[];
   products: Product[];
@@ -116,14 +136,56 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
   staffTotal: number;
   formatMoney: (value: number) => string;
   openModal: (modal: ModalState) => void;
+  dateRange: DashboardDateRange;
+  onDateRangeChange: (range: DashboardDateRange) => void;
 }) {
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const lowStockMaterials = materials.filter(m => m.stock <= m.minStock);
+  const presets = ['thisMonth', 'lastMonth', 'last30Days', 'today'] as const;
+  const updateStartDate = (startDate: string) => onDateRangeChange({
+    startDate,
+    endDate: dateRange.endDate < startDate ? startDate : dateRange.endDate,
+  });
+  const updateEndDate = (endDate: string) => onDateRangeChange({
+    startDate: dateRange.startDate > endDate ? endDate : dateRange.startDate,
+    endDate,
+  });
 
   return (
     <div className="grid gap-5">
       <PageHeader eyebrow={t('dashboard.eyebrow')} title={t('dashboard.title')} description={t('dashboard.description')} />
+      <div className="flex flex-col gap-3 rounded-xl bg-surface-card p-3 shadow-sm ring-1 ring-border-soft/35 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-wrap gap-2">
+          {presets.map(preset => {
+            const range = dashboardRangePreset(preset);
+            const active = dateRange.startDate === range.startDate && dateRange.endDate === range.endDate;
+            return (
+              <button
+                key={preset}
+                type="button"
+                className={[
+                  'inline-flex min-h-10 items-center rounded-xl px-3 text-xs font-extrabold transition',
+                  active ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-surface-subtle text-text-secondary hover:bg-primary/10 hover:text-text-primary',
+                ].join(' ')}
+                onClick={() => onDateRangeChange(range)}
+              >
+                {t(`dashboard.filters.${preset}`)}
+              </button>
+            );
+          })}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[360px]">
+          <label className="grid gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted">
+            {t('dashboard.filters.startDate')}
+            <DatePicker value={dateRange.startDate} onChange={updateStartDate} />
+          </label>
+          <label className="grid gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted">
+            {t('dashboard.filters.endDate')}
+            <DatePicker value={dateRange.endDate} onChange={updateEndDate} />
+          </label>
+        </div>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard icon={<FiBriefcase />} label={t('dashboard.metrics.pipeline')} value={formatMoney(pipelineValue)} caption={t('dashboard.metrics.pipelineCaption')} tone="success" />
         <MetricCard icon={<FiUsers />} label={t('dashboard.metrics.clients')} value={clients.length.toString()} caption={t('dashboard.metrics.clientsCaption')} tone="info" />
@@ -1628,10 +1690,10 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
           columns={[t('warehouse.columns.date'), t('warehouse.columns.product'), t('common.type'), t('warehouse.columns.quantity'), t('staff.columns.staff')]}
           rows={allMovements.map(row => [
             formatDisplayDate(row.date, t),
-            <span className="max-w-[180px] truncate text-sm font-semibold text-text-primary">{row.product}</span>,
+            <span className="block min-w-0 max-w-[220px] truncate text-sm font-semibold text-text-primary" title={row.product}>{row.product}</span>,
             <StatusBadge tone={row.type === 'in' ? 'success' : 'warning'}>{row.type === 'in' ? t('warehouse.movementIn') : t('warehouse.movementOut')}</StatusBadge>,
             <span className={['font-bold', row.type === 'in' ? 'text-success' : 'text-warning'].join(' ')}>{row.quantity}</span>,
-            translateMovementLabel(t, row.employee),
+            <span className="block min-w-0 max-w-[180px] truncate text-sm font-semibold text-text-primary" title={translateMovementLabel(t, row.employee)}>{translateMovementLabel(t, row.employee)}</span>,
           ])}
         />
       )}

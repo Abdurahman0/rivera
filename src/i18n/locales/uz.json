@@ -163,6 +163,14 @@
     "eyebrow": "Jonli operatsiyalar",
     "title": "To'qimachilik boshqaruv paneli",
     "description": "Mijozlar buyurtmalari, xodimlar davomati, mato zaxirasi va tayyor mahsulot savdosi bir joyda.",
+    "filters": {
+      "thisMonth": "Bu oy",
+      "lastMonth": "O'tgan oy",
+      "last30Days": "30 kun",
+      "today": "Bugun",
+      "startDate": "Boshlanish",
+      "endDate": "Tugash"
+    },
     "metrics": {
       "pipeline": "Buyurtmalar qiymati",
       "pipelineCaption": "Oy bo'yicha +14%",

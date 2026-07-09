@@ -429,6 +429,15 @@ export function SelectField({ label, value, onChange, options, stretch = false }
 }
 
 export function DataTable({ columns, rows, onRowClick }: { columns: string[]; rows: ReactNode[][]; onRowClick?: (rowIndex: number) => void }) {
+  const renderDesktopCell = (cell: ReactNode) => {
+    if (typeof cell === 'string' || typeof cell === 'number') {
+      const value = String(cell);
+      return <span className="block min-w-0 max-w-full truncate" title={value}>{cell}</span>;
+    }
+
+    return cell;
+  };
+
   return (
     <div className="table-shell rounded-xl bg-surface-card p-2 shadow-sm ring-1 ring-border-soft/40">
       <div className="grid gap-2 md:hidden">
@@ -438,6 +447,7 @@ export function DataTable({ columns, rows, onRowClick }: { columns: string[]; ro
             className={['grid gap-2 rounded-xl bg-surface-subtle/80 p-3 text-left ring-1 ring-border-soft/35', onRowClick ? 'cursor-pointer' : ''].join(' ')}
             onClick={() => onRowClick?.(rowIndex)}
             onKeyDown={event => {
+              if (event.target !== event.currentTarget) return;
               if ((event.key === 'Enter' || event.key === ' ') && onRowClick) {
                 event.preventDefault();
                 onRowClick(rowIndex);
@@ -460,7 +470,7 @@ export function DataTable({ columns, rows, onRowClick }: { columns: string[]; ro
           <thead>
             <tr>
               {columns.map(column => (
-                <th key={column} className="data-table__cell data-table__cell--head bg-transparent px-4 py-3.5 text-left align-middle text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted max-[640px]:px-4">{column}</th>
+                <th key={column} className="data-table__cell data-table__cell--head bg-transparent px-4 py-3.5 text-left align-middle text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted max-[640px]:px-4"><span className="block truncate" title={column}>{column}</span></th>
               ))}
             </tr>
           </thead>
@@ -472,7 +482,7 @@ export function DataTable({ columns, rows, onRowClick }: { columns: string[]; ro
                 onClick={() => onRowClick?.(rowIndex)}
               >
                 {row.map((cell, cellIndex) => (
-                  <td key={cellIndex} className="data-table__cell px-4 py-3.5 align-middle text-sm text-text-primary first:rounded-l-lg last:rounded-r-lg max-[640px]:px-4">{cell}</td>
+                  <td key={cellIndex} className="data-table__cell min-w-0 overflow-hidden px-4 py-3.5 align-middle text-sm text-text-primary first:rounded-l-lg last:rounded-r-lg max-[640px]:px-4">{renderDesktopCell(cell)}</td>
                 ))}
               </tr>
             ))}

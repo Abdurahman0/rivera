@@ -1,5 +1,6 @@
 import { actions, api, ApiError, resources } from './client';
 import { adaptOperationalData, type FrontendData, type OperationalApiData } from './adapters';
+import type { DashboardDateRange, PageId } from '../types/crm';
 import type {
   ApiAttendanceRecord,
   ApiApproval,
@@ -39,6 +40,70 @@ export const EMPTY_DATA: AppData = {
   operationTypeOptions: [],
 };
 
+const EMPTY_OPERATIONAL_DATA: OperationalApiData = {
+  clients: [],
+  clientOrders: [],
+  deliveries: [],
+  payments: [],
+  materials: [],
+  suppliers: [],
+  materialStocks: [],
+  materialTransactions: [],
+  categories: [],
+  products: [],
+  norms: [],
+  finishedStocks: [],
+  finishedTransactions: [],
+  batches: [],
+  employees: [],
+  attendance: [],
+  operationTypes: [],
+  workEntries: [],
+  expenses: [],
+};
+
+type OperationalKey = keyof OperationalApiData;
+
+const operationalLoaders = {
+  clients: () => allowedList<ApiClient>(resources.clients),
+  clientOrders: () => allowedList<ApiClientOrder>(resources.clientOrders),
+  deliveries: () => allowedList<ApiClientDelivery>(resources.clientDeliveries),
+  payments: () => allowedList<ApiClientPayment>(resources.clientPayments),
+  materials: () => allowedList<ApiMaterial>(resources.materials),
+  suppliers: () => allowedList<ApiSupplier>(resources.suppliers),
+  materialStocks: () => allowedList<ApiMaterialStock>(resources.materialStocks),
+  materialTransactions: () => allowedList<ApiMaterialTransaction>(resources.materialTransactions),
+  categories: () => allowedList<ApiProductCategory>(resources.productCategories),
+  products: () => allowedList<ApiProduct>(resources.products),
+  norms: () => allowedList<ApiProductMaterialNorm>(resources.productMaterialNorms),
+  finishedStocks: () => allowedList<ApiFinishedGoodsStock>(resources.finishedGoodsStocks),
+  finishedTransactions: () => allowedList<ApiFinishedGoodsTransaction>(resources.finishedGoodsTransactions),
+  batches: () => allowedList<ApiProductionBatch>(resources.productionBatches),
+  employees: () => allowedList<ApiEmployee>(resources.employees),
+  attendance: () => allowedList<ApiAttendanceRecord>(resources.attendanceRecords),
+  operationTypes: () => allowedList<ApiOperationType>(resources.operationTypes),
+  workEntries: () => allowedList<ApiDailyWorkEntry>(resources.dailyWorkEntries),
+  expenses: () => allowedList<ApiExpense>(resources.expenses),
+} satisfies Record<OperationalKey, () => Promise<unknown[]>>;
+
+const PAGE_OPERATIONAL_KEYS: Record<PageId, OperationalKey[]> = {
+  dashboard: [
+    'clients', 'clientOrders', 'materials', 'suppliers', 'materialStocks', 'categories', 'products', 'deliveries', 'finishedStocks', 'employees', 'attendance',
+  ],
+  clients: ['clients'],
+  orders: ['clients', 'clientOrders', 'batches', 'employees', 'operationTypes', 'workEntries'],
+  production: [
+    'products', 'categories', 'norms', 'materials', 'suppliers', 'materialStocks', 'deliveries', 'finishedStocks', 'batches', 'employees', 'operationTypes', 'workEntries',
+  ],
+  materials: ['materials', 'suppliers', 'materialStocks'],
+  products: ['products', 'categories', 'norms', 'materials', 'deliveries', 'finishedStocks'],
+  warehouse: ['products', 'categories', 'deliveries', 'finishedStocks', 'materials', 'materialTransactions', 'finishedTransactions', 'batches'],
+  staff: ['employees', 'attendance', 'batches', 'operationTypes', 'workEntries'],
+  finance: ['clients', 'clientOrders', 'payments', 'expenses'],
+  approvals: ['materials', 'products'],
+  system: [],
+};
+
 async function allowedList<T>(resource: string) {
   try {
     return await api.list<T>(resource);
@@ -48,55 +113,47 @@ async function allowedList<T>(resource: string) {
   }
 }
 
-async function allowedSummary() {
+function dashboardParams(dateRange?: DashboardDateRange) {
+  return dateRange ? { start_date: dateRange.startDate, end_date: dateRange.endDate } : undefined;
+}
+
+async function allowedSummary(dateRange?: DashboardDateRange) {
   try {
-    return await actions.dashboardSummary<ApiDashboardSummary>();
+    return await actions.dashboardSummary<ApiDashboardSummary>(dashboardParams(dateRange));
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) return null;
     throw error;
   }
 }
 
-async function allowedTopClients() {
+async function allowedTopClients(dateRange?: DashboardDateRange) {
   try {
-    return await actions.topClients<Array<{ client: string }>>(10);
+    return await actions.topClients<Array<{ client: string }>>(10, dashboardParams(dateRange) ?? {});
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) return [];
     throw error;
   }
 }
 
-export async function loadAppData(): Promise<AppData> {
-  const [
-    clients, clientOrders, deliveries, payments, materials, suppliers, materialStocks, materialTransactions, categories, products, norms,
-    finishedStocks, finishedTransactions, batches, employees, attendance, operationTypes, workEntries, expenses, summary, approvals, topClients,
-  ] = await Promise.all([
-    allowedList<ApiClient>(resources.clients),
-    allowedList<ApiClientOrder>(resources.clientOrders),
-    allowedList<ApiClientDelivery>(resources.clientDeliveries),
-    allowedList<ApiClientPayment>(resources.clientPayments),
-    allowedList<ApiMaterial>(resources.materials),
-    allowedList<ApiSupplier>(resources.suppliers),
-    allowedList<ApiMaterialStock>(resources.materialStocks),
-    allowedList<ApiMaterialTransaction>(resources.materialTransactions),
-    allowedList<ApiProductCategory>(resources.productCategories),
-    allowedList<ApiProduct>(resources.products),
-    allowedList<ApiProductMaterialNorm>(resources.productMaterialNorms),
-    allowedList<ApiFinishedGoodsStock>(resources.finishedGoodsStocks),
-    allowedList<ApiFinishedGoodsTransaction>(resources.finishedGoodsTransactions),
-    allowedList<ApiProductionBatch>(resources.productionBatches),
-    allowedList<ApiEmployee>(resources.employees),
-    allowedList<ApiAttendanceRecord>(resources.attendanceRecords),
-    allowedList<ApiOperationType>(resources.operationTypes),
-    allowedList<ApiDailyWorkEntry>(resources.dailyWorkEntries),
-    allowedList<ApiExpense>(resources.expenses),
-    allowedSummary(),
-    allowedList<ApiApproval>(resources.approvals),
-    allowedTopClients(),
+async function loadOperationalData(page: PageId): Promise<OperationalApiData> {
+  const entries = await Promise.all(
+    [...new Set(PAGE_OPERATIONAL_KEYS[page])].map(async key => [key, await operationalLoaders[key]()] as const),
+  );
+  return { ...EMPTY_OPERATIONAL_DATA, ...Object.fromEntries(entries) } as OperationalApiData;
+}
+
+export async function loadAppData(page: PageId, dashboardDateRange?: DashboardDateRange): Promise<AppData> {
+  const shouldLoadSummary = page === 'dashboard' || page === 'warehouse';
+  const shouldLoadApprovals = page === 'approvals';
+  const shouldLoadTopClients = page === 'dashboard';
+  const dateRange = page === 'dashboard' ? dashboardDateRange : undefined;
+
+  const [operational, summary, approvals, topClients] = await Promise.all([
+    loadOperationalData(page),
+    shouldLoadSummary ? allowedSummary(dateRange) : Promise.resolve(null),
+    shouldLoadApprovals ? allowedList<ApiApproval>(resources.approvals) : Promise.resolve([]),
+    shouldLoadTopClients ? allowedTopClients(dateRange) : Promise.resolve([]),
   ]);
-  const operational: OperationalApiData = {
-    clients, clientOrders, deliveries, payments, materials, suppliers, materialStocks, materialTransactions, categories, products, norms,
-    finishedStocks, finishedTransactions, batches, employees, attendance, operationTypes, workEntries, expenses,
-  };
+
   return { ...adaptOperationalData(operational), summary, approvals, topClientIds: topClients.map(row => row.client) };
 }
