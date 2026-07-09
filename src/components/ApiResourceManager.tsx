@@ -6,7 +6,7 @@ import { api } from '../api/client';
 import { useDialog } from './DialogProvider';
 import { useToast } from './ToastProvider';
 import { Dropdown, DatePicker } from './FormControls';
-import { formatDisplayDate, formatDisplayDateTime } from '../utils/crm';
+import { formatDisplayDate, formatDisplayDateTime, translateBackendMessage } from '../utils/crm';
 
 export type ResourceRow = Record<string, unknown> & { id: string | number; is_archived?: boolean };
 
@@ -72,7 +72,7 @@ function errorMessage(t: TFunction, error: unknown) {
     const record = details as Record<string, unknown>;
     // A top-level `detail` (DRF/SimpleJWT auth & permission errors) is already the
     // full human-readable message — ignore sibling keys like `code`/`messages`.
-    if (typeof record.detail === 'string') return record.detail;
+    if (typeof record.detail === 'string') return translateBackendMessage(t, record.detail);
     const flattened = Object.entries(record)
       .map(([key, value]) => {
         const text = stringifyErrorValue(value);
@@ -82,7 +82,7 @@ function errorMessage(t: TFunction, error: unknown) {
       .join(' · ');
     if (flattened) return flattened;
   }
-  return error.message || t('admin.ui.requestFailed');
+  return translateBackendMessage(t, error.message || t('admin.ui.requestFailed'));
 }
 
 function rawDisplayValue(t: TFunction, value: unknown) {

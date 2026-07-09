@@ -2282,5 +2282,9 @@
   "auth": {
     "sessionExpired": "Sessiya muddati tugadi. Iltimos, qayta kiring.",
     "loginFailed": "Kirish amalga oshmadi. Login yoki parolni tekshiring."
+  },
+  "errors": {
+    "insufficientMaterialStock": "Material zaxirasi yetarli emas",
+    "insufficientFinishedGoodsStock": "Tayyor mahsulot zaxirasi yetarli emas"
   }
 }

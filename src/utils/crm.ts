@@ -73,6 +73,26 @@ export function unitLabel(unit: Product['unit'], t: (key: string) => string) {
 
 type Translator = (key: string, options?: Record<string, unknown>) => string;
 
+const BACKEND_ERROR_TRANSLATIONS: Record<string, string> = {
+  'insufficient material stock': 'errors.insufficientMaterialStock',
+  'insufficient finished goods stock': 'errors.insufficientFinishedGoodsStock',
+};
+
+export function translateBackendMessage(t: Translator, message: string) {
+  const key = BACKEND_ERROR_TRANSLATIONS[message.trim().toLowerCase()];
+  return key ? t(key, { defaultValue: message }) : message;
+}
+
+export function apiErrorMessage(error: unknown, t: Translator, fallbackKey = 'admin.ui.requestFailed') {
+  if (!(error instanceof Error)) return t(fallbackKey);
+  const details = (error as Error & { details?: unknown }).details;
+  if (details && typeof details === 'object' && !Array.isArray(details)) {
+    const detail = (details as Record<string, unknown>).detail;
+    if (typeof detail === 'string') return translateBackendMessage(t, detail);
+  }
+  return translateBackendMessage(t, error.message || t(fallbackKey));
+}
+
 /** Translates a statusKey through the shared `statuses.*` dictionary. */
 export function statusLabel(t: Translator, statusKey: string) {
   return t(`statuses.${statusKey}`, { defaultValue: statusKey.replaceAll('_', ' ') });

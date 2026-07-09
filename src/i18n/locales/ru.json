@@ -2277,5 +2277,9 @@
   "auth": {
     "sessionExpired": "Сессия истекла. Пожалуйста, войдите снова.",
     "loginFailed": "Не удалось войти. Проверьте логин и пароль."
+  },
+  "errors": {
+    "insufficientMaterialStock": "Недостаточно материалов на складе",
+    "insufficientFinishedGoodsStock": "Недостаточно готовой продукции на складе"
   }
 }

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError } from '../api/client';
+import { api } from '../api/client';
 import type { ResourceField } from './ApiResourceManager';
 import { Dropdown, DatePicker, type DropdownOption } from './FormControls';
 import { useToast } from './ToastProvider';
+import { apiErrorMessage } from '../utils/crm';
 
 const inputClass = 'h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50';
 
@@ -64,7 +65,7 @@ export function QuickCreateForm({ resource, fields, extraPayload, defaults, onSa
       toast(t('admin.ui.savedOk'), 'success');
       onSaved();
     } catch (error) {
-      toast(error instanceof ApiError ? error.message : t('admin.ui.requestFailed'), 'danger');
+      toast(apiErrorMessage(error, t), 'danger');
     } finally {
       setSaving(false);
     }

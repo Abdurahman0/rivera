@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StockMovement } from '../types/crm';
-import { formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
+import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
 import { useDialog } from '../components/DialogProvider';
@@ -11,7 +11,7 @@ import { useToast } from '../components/ToastProvider';
 import { useHasPermission } from '../components/PermissionsProvider';
 import { Dropdown, DatePicker } from '../components/FormControls';
 import { ApiResourceManager, type ResourceAction, type ResourceConfig } from '../components/ApiResourceManager';
-import { actions, api, ApiError, resources } from '../api/client';
+import { actions, api, resources } from '../api/client';
 import type { ApiApproval, ApiRecord } from '../api/types';
 import { APPROVAL_ACTION_TARGETS, buildApprovalObjectLabel } from '../lib/approvalTargets';
 import { operationsConfigs } from '../data/resource-config';
@@ -23,7 +23,7 @@ function useResourceExport() {
   const { toast } = useToast();
   return (resource: string) => {
     void api.export(resource).catch(error => {
-      toast(error instanceof ApiError ? error.message : t('admin.ui.requestFailed'), 'danger');
+      toast(apiErrorMessage(error, t), 'danger');
     });
   };
 }
@@ -977,6 +977,7 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
   const { t } = useTranslation();
   const { toast } = useToast();
   const [adding, setAdding] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [newMaterial, setNewMaterial] = useState('');
   const [newQty, setNewQty] = useState('');
   const [saving, setSaving] = useState(false);
@@ -998,7 +999,7 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
       setNewQty('');
       onChanged();
     } catch (error) {
-      toast(error instanceof ApiError ? error.message : t('admin.ui.requestFailed'), 'danger');
+      toast(apiErrorMessage(error, t), 'danger');
     } finally {
       setSaving(false);
     }
@@ -1010,13 +1011,18 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
       toast(t('admin.ui.archivedOk'), 'success');
       onChanged();
     } catch (error) {
-      toast(error instanceof ApiError ? error.message : t('admin.ui.requestFailed'), 'danger');
+      toast(apiErrorMessage(error, t), 'danger');
     }
   }
 
   return (
     <section className="app-card--nova overflow-hidden">
-      <div className="flex flex-col items-start gap-4 border-b border-border-soft/30 p-5 sm:flex-row sm:items-center">
+      <button
+        type="button"
+        className={['flex w-full flex-col items-start gap-4 p-5 text-left transition hover:bg-primary/5 sm:flex-row sm:items-center', isOpen || adding ? 'border-b border-border-soft/30' : ''].join(' ')}
+        onClick={() => setIsOpen(open => !open)}
+        aria-expanded={isOpen || adding}
+      >
         <div className="flex min-w-0 w-full items-center gap-4 sm:w-auto sm:flex-1">
           <img src={product.imageUrl} alt={product.name} className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-border-soft/50" />
           <div className="min-w-0 flex-1">
@@ -1033,13 +1039,16 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
           <p className="text-xs text-text-muted">{t('products.metrics.revenue')}</p>
           <p className="text-lg font-extrabold text-success">{formatMoney(product.revenue)}</p>
         </div>
-      </div>
-      {recipe.length === 0 && !adding ? (
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-text-secondary ring-1 ring-border-soft/45">
+          <FiChevronRight className={['h-4 w-4 transition-transform', isOpen || adding ? 'rotate-90' : ''].join(' ')} />
+        </span>
+      </button>
+      {(isOpen || adding) && recipe.length === 0 && !adding ? (
         <div className="flex flex-col items-center gap-2 p-8 text-center">
           <FiLayers className="h-6 w-6 text-text-muted opacity-50" />
           <p className="text-sm font-semibold text-text-muted">{t('products.bom.noRecipe')}</p>
         </div>
-      ) : (
+      ) : isOpen || adding ? (
         <>
           <div className="grid gap-2 bg-surface-subtle/30 p-3 md:hidden">
             {recipe.map(item => {
@@ -1126,7 +1135,7 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
             </table>
           </div>
         </>
-      )}
+      ) : null}
       {canManage ? (
         adding ? (
           <div className="grid gap-3 border-t border-border-soft/20 bg-surface-subtle/40 p-5 sm:grid-cols-[1fr_140px_auto_auto]">
@@ -1140,7 +1149,7 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
             </button>
           </div>
         ) : (
-          <div className="border-t border-border-soft/20 p-4">
+          <div className={['border-border-soft/20 p-4', isOpen ? 'border-t' : ''].join(' ')}>
             <button className="rounded-lg bg-primary/10 px-3 py-2 text-xs font-bold text-text-accent transition hover:bg-primary/20" onClick={() => setAdding(true)}>
               + {t('products.bom.addMaterial')}
             </button>
@@ -2046,7 +2055,7 @@ function AddWorkEntryModal({ batch, staff, operationTypes, onClose, onSaved }: {
       onSaved();
       onClose();
     } catch (error) {
-      toast(error instanceof ApiError ? error.message : t('admin.ui.requestFailed'), 'danger');
+      toast(apiErrorMessage(error, t), 'danger');
     } finally {
       setSaving(false);
     }
@@ -2156,6 +2165,7 @@ export function ProductionPage({ batches, products, materials, staff, operationT
   const [activeTab, setActiveTab] = useState<'batches' | 'stock' | 'consumption'>('batches');
   const [addingEmployeeToBatch, setAddingEmployeeToBatch] = useState<ProductionBatch | null>(null);
   const [viewingBatchDetail, setViewingBatchDetail] = useState<ProductionBatch | null>(null);
+  const [openBatchMaterials, setOpenBatchMaterials] = useState<Record<string, boolean>>({});
 
   const totalProduced = batches.reduce((sum, b) => sum + b.producedQty, 0);
 
@@ -2220,6 +2230,7 @@ export function ProductionPage({ batches, products, materials, staff, operationT
             }));
             const visibleEmployees = batch.employees.slice(0, 3);
             const extraEmployees = batch.employees.length - 3;
+            const materialsOpen = Boolean(openBatchMaterials[String(batch.id)]);
 
             return (
               <article key={batch.id} className="app-card--nova overflow-hidden">
@@ -2247,9 +2258,17 @@ export function ProductionPage({ batches, products, materials, staff, operationT
                 </div>
 
                 {/* Material consumption */}
-                <div className="p-5">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <p className="m-0 text-[11px] font-extrabold uppercase tracking-wide text-text-muted">{t('production.batch.materials')}</p>
+                <div>
+                  <button
+                    type="button"
+                    className={['flex w-full flex-wrap items-center justify-between gap-2 px-5 py-3 text-left transition hover:bg-primary/5', materialsOpen ? 'border-b border-border-soft/20' : ''].join(' ')}
+                    onClick={() => setOpenBatchMaterials(current => ({ ...current, [String(batch.id)]: !current[String(batch.id)] }))}
+                    aria-expanded={materialsOpen}
+                  >
+                    <span className="inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wide text-text-muted">
+                      <FiChevronRight className={['h-4 w-4 transition-transform', materialsOpen ? 'rotate-90' : ''].join(' ')} />
+                      {t('production.batch.materials')}
+                    </span>
                     <span className={[
                       'rounded-lg px-2.5 py-1 text-[11px] font-extrabold ring-1',
                       batch.materialIssueRuns > 1
@@ -2262,37 +2281,41 @@ export function ProductionPage({ batches, products, materials, staff, operationT
                         ? t('production.batch.issueRuns', { count: batch.materialIssueRuns, transactions: batch.materialIssueCount })
                         : t('production.batch.notIssued')}
                     </span>
-                  </div>
-                  {materialRows.length === 0 ? (
-                    <p className="text-sm text-text-muted">{t('production.batch.noRecipe')}</p>
-                  ) : (
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                      {materialRows.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-3 rounded-xl bg-surface-subtle p-3 ring-1 ring-border-soft/30">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-text-muted">
-                            <FiLayers className="h-3.5 w-3.5" />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-semibold text-text-primary">{item.materialName}</p>
-                            <p className="mt-0.5 text-[11px] text-text-muted">
-                              {t('production.batch.plannedMaterial')}: <span className="font-bold text-text-primary">{item.plannedUsed.toLocaleString()} {unitLabel(item.unit, t)}</span>
-                              <span className="ml-1 opacity-60">({item.qtyPerUnit} × {batch.plannedQty.toLocaleString()})</span>
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-text-muted">
-                              {t('production.batch.calculatedUsed')}: <span className="font-bold text-text-primary">{item.totalUsed.toLocaleString()} {unitLabel(item.unit, t)}</span>
-                            </p>
-                            <p className={['mt-1 text-[11px] font-semibold', item.issued && item.issued.quantity > item.plannedUsed ? 'text-warning' : 'text-text-muted'].join(' ')}>
-                              {t('production.batch.issued')}: <span className="font-extrabold">{(item.issued?.quantity ?? 0).toLocaleString()} {unitLabel(item.unit, t)}</span>
-                              {item.issued ? <span className="ml-1 opacity-70">({item.issued.count}x)</span> : null}
-                            </p>
-                            {item.issued && item.issued.pendingQuantity > 0 ? (
-                              <p className="mt-0.5 text-[10px] font-semibold text-warning">{t('production.batch.pendingIssued')}: {item.issued.pendingQuantity.toLocaleString()} {unitLabel(item.unit, t)}</p>
-                            ) : null}
-                          </div>
+                  </button>
+                  {materialsOpen ? (
+                    <div className="p-5">
+                      {materialRows.length === 0 ? (
+                        <p className="text-sm text-text-muted">{t('production.batch.noRecipe')}</p>
+                      ) : (
+                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                          {materialRows.map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-3 rounded-xl bg-surface-subtle p-3 ring-1 ring-border-soft/30">
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-text-muted">
+                                <FiLayers className="h-3.5 w-3.5" />
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-semibold text-text-primary">{item.materialName}</p>
+                                <p className="mt-0.5 text-[11px] text-text-muted">
+                                  {t('production.batch.plannedMaterial')}: <span className="font-bold text-text-primary">{item.plannedUsed.toLocaleString()} {unitLabel(item.unit, t)}</span>
+                                  <span className="ml-1 opacity-60">({item.qtyPerUnit} × {batch.plannedQty.toLocaleString()})</span>
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-text-muted">
+                                  {t('production.batch.calculatedUsed')}: <span className="font-bold text-text-primary">{item.totalUsed.toLocaleString()} {unitLabel(item.unit, t)}</span>
+                                </p>
+                                <p className={['mt-1 text-[11px] font-semibold', item.issued && item.issued.quantity > item.plannedUsed ? 'text-warning' : 'text-text-muted'].join(' ')}>
+                                  {t('production.batch.issued')}: <span className="font-extrabold">{(item.issued?.quantity ?? 0).toLocaleString()} {unitLabel(item.unit, t)}</span>
+                                  {item.issued ? <span className="ml-1 opacity-70">({item.issued.count}x)</span> : null}
+                                </p>
+                                {item.issued && item.issued.pendingQuantity > 0 ? (
+                                  <p className="mt-0.5 text-[10px] font-semibold text-warning">{t('production.batch.pendingIssued')}: {item.issued.pendingQuantity.toLocaleString()} {unitLabel(item.unit, t)}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Footer: employees + shift */}

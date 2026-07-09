@@ -86,6 +86,7 @@ import type {
   StockMovement,
 } from '../types/crm';
 import {
+  apiErrorMessage,
   calculateInventory,
   formatDisplayDate,
   getPageFromPath,
@@ -208,7 +209,7 @@ function App() {
       }
     } catch (error) {
       if (requestId === dataLoadId.current && !(error instanceof ApiError && error.status === 401)) {
-        toast(error instanceof Error ? error.message : t('admin.ui.requestFailed'), 'danger');
+        toast(apiErrorMessage(error, t), 'danger');
       }
     } finally {
       if (requestId === dataLoadId.current) {
@@ -648,7 +649,7 @@ function App() {
                     await refreshData();
                     toast(t('dialog.issueMaterialsSuccess'), 'success');
                   } catch (error) {
-                    toast(error instanceof Error ? error.message : t('dialog.issueMaterialsFailed'), 'danger');
+                    toast(apiErrorMessage(error, t, 'dialog.issueMaterialsFailed'), 'danger');
                   }
                 }}
                 onDeliver={async id => {
@@ -661,7 +662,7 @@ function App() {
                     await refreshData();
                     toast(t('dialog.deliverSuccess'), 'success');
                   } catch (error) {
-                    toast(error instanceof Error ? error.message : t('dialog.deliverFailed'), 'danger');
+                    toast(apiErrorMessage(error, t, 'dialog.deliverFailed'), 'danger');
                   }
                 }}
               />
@@ -709,13 +710,13 @@ function App() {
                 onApprove={async id => {
                   try { await actions.approve(id); await refreshData(); }
                   catch (error) {
-                    toast(error instanceof Error ? error.message : t('dialog.approveFailed'), 'danger');
+                    toast(apiErrorMessage(error, t, 'dialog.approveFailed'), 'danger');
                   }
                 }}
                 onReject={async (id, reason) => {
                   try { await actions.reject(id, reason); await refreshData(); }
                   catch (error) {
-                    toast(error instanceof Error ? error.message : t('dialog.rejectFailed'), 'danger');
+                    toast(apiErrorMessage(error, t, 'dialog.rejectFailed'), 'danger');
                   }
                 }}
               />
@@ -749,7 +750,7 @@ function App() {
             void deleteEntity(pendingDelete)
               .then(() => { setPendingDelete(null); setModal(null); })
               .catch(error => {
-                toast(error instanceof Error ? error.message : t('dialog.deleteFailed'), 'danger');
+                toast(apiErrorMessage(error, t, 'dialog.deleteFailed'), 'danger');
                 setPendingDelete(null);
               });
           }}
@@ -926,7 +927,7 @@ function LoginPage({ activeDesign, onDesignChange, onLanguageChange, onLogin, fo
               try {
                 await onLogin(username.trim(), password);
               } catch (error) {
-                toast(error instanceof Error ? error.message : t('auth.loginFailed'), 'danger');
+                toast(apiErrorMessage(error, t, 'auth.loginFailed'), 'danger');
               } finally {
                 setIsSubmitting(false);
               }
@@ -1106,7 +1107,7 @@ function EntityModal({ modal, onClose, formatMoney, categories, clients, product
               void onSave(modal, payload)
                 .then(onClose)
                 .catch(error => {
-                  toast(error instanceof Error ? error.message : t('admin.ui.requestFailed'), 'danger');
+                  toast(apiErrorMessage(error, t), 'danger');
                 })
                 .finally(() => setIsSaving(false));
             }}>
