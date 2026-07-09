@@ -169,7 +169,8 @@ function currentMonthRange(): DashboardDateRange {
   return { startDate: monthStartIso(), endDate: toIsoDate(new Date()) };
 }
 
-function isWithinDateRange(value: string | undefined, range: DashboardDateRange) {
+function isWithinDateRange(value: string | undefined, range: DashboardDateRange | null) {
+  if (!range) return true;
   if (!value) return false;
   const date = value.slice(0, 10);
   return date >= range.startDate && date <= range.endDate;
@@ -191,7 +192,7 @@ function App() {
   const [appData, setAppData] = useState<AppData>(EMPTY_DATA);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [currentUser, setCurrentUser] = useState<ApiCurrentUser | null>(null);
-  const [dashboardDateRange, setDashboardDateRange] = useState<DashboardDateRange>(currentMonthRange);
+  const [dashboardDateRange, setDashboardDateRange] = useState<DashboardDateRange | null>(currentMonthRange);
   const dataLoadId = useRef(0);
   const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, movementHistory, revenueEntries, expenseEntries, productionRecords, materials: rawMaterials, pieceworkRecords, productionBatches, staffFlow, approvals, operationTypeOptions } = appData;
 

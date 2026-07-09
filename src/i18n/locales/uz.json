@@ -170,7 +170,8 @@
       "today": "Bugun",
       "startDate": "Boshlanish",
       "endDate": "Tugash",
-      "clear": "Tozalash"
+      "clear": "Tozalash",
+      "range": "Sana oralig'i"
     },
     "metrics": {
       "pipeline": "Buyurtmalar qiymati",

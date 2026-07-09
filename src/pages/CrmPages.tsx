@@ -130,12 +130,12 @@ function dashboardRangePreset(preset: DashboardRangePreset, endDateValue?: strin
   return { startDate: isoDate(new Date(safeToday.getFullYear(), safeToday.getMonth(), 1)), endDate: isoDate(safeToday) };
 }
 
-function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value: DashboardDateRange; onSave: (range: DashboardDateRange) => void; onClear: () => void; onOpenChange: (open: boolean) => void }) {
+function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value: DashboardDateRange | null; onSave: (range: DashboardDateRange) => void; onClear: () => void; onOpenChange: (open: boolean) => void }) {
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [draftStart, setDraftStart] = useState(value.startDate);
-  const [draftEnd, setDraftEnd] = useState(value.endDate);
-  const [viewDate, setViewDate] = useState(() => parseIsoDate(value.endDate) ?? new Date());
+  const [draftStart, setDraftStart] = useState(value?.startDate ?? '');
+  const [draftEnd, setDraftEnd] = useState(value?.endDate ?? '');
+  const [viewDate, setViewDate] = useState(() => parseIsoDate(value?.endDate ?? '') ?? new Date());
   const menuRef = useRef<HTMLDivElement | null>(null);
   const lang = i18n.language.startsWith('ru') ? 'ru-RU' : 'uz-UZ';
 
@@ -163,10 +163,10 @@ function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value:
 
   useEffect(() => {
     if (isOpen) return;
-    setDraftStart(value.startDate);
-    setDraftEnd(value.endDate);
-    setViewDate(parseIsoDate(value.endDate) ?? new Date());
-  }, [isOpen, value.endDate, value.startDate]);
+    setDraftStart(value?.startDate ?? '');
+    setDraftEnd(value?.endDate ?? '');
+    setViewDate(parseIsoDate(value?.endDate ?? '') ?? new Date());
+  }, [isOpen, value?.endDate, value?.startDate]);
 
   const days = useMemo(() => {
     const year = viewDate.getFullYear();
@@ -183,12 +183,12 @@ function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value:
 
   const monthLabel = viewDate.toLocaleDateString(lang, { month: 'long', year: 'numeric' });
   const weekdayLabels = lang === 'ru-RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Du', 'Se', 'Cho', 'Pay', 'Ju', 'Sha', 'Ya'];
-  const displayText = `${value.startDate.split('-').reverse().join('.')} - ${value.endDate.split('-').reverse().join('.')}`;
+  const displayText = value ? `${value.startDate.split('-').reverse().join('.')} - ${value.endDate.split('-').reverse().join('.')}` : t('dashboard.filters.range');
 
   function openPicker() {
-    setDraftStart(value.startDate);
-    setDraftEnd(value.endDate);
-    setViewDate(parseIsoDate(value.endDate) ?? new Date());
+    setDraftStart(value?.startDate ?? '');
+    setDraftEnd(value?.endDate ?? '');
+    setViewDate(parseIsoDate(value?.endDate ?? '') ?? new Date());
     setIsOpen(true);
     onOpenChange(true);
   }
@@ -298,8 +298,8 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
   staffTotal: number;
   formatMoney: (value: number) => string;
   openModal: (modal: ModalState) => void;
-  dateRange: DashboardDateRange;
-  onDateRangeChange: (range: DashboardDateRange) => void;
+  dateRange: DashboardDateRange | null;
+  onDateRangeChange: (range: DashboardDateRange | null) => void;
 }) {
   const { t } = useTranslation();
   const exportResource = useResourceExport();
@@ -307,16 +307,21 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
   const presets: DashboardRangePreset[] = ['thisMonth', 'last30Days', 'lastMonth', 'today'];
   const [activePreset, setActivePreset] = useState<DashboardRangePreset | null>('thisMonth');
   const changePreset = (preset: DashboardRangePreset) => {
+    if (activePreset === preset) {
+      setActivePreset(null);
+      onDateRangeChange(null);
+      return;
+    }
     setActivePreset(preset);
-    onDateRangeChange(dashboardRangePreset(preset, dateRange.endDate));
+    onDateRangeChange(dashboardRangePreset(preset, dateRange?.endDate));
   };
   const saveCustomRange = (range: DashboardDateRange) => {
     setActivePreset(null);
     onDateRangeChange(range);
   };
   const clearCustomRange = () => {
-    setActivePreset('thisMonth');
-    onDateRangeChange(dashboardRangePreset('thisMonth'));
+    setActivePreset(null);
+    onDateRangeChange(null);
   };
 
   return (
