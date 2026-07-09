@@ -156,8 +156,8 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
   return (
     <div className="grid gap-5">
       <PageHeader eyebrow={t('dashboard.eyebrow')} title={t('dashboard.title')} description={t('dashboard.description')} />
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-card p-2 shadow-sm ring-1 ring-border-soft/35">
-        <div className="flex min-w-0 flex-wrap gap-1">
+      <div className="flex justify-end">
+        <div className="flex w-full max-w-full flex-wrap items-center justify-end gap-1.5 rounded-xl bg-surface-card p-1.5 shadow-sm ring-1 ring-border-soft/35 sm:w-auto">
           {presets.map(preset => {
             const active = activePreset === preset;
             return (
@@ -174,10 +174,7 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
               </button>
             );
           })}
-        </div>
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="hidden text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted sm:inline">{t('dashboard.filters.until')}</span>
-          <DatePicker value={dateRange.endDate} onChange={changeEndDate} className="w-[154px]" />
+          <DatePicker value={dateRange.endDate} onChange={changeEndDate} className="w-[154px]" popoverAlign="right" />
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

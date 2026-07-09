@@ -141,6 +141,7 @@ export function DatePicker({
   required,
   type = 'date',
   className = '',
+  popoverAlign = 'left',
 }: {
   name?: string;
   defaultValue?: string;
@@ -149,6 +150,7 @@ export function DatePicker({
   required?: boolean;
   type?: 'date' | 'datetime-local';
   className?: string;
+  popoverAlign?: 'left' | 'right';
 }) {
   const { i18n } = useTranslation();
   const lang = i18n.language.startsWith('ru') ? 'ru' : 'uz';
@@ -218,7 +220,7 @@ export function DatePicker({
       ) : null}
 
       {isOpen ? (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-[280px] rounded-2xl border border-border-soft/60 bg-surface-card p-3 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl">
+        <div className={['absolute top-[calc(100%+6px)] z-50 w-[280px] rounded-2xl border border-border-soft/60 bg-surface-card p-3 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl', popoverAlign === 'right' ? 'right-0' : 'left-0'].join(' ')}>
           <div className="mb-2 flex items-center justify-between">
             <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>
               <FiChevronLeft className="h-4 w-4" />

@@ -169,8 +169,7 @@
       "last30Days": "30 дней",
       "today": "Сегодня",
       "startDate": "Начало",
-      "endDate": "Конец",
-      "until": "До"
+      "endDate": "Конец"
     },
     "metrics": {
       "pipeline": "Стоимость заказов",
