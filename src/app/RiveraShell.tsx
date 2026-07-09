@@ -1039,11 +1039,12 @@ function EntityModal({ modal, onClose, formatMoney, categories, clients, product
     <div
       className="client-drawer-overlay--nova fixed inset-0 z-[150] flex justify-end bg-background-overlay/72 backdrop-blur-[3px]"
       role="presentation"
-      onClick={onClose}
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <aside
         className="client-drawer-panel--nova h-full w-full max-w-[780px] overflow-y-auto bg-background-subtle p-4 shadow-xl ring-1 ring-border-soft/50 min-[641px]:p-5"
-        onClick={event => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >

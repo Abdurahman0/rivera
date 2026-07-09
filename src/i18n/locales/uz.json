@@ -536,10 +536,8 @@
       "details": {
         "operation": "Operatsiya",
         "amount": "Hisoblangan summa",
-        "backendId": "Backend ID",
         "created": "Yaratilgan",
-        "updated": "Yangilangan",
-        "apiDetails": "API ma'lumotlari"
+        "updated": "Yangilangan"
       }
     },
     "metrics": {

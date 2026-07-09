@@ -1706,55 +1706,44 @@ function ProductionRecordModal({ record, formatMoney, onClose }: { record: Produ
     { label: t('orders.production.columns.orderId'), value: record.orderId || '—' },
     { label: t('orders.production.columns.shift'), value: record.shift || '—' },
     { label: t('orders.production.columns.notes'), value: record.notes || '—' },
-    { label: t('orders.production.details.backendId'), value: String(record.api?.id ?? '—') },
     { label: t('orders.production.details.created'), value: record.api?.created_at ? formatDisplayDateTime(String(record.api.created_at), t) : '—' },
     { label: t('orders.production.details.updated'), value: record.api?.updated_at ? formatDisplayDateTime(String(record.api.updated_at), t) : '—' },
   ];
-  const apiRows = ([
-    ['employee', record.api?.employee],
-    ['operation_type', record.api?.operation_type],
-    ['related_batch', record.api?.related_batch],
-    ['quantity_done', record.api?.quantity_done],
-    ['amount', record.api?.amount],
-  ] as Array<[string, unknown]>).filter(([, value]) => value !== undefined && value !== null && value !== '');
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <section className="grid max-h-[90vh] w-full max-w-[760px] grid-rows-[auto_1fr] overflow-hidden rounded-[28px] bg-surface-card shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
-        <header className="flex items-start justify-between gap-4 border-b border-border-soft/30 p-5">
-          <div className="min-w-0">
-            <p className="m-0 text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary">{t('orders.production.title')}</p>
-            <h3 className="mt-1 truncate font-display text-xl font-extrabold text-text-primary">{record.product}</h3>
-            <p className="mt-1 text-sm font-semibold text-text-muted">{record.employee} · {formatProductionQuantity(record, t)}</p>
-          </div>
-          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
-            <FiX className="h-4 w-4" />
-          </button>
-        </header>
-        <div className="min-h-0 overflow-y-auto p-5">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {detailRows.map(row => (
-              <div key={row.label} className="min-w-0 rounded-xl bg-surface-subtle p-3 ring-1 ring-border-soft/35">
-                <p className="m-0 text-[11px] font-extrabold uppercase tracking-wide text-text-muted">{row.label}</p>
-                <p className="mt-1 min-w-0 break-words text-sm font-bold text-text-primary">{row.value}</p>
-              </div>
-            ))}
-          </div>
-          {apiRows.length ? (
-            <div className="mt-4 rounded-xl bg-surface-subtle p-3 ring-1 ring-border-soft/35">
-              <p className="m-0 text-[11px] font-extrabold uppercase tracking-wide text-text-muted">{t('orders.production.details.apiDetails')}</p>
-              <div className="mt-2 grid gap-2">
-                {apiRows.map(([key, value]) => (
-                  <div key={key} className="flex min-w-0 items-center justify-between gap-3 text-xs">
-                    <span className="shrink-0 font-bold text-text-muted">{key}</span>
-                    <span className="min-w-0 truncate font-mono font-semibold text-text-secondary" title={String(value)}>{String(value)}</span>
-                  </div>
-                ))}
-              </div>
+    <div
+      className="client-drawer-overlay--nova fixed inset-0 z-[150] flex justify-end bg-background-overlay/72 backdrop-blur-[3px]"
+      role="presentation"
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <aside
+        className="client-drawer-panel--nova h-full w-full max-w-[760px] overflow-y-auto bg-background-subtle p-4 shadow-xl ring-1 ring-border-soft/50 min-[641px]:p-5"
+        role="dialog"
+        aria-modal="true"
+      >
+        <header className="mb-4 rounded-xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="m-0 text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary">{t('orders.production.title')}</p>
+              <h3 className="mt-1 truncate font-display text-xl font-extrabold text-text-primary">{record.product}</h3>
+              <p className="mt-1 text-sm font-semibold text-text-muted">{record.employee} · {formatProductionQuantity(record, t)}</p>
             </div>
-          ) : null}
+            <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+              <FiX className="h-4 w-4" />
+            </button>
+          </div>
+        </header>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {detailRows.map(row => (
+            <div key={row.label} className="min-w-0 rounded-xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40">
+              <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">{row.label}</p>
+              <p className="mt-1 text-sm font-semibold text-text-primary [overflow-wrap:anywhere]">{row.value}</p>
+            </div>
+          ))}
         </div>
-      </section>
+      </aside>
     </div>
   );
 }
