@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -105,6 +105,12 @@ function isoDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+function parseIsoDate(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
 type DashboardRangePreset = 'thisMonth' | 'lastMonth' | 'last30Days' | 'today';
 
 function dashboardRangePreset(preset: DashboardRangePreset, endDateValue?: string): DashboardDateRange {
@@ -122,6 +128,159 @@ function dashboardRangePreset(preset: DashboardRangePreset, endDateValue?: strin
     return { startDate: isoDate(start), endDate: isoDate(end) };
   }
   return { startDate: isoDate(new Date(safeToday.getFullYear(), safeToday.getMonth(), 1)), endDate: isoDate(safeToday) };
+}
+
+function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value: DashboardDateRange; onSave: (range: DashboardDateRange) => void; onClear: () => void; onOpenChange: (open: boolean) => void }) {
+  const { t, i18n } = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+  const [draftStart, setDraftStart] = useState(value.startDate);
+  const [draftEnd, setDraftEnd] = useState(value.endDate);
+  const [viewDate, setViewDate] = useState(() => parseIsoDate(value.endDate) ?? new Date());
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const lang = i18n.language.startsWith('ru') ? 'ru-RU' : 'uz-UZ';
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handlePointerDown(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+        onOpenChange(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        onOpenChange(false);
+      }
+    }
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onOpenChange]);
+
+  useEffect(() => {
+    if (isOpen) return;
+    setDraftStart(value.startDate);
+    setDraftEnd(value.endDate);
+    setViewDate(parseIsoDate(value.endDate) ?? new Date());
+  }, [isOpen, value.endDate, value.startDate]);
+
+  const days = useMemo(() => {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const startOffset = (firstOfMonth.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells: Array<{ date: Date; inMonth: boolean }> = [];
+    for (let i = 0; i < startOffset; i++) cells.push({ date: new Date(year, month, i - startOffset + 1), inMonth: false });
+    for (let day = 1; day <= daysInMonth; day++) cells.push({ date: new Date(year, month, day), inMonth: true });
+    while (cells.length % 7 !== 0 || cells.length < 42) cells.push({ date: new Date(year, month, daysInMonth + cells.length - startOffset - daysInMonth + 1), inMonth: false });
+    return cells;
+  }, [viewDate]);
+
+  const monthLabel = viewDate.toLocaleDateString(lang, { month: 'long', year: 'numeric' });
+  const weekdayLabels = lang === 'ru-RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Du', 'Se', 'Cho', 'Pay', 'Ju', 'Sha', 'Ya'];
+  const displayText = `${value.startDate.split('-').reverse().join('.')} - ${value.endDate.split('-').reverse().join('.')}`;
+
+  function openPicker() {
+    setDraftStart(value.startDate);
+    setDraftEnd(value.endDate);
+    setViewDate(parseIsoDate(value.endDate) ?? new Date());
+    setIsOpen(true);
+    onOpenChange(true);
+  }
+
+  function closePicker() {
+    setIsOpen(false);
+    onOpenChange(false);
+  }
+
+  function pickDate(iso: string) {
+    if (!draftStart || (draftStart && draftEnd)) {
+      setDraftStart(iso);
+      setDraftEnd('');
+      return;
+    }
+    if (iso < draftStart) {
+      setDraftEnd(draftStart);
+      setDraftStart(iso);
+      return;
+    }
+    setDraftEnd(iso);
+  }
+
+  return (
+    <div ref={menuRef} className="relative w-[238px] max-w-full">
+      <button
+        type="button"
+        className={[
+          'flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border-soft bg-surface-card px-2.5 text-left text-[11px] font-bold text-text-primary outline-none transition',
+          isOpen ? 'border-primary/50 ring-4 ring-primary/10' : 'hover:border-primary/35',
+        ].join(' ')}
+        onClick={() => isOpen ? closePicker() : openPicker()}
+      >
+        <span className="min-w-0 truncate">{displayText}</span>
+        <FiCalendar className="h-3.5 w-3.5 shrink-0 text-text-muted" />
+      </button>
+
+      {isOpen ? (
+        <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-[292px] rounded-2xl border border-border-soft/60 bg-surface-card p-3 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl">
+          <div className="mb-2 flex items-center justify-between">
+            <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() - 1, 1))}>
+              <FiChevronRight className="h-4 w-4 rotate-180" />
+            </button>
+            <span className="text-sm font-bold capitalize text-text-primary">{monthLabel}</span>
+            <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() + 1, 1))}>
+              <FiChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {weekdayLabels.map(label => <span key={label} className="grid h-7 place-items-center text-[10px] font-bold uppercase text-text-muted">{label}</span>)}
+            {days.map(({ date, inMonth }, index) => {
+              const iso = isoDate(date);
+              const isEdge = iso === draftStart || iso === draftEnd;
+              const isBetween = Boolean(draftStart && draftEnd && iso > draftStart && iso < draftEnd);
+              return (
+                <button
+                  key={`${iso}-${index}`}
+                  type="button"
+                  className={[
+                    'grid h-8 place-items-center rounded-lg text-xs font-semibold transition',
+                    !inMonth ? 'text-text-muted/40 hover:bg-surface-subtle' : 'text-text-primary hover:bg-primary/10',
+                    isBetween ? 'bg-primary/10 text-text-primary' : '',
+                    isEdge ? 'bg-primary text-primary-foreground hover:bg-primary' : '',
+                  ].join(' ')}
+                  onClick={() => pickDate(iso)}
+                >
+                  {date.getDate()}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button type="button" className="h-9 rounded-lg bg-surface-subtle px-3 text-xs font-bold text-text-secondary transition hover:bg-surface-muted hover:text-text-primary" onClick={() => { onClear(); closePicker(); }}>
+              {t('dashboard.filters.clear')}
+            </button>
+            <button
+              type="button"
+              className="h-9 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:bg-primary-accent disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!draftStart || !draftEnd}
+              onClick={() => {
+                if (!draftStart || !draftEnd) return;
+                onSave({ startDate: draftStart, endDate: draftEnd });
+                closePicker();
+              }}
+            >
+              {t('common.save')}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function DashboardPage({ clients, priorityClients, products, materials, staff, categoryAnalytics, revenueData, totalStock, lowStockCount, pipelineValue, onDutyCount, staffTotal, formatMoney, openModal, dateRange, onDateRangeChange }: {
@@ -146,12 +305,19 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
   const exportResource = useResourceExport();
   const lowStockMaterials = materials.filter(m => m.stock <= m.minStock);
   const presets: DashboardRangePreset[] = ['thisMonth', 'last30Days', 'lastMonth', 'today'];
-  const activePreset = presets.find(preset => {
-    const range = dashboardRangePreset(preset, dateRange.endDate);
-    return dateRange.startDate === range.startDate && dateRange.endDate === range.endDate;
-  }) ?? 'thisMonth';
-  const changePreset = (preset: DashboardRangePreset) => onDateRangeChange(dashboardRangePreset(preset, dateRange.endDate));
-  const changeEndDate = (endDate: string) => onDateRangeChange(dashboardRangePreset(activePreset, endDate));
+  const [activePreset, setActivePreset] = useState<DashboardRangePreset | null>('thisMonth');
+  const changePreset = (preset: DashboardRangePreset) => {
+    setActivePreset(preset);
+    onDateRangeChange(dashboardRangePreset(preset, dateRange.endDate));
+  };
+  const saveCustomRange = (range: DashboardDateRange) => {
+    setActivePreset(null);
+    onDateRangeChange(range);
+  };
+  const clearCustomRange = () => {
+    setActivePreset('thisMonth');
+    onDateRangeChange(dashboardRangePreset('thisMonth'));
+  };
 
   return (
     <div className="grid gap-5">
@@ -174,7 +340,14 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
               </button>
             );
           })}
-          <DatePicker value={dateRange.endDate} onChange={changeEndDate} className="w-[154px]" popoverAlign="right" />
+          <DashboardRangePicker
+            value={dateRange}
+            onSave={saveCustomRange}
+            onClear={clearCustomRange}
+            onOpenChange={open => {
+              if (open) setActivePreset(null);
+            }}
+          />
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
