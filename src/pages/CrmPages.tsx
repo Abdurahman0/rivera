@@ -2215,6 +2215,8 @@ export function ProductionPage({ batches, products, materials, staff, operationT
             const materialRows = recipe.map(item => ({
               ...item,
               totalUsed: item.qtyPerUnit * batch.producedQty,
+              plannedUsed: item.qtyPerUnit * batch.plannedQty,
+              issued: batch.materialIssues.find(issue => String(issue.materialId) === String(item.materialId)),
             }));
             const visibleEmployees = batch.employees.slice(0, 3);
             const extraEmployees = batch.employees.length - 3;
@@ -2246,7 +2248,21 @@ export function ProductionPage({ batches, products, materials, staff, operationT
 
                 {/* Material consumption */}
                 <div className="p-5">
-                  <p className="mb-3 text-[11px] font-extrabold uppercase tracking-wide text-text-muted">{t('production.batch.materials')}</p>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="m-0 text-[11px] font-extrabold uppercase tracking-wide text-text-muted">{t('production.batch.materials')}</p>
+                    <span className={[
+                      'rounded-lg px-2.5 py-1 text-[11px] font-extrabold ring-1',
+                      batch.materialIssueRuns > 1
+                        ? 'bg-warning-bg text-warning ring-warning/15'
+                        : batch.materialIssueRuns === 1
+                          ? 'bg-success-bg text-success ring-success/15'
+                          : 'bg-surface-subtle text-text-muted ring-border-soft/40',
+                    ].join(' ')}>
+                      {batch.materialIssueRuns > 0
+                        ? t('production.batch.issueRuns', { count: batch.materialIssueRuns, transactions: batch.materialIssueCount })
+                        : t('production.batch.notIssued')}
+                    </span>
+                  </div>
                   {materialRows.length === 0 ? (
                     <p className="text-sm text-text-muted">{t('production.batch.noRecipe')}</p>
                   ) : (
@@ -2259,9 +2275,19 @@ export function ProductionPage({ batches, products, materials, staff, operationT
                           <div className="min-w-0">
                             <p className="truncate text-xs font-semibold text-text-primary">{item.materialName}</p>
                             <p className="mt-0.5 text-[11px] text-text-muted">
-                              <span className="font-bold text-text-primary">{item.totalUsed.toLocaleString()} {unitLabel(item.unit, t)}</span>
-                              <span className="ml-1 opacity-60">({item.qtyPerUnit} × {batch.producedQty.toLocaleString()})</span>
+                              {t('production.batch.plannedMaterial')}: <span className="font-bold text-text-primary">{item.plannedUsed.toLocaleString()} {unitLabel(item.unit, t)}</span>
+                              <span className="ml-1 opacity-60">({item.qtyPerUnit} × {batch.plannedQty.toLocaleString()})</span>
                             </p>
+                            <p className="mt-0.5 text-[11px] text-text-muted">
+                              {t('production.batch.calculatedUsed')}: <span className="font-bold text-text-primary">{item.totalUsed.toLocaleString()} {unitLabel(item.unit, t)}</span>
+                            </p>
+                            <p className={['mt-1 text-[11px] font-semibold', item.issued && item.issued.quantity > item.plannedUsed ? 'text-warning' : 'text-text-muted'].join(' ')}>
+                              {t('production.batch.issued')}: <span className="font-extrabold">{(item.issued?.quantity ?? 0).toLocaleString()} {unitLabel(item.unit, t)}</span>
+                              {item.issued ? <span className="ml-1 opacity-70">({item.issued.count}x)</span> : null}
+                            </p>
+                            {item.issued && item.issued.pendingQuantity > 0 ? (
+                              <p className="mt-0.5 text-[10px] font-semibold text-warning">{t('production.batch.pendingIssued')}: {item.issued.pendingQuantity.toLocaleString()} {unitLabel(item.unit, t)}</p>
+                            ) : null}
                           </div>
                         </div>
                       ))}

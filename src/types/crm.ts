@@ -157,12 +157,25 @@ export interface ProductionBatch {
   dateLabel: string;
   product: string;
   productId: EntityId;
+  plannedQty: number;
   producedQty: number;
   unit: 'm' | 'kg' | 'pcs';
   employees: string[];
   shift: string;
   orderId: string | null;
   notes: string;
+  materialIssueRuns: number;
+  materialIssueCount: number;
+  materialIssues: Array<{
+    materialId: EntityId;
+    materialName: string;
+    unit: 'm' | 'kg' | 'pcs';
+    quantity: number;
+    approvedQuantity: number;
+    pendingQuantity: number;
+    rejectedQuantity: number;
+    count: number;
+  }>;
   api?: Record<string, unknown>;
 }
 

@@ -605,7 +605,13 @@
       "noEmployees": "Сотрудники не привязаны",
       "addEmployee": "Добавить сотрудника",
       "workEntrySaved": "Запись работы сохранена",
-      "detail": "Подробнее"
+      "detail": "Подробнее",
+      "notIssued": "Материалы не списаны",
+      "issueRuns": "Списано {{count}} раз · {{transactions}} записей",
+      "plannedMaterial": "План",
+      "calculatedUsed": "По произведенному",
+      "issued": "Списано",
+      "pendingIssued": "Ожидает подтверждения"
     },
     "stock": {
       "title": "Запас готовой продукции",

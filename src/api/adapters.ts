@@ -257,17 +257,58 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     employeesByBatch.get(key)!.add(name);
   });
 
+  const materialIssuesByBatch = new Map<string, Map<string, {
+    materialId: string;
+    materialName: string;
+    unit: Material['unit'];
+    quantity: number;
+    approvedQuantity: number;
+    pendingQuantity: number;
+    rejectedQuantity: number;
+    count: number;
+  }>>();
+  data.materialTransactions
+    .filter(row => row.transaction_type === 'out_production' && row.related_production_batch)
+    .forEach(row => {
+      const batchId = String(row.related_production_batch);
+      const material = materialById.get(row.material);
+      const materialId = String(row.material);
+      const batchIssues = materialIssuesByBatch.get(batchId) || new Map();
+      const current = batchIssues.get(materialId) || {
+        materialId,
+        materialName: material?.name || materialId,
+        unit: material ? materialUnit(material.unit) : 'pcs',
+        quantity: 0,
+        approvedQuantity: 0,
+        pendingQuantity: 0,
+        rejectedQuantity: 0,
+        count: 0,
+      };
+      const qty = number(row.quantity);
+      current.quantity += qty;
+      current.count += 1;
+      if (row.status === 'approved') current.approvedQuantity += qty;
+      else if (row.status === 'rejected') current.rejectedQuantity += qty;
+      else current.pendingQuantity += qty;
+      batchIssues.set(materialId, current);
+      materialIssuesByBatch.set(batchId, batchIssues);
+    });
+
   const productionBatches: ProductionBatch[] = data.batches.map(row => ({
     id: row.id,
     dateLabel: row.started_date,
     product: productNames.get(row.product) || row.product,
     productId: row.product,
+    plannedQty: row.planned_quantity,
     producedQty: row.delivered_to_warehouse,
     unit: 'pcs',
     employees: [...(employeesByBatch.get(String(row.id)) || [])],
     shift: row.status,
     orderId: row.batch_number,
     notes: row.note,
+    materialIssueRuns: Math.max(0, ...[...(materialIssuesByBatch.get(String(row.id))?.values() || [])].map(issue => issue.count)),
+    materialIssueCount: [...(materialIssuesByBatch.get(String(row.id))?.values() || [])].reduce((sum, issue) => sum + issue.count, 0),
+    materialIssues: [...(materialIssuesByBatch.get(String(row.id))?.values() || [])],
     api: row as unknown as Record<string, unknown>,
   }));
 

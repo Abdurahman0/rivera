@@ -605,7 +605,13 @@
       "noEmployees": "Xodim biriktirilmagan",
       "addEmployee": "Xodim qo'shish",
       "workEntrySaved": "Ish yozuvi saqlandi",
-      "detail": "Batafsil"
+      "detail": "Batafsil",
+      "notIssued": "Material chiqarilmagan",
+      "issueRuns": "{{count}} marta chiqarilgan · {{transactions}} yozuv",
+      "plannedMaterial": "Reja",
+      "calculatedUsed": "Ishlab chiqarilgan bo'yicha",
+      "issued": "Chiqarilgan",
+      "pendingIssued": "Tasdiq kutmoqda"
     },
     "stock": {
       "title": "Tayyor mahsulot zaxirasi",

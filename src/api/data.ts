@@ -93,7 +93,7 @@ const PAGE_OPERATIONAL_KEYS: Record<PageId, OperationalKey[]> = {
   clients: ['clients'],
   orders: ['clients', 'clientOrders', 'batches', 'employees', 'operationTypes', 'workEntries'],
   production: [
-    'products', 'categories', 'norms', 'materials', 'suppliers', 'materialStocks', 'deliveries', 'finishedStocks', 'batches', 'employees', 'operationTypes', 'workEntries',
+    'products', 'categories', 'norms', 'materials', 'suppliers', 'materialStocks', 'materialTransactions', 'deliveries', 'finishedStocks', 'batches', 'employees', 'operationTypes', 'workEntries',
   ],
   materials: ['materials', 'suppliers', 'materialStocks'],
   products: ['products', 'categories', 'norms', 'materials', 'deliveries', 'finishedStocks'],
