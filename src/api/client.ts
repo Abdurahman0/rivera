@@ -27,6 +27,7 @@ function getStored(key: string) {
 function storeTokens(access: string, refresh?: string) {
   window.localStorage.setItem(ACCESS_KEY, access);
   if (refresh) window.localStorage.setItem(REFRESH_KEY, refresh);
+  sessionExpiredNotified = false;
 }
 
 export function clearSession() {
@@ -43,6 +44,7 @@ export function hasSession() {
 }
 
 let sessionExpiredHandlers: Array<() => void> = [];
+let sessionExpiredNotified = false;
 
 /** Subscribe to be notified when the session is forcibly cleared (token invalid/expired
  *  beyond repair). Returns an unsubscribe function. */
@@ -53,7 +55,11 @@ export function onSessionExpired(handler: () => void) {
   };
 }
 
+/** A page load can fire many parallel requests (initial data load); if the token is
+ *  dead, every single one would otherwise notify independently. Fire once per episode. */
 function notifySessionExpired() {
+  if (sessionExpiredNotified) return;
+  sessionExpiredNotified = true;
   sessionExpiredHandlers.forEach(handler => handler());
 }
 
@@ -64,21 +70,32 @@ async function parseResponse(response: Response) {
   return response.text();
 }
 
-async function refreshAccessToken() {
+let refreshPromise: Promise<string | null> | null = null;
+
+/** The backend rotates+blacklists refresh tokens, so concurrent 401s (e.g. the initial
+ *  page load firing a dozen parallel requests) must share a single refresh attempt —
+ *  otherwise only the first succeeds and every other one spuriously kills the session. */
+function refreshAccessToken() {
+  if (refreshPromise) return refreshPromise;
   const refresh = getStored(REFRESH_KEY);
-  if (!refresh) return null;
-  const response = await fetch(`${API_BASE}/auth/token/refresh/`, {
+  if (!refresh) return Promise.resolve(null);
+  refreshPromise = fetch(`${API_BASE}/auth/token/refresh/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh }),
-  });
-  if (!response.ok) {
-    clearSession();
-    return null;
-  }
-  const tokens = await response.json() as { access: string; refresh?: string };
-  storeTokens(tokens.access, tokens.refresh);
-  return tokens.access;
+  })
+    .then(async response => {
+      if (!response.ok) {
+        clearSession();
+        return null;
+      }
+      const tokens = await response.json() as { access: string; refresh?: string };
+      storeTokens(tokens.access, tokens.refresh);
+      return tokens.access;
+    })
+    .catch(() => null)
+    .finally(() => { refreshPromise = null; });
+  return refreshPromise;
 }
 
 async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
@@ -198,7 +215,7 @@ export const api = {
 export const resources = {
   users: 'users', permissions: 'permissions', approvals: 'approvals', auditLogs: 'audit-logs', exportLogs: 'export-logs',
   securityLogs: 'security-logs', stockLogs: 'stock-logs', payrollLogs: 'payroll-logs', attendanceLogs: 'attendance-logs', backupLogs: 'backup-logs',
-  settings: 'settings', backups: 'backups', clients: 'clients', clientOrders: 'client-orders', clientDeliveries: 'client-deliveries', clientPayments: 'client-payments',
+  settings: 'settings', backups: 'backups', clients: 'clients', clientOrders: 'client-orders', clientOrderItems: 'client-order-items', clientDeliveries: 'client-deliveries', clientPayments: 'client-payments',
   clientReturns: 'client-returns', clientDebtAdjustments: 'client-debt-adjustments', materials: 'materials', suppliers: 'suppliers', materialPurchases: 'material-purchases', productCategories: 'product-categories',
   products: 'products', productMaterialNorms: 'product-material-norms', warehouseLocations: 'warehouse-locations', materialStocks: 'material-stocks', materialTransactions: 'material-transactions',
   defectiveMaterialStocks: 'defective-material-stocks', defectiveMaterialTransactions: 'defective-material-transactions', finishedGoodsStocks: 'finished-goods-stocks',
@@ -214,7 +231,13 @@ export const actions = {
   approve: (id: string) => api.post(`/approvals/${id}/approve/`),
   reject: (id: string, reason: string) => api.post(`/approvals/${id}/reject/`, { reason }),
   runBackup: () => api.post('/backups/run_now/'),
-  dashboardSummary: <T>() => api.get<T>('/dashboard/summary/'),
+  dashboardSummary: <T>(range?: { date_from?: string; date_to?: string }) => {
+    const query = new URLSearchParams();
+    if (range?.date_from) query.set('date_from', range.date_from);
+    if (range?.date_to) query.set('date_to', range.date_to);
+    const qs = query.toString();
+    return api.get<T>(`/dashboard/summary/${qs ? `?${qs}` : ''}`);
+  },
   topClients: <T>(limit = 10) => api.get<T>(`/dashboard/top_clients/?limit=${limit}`),
   authMe: <T>() => api.get<T>('/auth/me/'),
   deviceAttendanceCheck: <T>(payload: FormData | Record<string, unknown>) => api.post<T>('/attendance-events/check/', payload),

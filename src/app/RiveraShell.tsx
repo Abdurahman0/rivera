@@ -195,6 +195,10 @@ function App() {
   const [currentUser, setCurrentUser] = useState<ApiCurrentUser | null>(null);
   const [dashboardDateRange, setDashboardDateRange] = useState<DashboardDateRange | null>(currentMonthRange);
   const dataLoadId = useRef(0);
+  // Tracks whether this pageview ever had a genuinely working session, so a token
+  // that's already dead on first load redirects to login silently instead of
+  // announcing a "session expired" the user never experienced.
+  const hadActiveSessionRef = useRef(false);
   const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, movementHistory, revenueEntries, expenseEntries, productionRecords, materials: rawMaterials, pieceworkRecords, productionBatches, staffFlow, approvals, operationTypeOptions } = appData;
 
   const refreshData = useCallback(async (page: PageId = activePage) => {
@@ -203,9 +207,10 @@ function App() {
     dataLoadId.current = requestId;
     setIsLoadingData(true);
     try {
-      const nextData = await loadAppData(page);
+      const nextData = await loadAppData(page, dashboardDateRange);
       if (requestId === dataLoadId.current) {
         setAppData(nextData);
+        hadActiveSessionRef.current = true;
       }
     } catch (error) {
       if (requestId === dataLoadId.current && !(error instanceof ApiError && error.status === 401)) {
@@ -216,7 +221,7 @@ function App() {
         setIsLoadingData(false);
       }
     }
-  }, [activePage, isAuthenticated, t, toast]);
+  }, [activePage, isAuthenticated, t, toast, dashboardDateRange]);
 
   useEffect(() => {
     void refreshData(activePage);
@@ -226,7 +231,10 @@ function App() {
     dataLoadId.current += 1;
     setAppData(EMPTY_DATA);
     setIsAuthenticated(false);
-    toast(t('auth.sessionExpired'), 'danger');
+    if (hadActiveSessionRef.current) {
+      toast(t('auth.sessionExpired'), 'danger');
+    }
+    hadActiveSessionRef.current = false;
   }), [t, toast]);
 
   useEffect(() => {
@@ -237,7 +245,7 @@ function App() {
     // Re-checks on every navigation, not just on login, so a session that died
     // server-side (expired/blacklisted token) is caught the moment the user
     // clicks anywhere instead of only on the next data-fetching action.
-    void actions.authMe<ApiCurrentUser>().then(setCurrentUser).catch(() => setCurrentUser(null));
+    void actions.authMe<ApiCurrentUser>().then(user => { hadActiveSessionRef.current = true; setCurrentUser(user); }).catch(() => setCurrentUser(null));
   }, [isAuthenticated, activePage]);
 
   useEffect(() => {
@@ -279,6 +287,8 @@ function App() {
   const totalStock = appData.summary?.warehouse.finished_goods_total_units ?? products.reduce((sum, product) => sum + product.stock, 0);
   const lowStockCount = appData.summary?.warehouse.low_stock_materials_count ?? products.filter(product => product.stock <= product.minStock).length;
   const pipelineValue = dashboardOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const newClientsInPeriod = appData.summary?.new_in_period ?? dashboardClients.length;
+  const ordersInPeriod = dashboardOrders.length;
   const onDutyCount = staff.filter(member => member.statusKey !== 'leftEarly').length;
   const priorityClients = appData.topClientIds.map(id => clients.find(client => String(client.id) === id)).filter((client): client is Client => Boolean(client));
   const activeMeta = navItems.find(item => item.id === activePage) ?? navItems[0];
@@ -557,7 +567,7 @@ function App() {
             {t('dashboard.metrics.pipeline')}
           </p>
           <p className="mt-2 text-2xl font-extrabold text-text-primary">{formatMoney(pipelineValue)}</p>
-          <p className="mt-1 text-sm text-text-secondary">{t('dashboard.metrics.pipelineCaption')}</p>
+          <p className="mt-1 text-sm text-text-secondary">{t('dashboard.metrics.pipelineCaption', { count: ordersInPeriod })}</p>
         </div>
       </aside>
 
@@ -617,6 +627,8 @@ function App() {
                 totalStock={totalStock}
                 lowStockCount={lowStockCount}
                 pipelineValue={pipelineValue}
+                newClientsInPeriod={newClientsInPeriod}
+                ordersInPeriod={ordersInPeriod}
                 onDutyCount={onDutyCount}
                 staffTotal={staff.length}
                 formatMoney={formatMoney}
@@ -1157,6 +1169,7 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
           {modal.kind === 'client' ? <>
             <FieldInput name="full_name" label={f('fullName')} fallback={(modal.item as Client | undefined)?.name} required />
             <FieldInput name="phone" label={f('phone')} fallback={(modal.item as Client | undefined)?.phone} />
+            <SelectInput name="status" label={f('status')} required fallback={(modal.item as Client | undefined)?.statusKey || 'new'} options={['active', 'new', 'vip', 'blocked', 'inactive'].map(value => ({ value, label: t(`statuses.${value}`) }))} />
             <TextArea name="address" label={f('address')} />
             <TextArea name="note" label={f('note')} />
           </> : null}

@@ -51,6 +51,15 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'date', label: f('date'), type: 'date', required: true, table: true }, { ...statusField },
     ],
   },
+  orderItems: {
+    resource: resources.clientOrderItems, title: title('orderItems'), description: description('orderItems'),
+    fields: [
+      { name: 'product', label: f('product'), lookup: { resource: resources.products, label: 'name', secondary: 'code' }, required: true, table: true },
+      { name: 'size', label: f('size'), table: true }, { name: 'color', label: f('color'), table: true }, { name: 'quantity', label: f('quantity'), type: 'number', required: true, table: true },
+      { name: 'unit_price', label: f('unitPrice'), type: 'number', step: '0.01', required: true, table: true }, { name: 'total_amount', label: f('totalAmount'), readOnly: true, table: true },
+      { name: 'note', label: f('note'), type: 'textarea' },
+    ],
+  },
   suppliers: {
     resource: resources.suppliers, title: title('suppliers'), description: description('suppliers'),
     fields: [{ name: 'name', label: f('name'), required: true, table: true }, { name: 'phone', label: f('phone'), table: true }, { name: 'address', label: f('address'), type: 'textarea' }, { name: 'note', label: f('note'), type: 'textarea' }],

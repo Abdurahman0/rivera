@@ -175,9 +175,9 @@
     },
     "metrics": {
       "pipeline": "Стоимость заказов",
-      "pipelineCaption": "+14% за месяц",
+      "pipelineCaption": "За период {{count}} заказов",
       "clients": "Активные клиенты",
-      "clientsCaption": "3 сделки с высоким шансом",
+      "clientsCaption": "{{count}} новых клиентов",
       "staff": "Сотрудники на смене",
       "staffCaption": "2 предупреждения сегодня",
       "stock": "Остаток склада",
@@ -392,7 +392,8 @@
       "noRecipe": "Рецептура для этого продукта не задана",
       "totalCount": "видов сырья использовано",
       "panelTitle": "Рецептура и расход материалов",
-      "addMaterial": "Добавить материал"
+      "addMaterial": "Добавить материал",
+      "deleteConfirm": "Удалить материал {{material}} из рецептуры {{product}}?"
     },
     "movementTitle": "История движений",
     "stockColumns": {
@@ -572,7 +573,8 @@
       "editTitle": "Редактировать заказ",
       "summary": "Управление клиентом, номером заказа, датами и суммой.",
       "nextStep": "Следующий шаг: проверить производственный план и остаток склада."
-    }
+    },
+    "items": "Товары"
   },
   "production": {
     "eyebrow": "Производство",
@@ -611,7 +613,11 @@
       "plannedMaterial": "План",
       "calculatedUsed": "По произведенному",
       "issued": "Списано",
-      "pendingIssued": "Ожидает подтверждения"
+      "pendingIssued": "Ожидает подтверждения",
+      "issueDisabledCompleted": "Партия завершена, запрос материалов недоступен",
+      "issueDisabledPending": "Материал уже запрошен (в ожидании или подтверждён)",
+      "deliverDisabledCompleted": "Партия завершена, доставка недоступна",
+      "deliverDisabledNoRemaining": "Нет оставшегося количества для доставки"
     },
     "stock": {
       "title": "Запас готовой продукции",
@@ -678,7 +684,12 @@
     "cancelled": "Отменено",
     "draft": "Черновик",
     "confirmed": "Подтверждён",
-    "completed": "Завершён"
+    "completed": "Завершён",
+    "active": "Активный",
+    "new": "Новый",
+    "vip": "VIP",
+    "blocked": "Заблокирован",
+    "inactive": "Неактивный"
   },
   "mock": {
     "months": [
@@ -2037,6 +2048,10 @@
       "invoices": {
         "title": "Счета-фактуры",
         "description": "Счета-фактуры, выставленные клиентам."
+      },
+      "orderItems": {
+        "title": "Товары заказа",
+        "description": "Список товаров в заказе."
       }
     },
     "options": {
@@ -2280,6 +2295,7 @@
   },
   "errors": {
     "insufficientMaterialStock": "Недостаточно материалов на складе",
-    "insufficientFinishedGoodsStock": "Недостаточно готовой продукции на складе"
+    "insufficientFinishedGoodsStock": "Недостаточно готовой продукции на складе",
+    "quantityExceedsPlanned": "Количество превышает доступный запланированный объём: {{amount}}"
   }
 }

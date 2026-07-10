@@ -30,12 +30,15 @@ export interface ApiUser {
   last_login: string | null;
 }
 
+export type ApiClientStatus = 'active' | 'new' | 'vip' | 'blocked' | 'inactive';
+
 export interface ApiClient extends ApiBaseModel {
   full_name: string;
   phone: string;
   address: string;
   note: string;
   balance: string;
+  status: ApiClientStatus;
 }
 
 export interface ApiClientOrder extends ApiBaseModel {
@@ -48,6 +51,17 @@ export interface ApiClientOrder extends ApiBaseModel {
   total_amount_uzs: string;
   currency: 'UZS' | 'USD';
   exchange_rate: string | null;
+  note: string;
+}
+
+export interface ApiClientOrderItem extends ApiBaseModel {
+  order: ApiId;
+  product: ApiId;
+  size: string;
+  color: string;
+  quantity: number;
+  unit_price: string;
+  total_amount: string;
   note: string;
 }
 
@@ -238,10 +252,21 @@ export interface ApiMonthlyPayroll extends ApiBaseModel {
 }
 
 export interface ApiDashboardSummary {
-  clients: { total_count: number; new_this_month: number };
+  clients: { total_count: number; new_this_month: number; delivered_total_this_month?: number | string; paid_total_this_month?: number | string; estimated_debt_this_month?: number | string };
   warehouse: { finished_goods_total_units: number; low_stock_materials_count: number; materials_value_total: number | string };
   employees: { total_active: number };
   production: { batches_in_progress: number; produced_this_month: number };
+  finance?: { expenses_this_month: number | string; payroll_this_month: number | string; estimated_profit_this_month: number | string };
+  // Present when the request included date_from/date_to (backend computes these server-side for the exact range).
+  filters?: { date_from: string; date_to: string };
+  new_in_period?: number;
+  delivered_total_in_period?: number | string;
+  paid_total_in_period?: number | string;
+  estimated_debt_in_period?: number | string;
+  produced_in_period?: number;
+  expenses_in_period?: number | string;
+  payroll_in_period?: number | string;
+  estimated_profit_in_period?: number | string;
 }
 
 export interface ApiApproval extends ApiBaseModel {

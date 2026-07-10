@@ -283,7 +283,7 @@ function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value:
   );
 }
 
-export function DashboardPage({ clients, priorityClients, products, materials, staff, categoryAnalytics, revenueData, totalStock, lowStockCount, pipelineValue, onDutyCount, staffTotal, formatMoney, openModal, dateRange, onDateRangeChange }: {
+export function DashboardPage({ clients, priorityClients, products, materials, staff, categoryAnalytics, revenueData, totalStock, lowStockCount, pipelineValue, newClientsInPeriod, ordersInPeriod, onDutyCount, staffTotal, formatMoney, openModal, dateRange, onDateRangeChange }: {
   clients: Client[];
   priorityClients: Client[];
   products: Product[];
@@ -294,6 +294,8 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
   totalStock: number;
   lowStockCount: number;
   pipelineValue: number;
+  newClientsInPeriod: number;
+  ordersInPeriod: number;
   onDutyCount: number;
   staffTotal: number;
   formatMoney: (value: number) => string;
@@ -356,8 +358,8 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={<FiBriefcase />} label={t('dashboard.metrics.pipeline')} value={formatMoney(pipelineValue)} caption={t('dashboard.metrics.pipelineCaption')} tone="success" />
-        <MetricCard icon={<FiUsers />} label={t('dashboard.metrics.clients')} value={clients.length.toString()} caption={t('dashboard.metrics.clientsCaption')} tone="info" />
+        <MetricCard icon={<FiBriefcase />} label={t('dashboard.metrics.pipeline')} value={formatMoney(pipelineValue)} caption={t('dashboard.metrics.pipelineCaption', { count: ordersInPeriod })} tone="success" />
+        <MetricCard icon={<FiUsers />} label={t('dashboard.metrics.clients')} value={clients.length.toString()} caption={t('dashboard.metrics.clientsCaption', { count: newClientsInPeriod })} tone="info" />
         <MetricCard icon={<FiClock />} label={t('dashboard.metrics.staff')} value={`${onDutyCount}/${staffTotal}`} caption={t('dashboard.metrics.staffCaption')} tone="warning" />
         <MetricCard icon={<FiArchive />} label={t('dashboard.metrics.stock')} value={totalStock.toLocaleString()} caption={t('dashboard.metrics.stockCaption', { count: lowStockCount })} tone="danger" />
       </div>
@@ -925,6 +927,7 @@ export function OrdersPage({ orders, productionRecords, formatMoney, openModal, 
   const exportResource = useResourceExport();
   const canManage = useHasPermission('clients', 'manage');
   const [activeTab, setActiveTab] = useState<'orders' | 'production'>('orders');
+  const [viewingItemsFor, setViewingItemsFor] = useState<Order | null>(null);
   const pending = orders.filter(o => o.statusKey === 'draft').length;
   const inProd = orders.filter(o => o.statusKey === 'confirmed').length;
   const delivered = orders.filter(o => o.statusKey === 'completed').length;
@@ -962,13 +965,26 @@ export function OrdersPage({ orders, productionRecords, formatMoney, openModal, 
             formatMoney(order.totalAmount),
             formatDisplayDate(order.dueDate, t),
             <StatusBadge tone={orderStatusTone(order.statusKey)}>{statusLabel(t, order.statusKey)}</StatusBadge>,
-            <RowActions onView={() => openModal({ kind: 'order', mode: 'view', item: order })} onEdit={canManage ? () => openModal({ kind: 'order', mode: 'edit', item: order }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'order', mode: 'view', item: order }) : undefined} />,
+            <div className="flex items-center gap-2">
+              <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={event => { event.stopPropagation(); setViewingItemsFor(order); }}>{t('orders.items')}</button>
+              <RowActions onView={() => openModal({ kind: 'order', mode: 'view', item: order })} onEdit={canManage ? () => openModal({ kind: 'order', mode: 'edit', item: order }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'order', mode: 'view', item: order }) : undefined} />
+            </div>,
           ])}
           onRowClick={(rowIndex) => openModal({ kind: 'order', mode: 'view', item: orders[rowIndex] })}
         />
       ) : (
         <ProductionTab records={productionRecords} orders={orders} formatMoney={formatMoney} />
       )}
+      {viewingItemsFor ? (
+        <ScopedResourceModal
+          title={viewingItemsFor.orderId}
+          subtitle={t('admin.resources.orderItems.title')}
+          config={{ ...operationsConfigs.orderItems, readOnly: !canManage }}
+          extraParams={{ order: String(viewingItemsFor.id) }}
+          fixedValues={{ order: String(viewingItemsFor.id) }}
+          onClose={() => setViewingItemsFor(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -976,6 +992,7 @@ export function OrdersPage({ orders, productionRecords, formatMoney, openModal, 
 function BomProductSection({ product, materials, canManage, formatMoney, onChanged }: { product: Product; materials: Material[]; canManage: boolean; formatMoney: (v: number) => string; onChanged: () => void }) {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { confirm: confirmDialog } = useDialog();
   const [adding, setAdding] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [newMaterial, setNewMaterial] = useState('');
@@ -1006,6 +1023,14 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
   }
 
   async function removeNorm(normId: string) {
+    const item = recipe.find(row => row.id === normId);
+    const ok = await confirmDialog({
+      title: t('deleteDialog.title'),
+      message: t('products.bom.deleteConfirm', { material: item?.materialName ?? t('common.notRequired'), product: product.name }),
+      confirmLabel: t('common.delete'),
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api.remove(resources.productMaterialNorms, normId);
       toast(t('admin.ui.archivedOk'), 'success');
@@ -2231,6 +2256,13 @@ export function ProductionPage({ batches, products, materials, staff, operationT
             const visibleEmployees = batch.employees.slice(0, 3);
             const extraEmployees = batch.employees.length - 3;
             const materialsOpen = Boolean(openBatchMaterials[String(batch.id)]);
+            const isCompleted = batch.shift === 'completed';
+            const remainingQty = Math.max(batch.plannedQty - batch.producedQty, 0);
+            const hasActiveMaterialIssue = batch.materialIssues.some(issue => issue.pendingQuantity > 0 || issue.approvedQuantity > 0);
+            const canIssueMaterials = !isCompleted && !hasActiveMaterialIssue;
+            const canDeliver = !isCompleted && remainingQty > 0;
+            const issueDisabledReason = isCompleted ? t('production.batch.issueDisabledCompleted') : hasActiveMaterialIssue ? t('production.batch.issueDisabledPending') : undefined;
+            const deliverDisabledReason = isCompleted ? t('production.batch.deliverDisabledCompleted') : remainingQty <= 0 ? t('production.batch.deliverDisabledNoRemaining') : undefined;
 
             return (
               <article key={batch.id} className="app-card--nova overflow-hidden">
@@ -2341,8 +2373,8 @@ export function ProductionPage({ batches, products, materials, staff, operationT
                   </div>
                   <div className="ml-auto flex flex-wrap items-center gap-2">
                     <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => setViewingBatchDetail(batch)}>{t('production.batch.detail')}</button>
-                    {canManage ? <button className="rounded-lg bg-warning-bg px-2.5 py-1.5 text-xs font-bold text-warning" onClick={() => void onIssue(batch.id)}>{t('production.batch.issueMaterials')}</button> : null}
-                    {canManage ? <button className="rounded-lg bg-success-bg px-2.5 py-1.5 text-xs font-bold text-success" onClick={() => void onDeliver(batch.id)}>{t('production.batch.deliver')}</button> : null}
+                    {canManage ? <button disabled={!canIssueMaterials} title={issueDisabledReason} className="rounded-lg bg-warning-bg px-2.5 py-1.5 text-xs font-bold text-warning transition disabled:cursor-not-allowed disabled:opacity-40" onClick={() => void onIssue(batch.id)}>{t('production.batch.issueMaterials')}</button> : null}
+                    {canManage ? <button disabled={!canDeliver} title={deliverDisabledReason} className="rounded-lg bg-success-bg px-2.5 py-1.5 text-xs font-bold text-success transition disabled:cursor-not-allowed disabled:opacity-40" onClick={() => void onDeliver(batch.id)}>{t('production.batch.deliver')}</button> : null}
                     <RowActions onView={() => openModal({ kind: 'batch', mode: 'view', item: batch })} onEdit={canManage ? () => openModal({ kind: 'batch', mode: 'edit', item: batch }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'batch', mode: 'view', item: batch }) : undefined} />
                   </div>
                 </div>

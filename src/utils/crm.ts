@@ -22,10 +22,11 @@ export function hexToRgba(hexColor: string, alpha: number): string {
 }
 
 export function statusTone(statusKey: string): StatusTone {
-  if (statusKey === 'won' || statusKey === 'contract' || statusKey === 'onTime' || statusKey === 'clear') return 'success';
-  if (statusKey === 'followUp' || statusKey === 'sample' || statusKey === 'late' || statusKey === 'hasBalance') return 'warning';
-  if (statusKey === 'leftEarly') return 'danger';
-  if (statusKey === 'newLead' || statusKey === 'remote') return 'info';
+  if (statusKey === 'won' || statusKey === 'contract' || statusKey === 'onTime' || statusKey === 'clear' || statusKey === 'active') return 'success';
+  if (statusKey === 'followUp' || statusKey === 'sample' || statusKey === 'late' || statusKey === 'hasBalance' || statusKey === 'new') return 'warning';
+  if (statusKey === 'leftEarly' || statusKey === 'blocked') return 'danger';
+  if (statusKey === 'newLead' || statusKey === 'remote' || statusKey === 'vip') return 'info';
+  if (statusKey === 'inactive') return 'neutral';
   return 'neutral';
 }
 
@@ -78,9 +79,22 @@ const BACKEND_ERROR_TRANSLATIONS: Record<string, string> = {
   'insufficient finished goods stock': 'errors.insufficientFinishedGoodsStock',
 };
 
+// Some backend errors embed a dynamic value (e.g. "...: 100") — match by prefix and
+// interpolate the trailing value instead of requiring an exact string match.
+const BACKEND_ERROR_PREFIX_TRANSLATIONS: Array<{ prefix: string; key: string }> = [
+  { prefix: 'quantity exceeds available planned amount:', key: 'errors.quantityExceedsPlanned' },
+];
+
 export function translateBackendMessage(t: Translator, message: string) {
-  const key = BACKEND_ERROR_TRANSLATIONS[message.trim().toLowerCase()];
-  return key ? t(key, { defaultValue: message }) : message;
+  const normalized = message.trim().toLowerCase();
+  const exactKey = BACKEND_ERROR_TRANSLATIONS[normalized];
+  if (exactKey) return t(exactKey, { defaultValue: message });
+  const prefixMatch = BACKEND_ERROR_PREFIX_TRANSLATIONS.find(entry => normalized.startsWith(entry.prefix));
+  if (prefixMatch) {
+    const amount = message.slice(prefixMatch.prefix.length).trim();
+    return t(prefixMatch.key, { amount, defaultValue: message });
+  }
+  return message;
 }
 
 export function apiErrorMessage(error: unknown, t: Translator, fallbackKey = 'admin.ui.requestFailed') {

@@ -1,6 +1,6 @@
 import { actions, api, ApiError, resources } from './client';
 import { adaptOperationalData, type FrontendData, type OperationalApiData } from './adapters';
-import type { PageId } from '../types/crm';
+import type { DashboardDateRange, PageId } from '../types/crm';
 import type {
   ApiAttendanceRecord,
   ApiApproval,
@@ -113,9 +113,11 @@ async function allowedList<T>(resource: string) {
   }
 }
 
-async function allowedSummary() {
+async function allowedSummary(range?: DashboardDateRange | null) {
   try {
-    return await actions.dashboardSummary<ApiDashboardSummary>();
+    return await actions.dashboardSummary<ApiDashboardSummary>(
+      range ? { date_from: range.startDate, date_to: range.endDate } : undefined,
+    );
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) return null;
     throw error;
@@ -138,14 +140,14 @@ async function loadOperationalData(page: PageId): Promise<OperationalApiData> {
   return { ...EMPTY_OPERATIONAL_DATA, ...Object.fromEntries(entries) } as OperationalApiData;
 }
 
-export async function loadAppData(page: PageId): Promise<AppData> {
+export async function loadAppData(page: PageId, dashboardRange?: DashboardDateRange | null): Promise<AppData> {
   const shouldLoadSummary = page === 'dashboard' || page === 'warehouse';
   const shouldLoadApprovals = page === 'approvals';
   const shouldLoadTopClients = page === 'dashboard';
 
   const [operational, summary, approvals, topClients] = await Promise.all([
     loadOperationalData(page),
-    shouldLoadSummary ? allowedSummary() : Promise.resolve(null),
+    shouldLoadSummary ? allowedSummary(page === 'dashboard' ? dashboardRange : null) : Promise.resolve(null),
     shouldLoadApprovals ? allowedList<ApiApproval>(resources.approvals) : Promise.resolve([]),
     shouldLoadTopClients ? allowedTopClients() : Promise.resolve([]),
   ]);

@@ -175,9 +175,9 @@
     },
     "metrics": {
       "pipeline": "Buyurtmalar qiymati",
-      "pipelineCaption": "Oy bo'yicha +14%",
+      "pipelineCaption": "Davr ichida {{count}} ta buyurtma",
       "clients": "Faol mijozlar",
-      "clientsCaption": "3 ta yuqori ehtimolli bitim",
+      "clientsCaption": "{{count}} ta yangi mijoz",
       "staff": "Ishdagi xodimlar",
       "staffCaption": "Bugun 2 ta ogohlantirish",
       "stock": "Sklad qoldig'i",
@@ -392,7 +392,8 @@
       "noRecipe": "Bu mahsulot uchun resept kiritilmagan",
       "totalCount": "xil material ishlatildi",
       "panelTitle": "Resept va material sarfi",
-      "addMaterial": "Material qo'shish"
+      "addMaterial": "Material qo'shish",
+      "deleteConfirm": "{{product}} reseptidan {{material}} materialini olib tashlaysizmi?"
     },
     "movementTitle": "Harakat tarixi",
     "stockColumns": {
@@ -572,7 +573,8 @@
       "editTitle": "Buyurtmani tahrirlash",
       "summary": "Mijoz, buyurtma raqami, sana va summani boshqarish.",
       "nextStep": "Keyingi qadam: ishlab chiqarish rejasi va sklad qoldig'ini tekshirish."
-    }
+    },
+    "items": "Mahsulotlar"
   },
   "production": {
     "eyebrow": "Ishlab chiqarish",
@@ -611,7 +613,11 @@
       "plannedMaterial": "Reja",
       "calculatedUsed": "Ishlab chiqarilgan bo'yicha",
       "issued": "Chiqarilgan",
-      "pendingIssued": "Tasdiq kutmoqda"
+      "pendingIssued": "Tasdiq kutmoqda",
+      "issueDisabledCompleted": "Partiya yakunlangan, material so'rash mumkin emas",
+      "issueDisabledPending": "Material allaqachon so'ralgan (kutilmoqda yoki tasdiqlangan)",
+      "deliverDisabledCompleted": "Partiya yakunlangan, yetkazish mumkin emas",
+      "deliverDisabledNoRemaining": "Yetkazish uchun qolgan miqdor yo'q"
     },
     "stock": {
       "title": "Tayyor mahsulot zaxirasi",
@@ -678,7 +684,12 @@
     "cancelled": "Bekor qilindi",
     "draft": "Qoralama",
     "confirmed": "Tasdiqlangan",
-    "completed": "Bajarilgan"
+    "completed": "Bajarilgan",
+    "active": "Faol",
+    "new": "Yangi",
+    "vip": "VIP",
+    "blocked": "Bloklangan",
+    "inactive": "Nofaol"
   },
   "mock": {
     "months": [
@@ -2042,6 +2053,10 @@
       "invoices": {
         "title": "Hisob-fakturalar",
         "description": "Mijozlarga taqdim etilgan hisob-fakturalar."
+      },
+      "orderItems": {
+        "title": "Buyurtma mahsulotlari",
+        "description": "Har bir buyurtmadagi mahsulotlar ro'yxati."
       }
     },
     "options": {
@@ -2285,6 +2300,7 @@
   },
   "errors": {
     "insufficientMaterialStock": "Material zaxirasi yetarli emas",
-    "insufficientFinishedGoodsStock": "Tayyor mahsulot zaxirasi yetarli emas"
+    "insufficientFinishedGoodsStock": "Tayyor mahsulot zaxirasi yetarli emas",
+    "quantityExceedsPlanned": "Miqdor mavjud rejalashtirilgan miqdordan oshib ketdi: {{amount}}"
   }
 }
