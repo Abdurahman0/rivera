@@ -255,6 +255,10 @@
       "nameAsc": "Имя: А-Я",
       "nameDesc": "Имя: Я-А"
     },
+    "viewModes": {
+      "clients": "Клиенты",
+      "statuses": "Статусы"
+    },
     "modal": {
       "viewTitle": "Карточка клиента",
       "createTitle": "Новый клиент",

@@ -255,6 +255,10 @@
       "nameAsc": "Nomi: A-Z",
       "nameDesc": "Nomi: Z-A"
     },
+    "viewModes": {
+      "clients": "Mijozlar",
+      "statuses": "Statuslar"
+    },
     "modal": {
       "viewTitle": "Mijoz kartasi",
       "createTitle": "Yangi mijoz",

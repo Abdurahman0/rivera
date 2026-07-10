@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
+import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSearch, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StockMovement } from '../types/crm';
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
@@ -537,49 +537,118 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [sortMode, setSortMode] = useState('valueDesc');
+  const [viewMode, setViewMode] = useState<'clients' | 'statuses'>('clients');
   const statusOptions = useMemo(() => ['all', ...Array.from(new Set(clients.map(client => client.statusKey)))], [clients]);
   const sourceOptions = useMemo(() => ['all', ...Array.from(new Set(clients.map(client => client.source)))], [clients]);
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: clients.length };
+    clients.forEach(client => { counts[client.statusKey] = (counts[client.statusKey] ?? 0) + 1; });
+    return counts;
+  }, [clients]);
   const filteredClients = useMemo(() => {
     const normalizedQuery = query.toLowerCase();
     return clients
       .filter(client => `${client.name} ${client.phone} ${client.status} ${client.fabric}`.toLowerCase().includes(normalizedQuery))
       .filter(client => statusFilter === 'all' || client.statusKey === statusFilter)
-      .filter(client => sourceFilter === 'all' || client.source === sourceFilter)
+      .filter(client => viewMode === 'statuses' || sourceFilter === 'all' || client.source === sourceFilter)
       .sort((first, second) => {
         if (sortMode === 'valueAsc') return first.value - second.value;
         if (sortMode === 'nameAsc') return first.name.localeCompare(second.name);
         if (sortMode === 'nameDesc') return second.name.localeCompare(first.name);
         return second.value - first.value;
       });
-  }, [clients, query, sortMode, sourceFilter, statusFilter]);
+  }, [clients, query, sortMode, sourceFilter, statusFilter, viewMode]);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
 
   return (
     <div className="grid gap-5">
       <PageHeader eyebrow={t('clients.eyebrow')} title={t('clients.title')} description={t('clients.description')} createLabel={canManage ? t('clients.create') : undefined} onCreate={canManage ? () => openModal({ kind: 'client', mode: 'create' }) : undefined} onExport={() => exportResource(resources.clients)} />
-      <ClientsFilterBar
-        query={query}
-        setQuery={setQuery}
-        placeholder={t('clients.searchPlaceholder')}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        sourceFilter={sourceFilter}
-        setSourceFilter={setSourceFilter}
-        sortMode={sortMode}
-        setSortMode={setSortMode}
-        statusOptions={statusOptions}
-        sourceOptions={sourceOptions}
-      />
+      <div className="flex flex-wrap gap-2">
+        {(['clients', 'statuses'] as const).map(mode => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setViewMode(mode)}
+            className={[
+              'inline-flex h-9 items-center gap-1.5 rounded-pill px-4 text-xs font-extrabold uppercase tracking-[0.04em] transition',
+              viewMode === mode
+                ? 'bg-primary text-primary-foreground shadow-[0_12px_24px_-18px_rgb(var(--color-primary)/0.65)]'
+                : 'bg-surface-subtle text-text-secondary ring-1 ring-border-soft/40 hover:bg-primary/10 hover:text-text-primary',
+            ].join(' ')}
+          >
+            {t(`clients.viewModes.${mode}`)}
+          </button>
+        ))}
+      </div>
+      {viewMode === 'clients' ? (
+        <ClientsFilterBar
+          query={query}
+          setQuery={setQuery}
+          placeholder={t('clients.searchPlaceholder')}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          sourceFilter={sourceFilter}
+          setSourceFilter={setSourceFilter}
+          sortMode={sortMode}
+          setSortMode={setSortMode}
+          statusOptions={statusOptions}
+          sourceOptions={sourceOptions}
+        />
+      ) : (
+        <div className="filter-bar filter-bar--nova relative z-20 flex flex-wrap items-end justify-start gap-3 overflow-visible rounded-xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/25 backdrop-blur-[12px]">
+          <label className="grid w-full gap-1.5 sm:w-[280px] xl:w-[300px]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">{t('common.search')}</span>
+            <span className="relative">
+              <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+              <input
+                value={query}
+                onChange={event => setQuery(event.target.value)}
+                placeholder={t('clients.searchPlaceholder')}
+                className="h-11 w-full rounded-xl border border-border-soft bg-surface-card pl-10 pr-4 text-sm font-medium text-text-primary outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
+              />
+            </span>
+          </label>
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            {statusOptions.map(status => {
+              const isActive = statusFilter === status;
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={[
+                    'inline-flex items-center gap-1.5 rounded-pill px-3.5 py-1.5 text-xs font-bold transition',
+                    isActive
+                      ? 'bg-primary text-primary-foreground ring-1 ring-primary'
+                      : 'bg-surface-subtle text-text-secondary ring-1 ring-border-soft/40 hover:bg-primary/10 hover:text-text-primary',
+                  ].join(' ')}
+                >
+                  {status === 'all' ? t('clients.filters.allStatuses') : t(`statuses.${status}`)}
+                  <span className={isActive ? 'text-primary-foreground/80' : 'text-text-muted'}>{statusCounts[status] ?? 0}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <DataTable
-        columns={[t('clients.columns.client'), t('clients.columns.source'), t('clients.columns.status'), t('clients.columns.fabric'), t('clients.columns.value'), t('common.actions')]}
-        rows={filteredClients.map(client => [
-          <PrimaryCell title={client.name} subtitle={client.phone} />,
-          client.source,
-          <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>,
-          client.fabric,
-          formatMoney(client.value),
-          <RowActions onView={() => setViewingClient(client)} onEdit={canManage ? () => openModal({ kind: 'client', mode: 'edit', item: client }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'client', mode: 'view', item: client }) : undefined} />,
-        ])}
+        columns={viewMode === 'clients'
+          ? [t('clients.columns.client'), t('clients.columns.source'), t('clients.columns.status'), t('clients.columns.fabric'), t('clients.columns.value'), t('common.actions')]
+          : [t('clients.columns.client'), t('clients.columns.status'), t('common.actions')]}
+        rows={filteredClients.map(client => viewMode === 'clients'
+          ? [
+            <PrimaryCell title={client.name} subtitle={client.phone} />,
+            client.source,
+            <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>,
+            client.fabric,
+            formatMoney(client.value),
+            <RowActions onView={() => setViewingClient(client)} onEdit={canManage ? () => openModal({ kind: 'client', mode: 'edit', item: client }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'client', mode: 'view', item: client }) : undefined} />,
+          ]
+          : [
+            <PrimaryCell title={client.name} subtitle={client.phone} />,
+            <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>,
+            <RowActions onView={() => setViewingClient(client)} onEdit={canManage ? () => openModal({ kind: 'client', mode: 'edit', item: client }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'client', mode: 'view', item: client }) : undefined} />,
+          ])}
         onRowClick={(rowIndex) => setViewingClient(filteredClients[rowIndex])}
       />
       {viewingClient ? <ClientDetailModal client={viewingClient} canManage={canManage} onClose={() => setViewingClient(null)} /> : null}
