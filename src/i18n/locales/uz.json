@@ -257,7 +257,25 @@
     },
     "viewModes": {
       "clients": "Mijozlar",
-      "statuses": "Statuslar"
+      "statuses": "Statuslar",
+      "statusesTitle": "Statuslar",
+      "statusesDescription": "Mijozlar uchun status turlarini boshqaring va har biriga tegishli mijozlar sonini ko'ring.",
+      "createStatus": "Status qo'shish",
+      "editStatusTitle": "Statusni tahrirlash",
+      "statusColumn": "Status",
+      "clientCountColumn": "Mijozlar soni",
+      "statusLabel": "Status nomi",
+      "statusColor": "Rang",
+      "statusExists": "Bunday status allaqachon mavjud",
+      "deleteStatusTitle": "Statusni o'chirish",
+      "deleteStatusMessage": "\"{{name}}\" statusini o'chirmoqchimisiz? Bu status bilan belgilangan mijozlar o'zgarishsiz qoladi.",
+      "tone": {
+        "success": "Yashil",
+        "warning": "Sariq",
+        "danger": "Qizil",
+        "info": "Ko'k",
+        "neutral": "Kulrang"
+      }
     },
     "modal": {
       "viewTitle": "Mijoz kartasi",

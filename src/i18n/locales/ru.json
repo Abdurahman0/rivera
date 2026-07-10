@@ -257,7 +257,25 @@
     },
     "viewModes": {
       "clients": "Клиенты",
-      "statuses": "Статусы"
+      "statuses": "Статусы",
+      "statusesTitle": "Статусы",
+      "statusesDescription": "Управляйте типами статусов клиентов и смотрите количество клиентов по каждому статусу.",
+      "createStatus": "Добавить статус",
+      "editStatusTitle": "Редактировать статус",
+      "statusColumn": "Статус",
+      "clientCountColumn": "Кол-во клиентов",
+      "statusLabel": "Название статуса",
+      "statusColor": "Цвет",
+      "statusExists": "Такой статус уже существует",
+      "deleteStatusTitle": "Удалить статус",
+      "deleteStatusMessage": "Удалить статус \"{{name}}\"? Клиенты с этим статусом останутся без изменений.",
+      "tone": {
+        "success": "Зелёный",
+        "warning": "Жёлтый",
+        "danger": "Красный",
+        "info": "Синий",
+        "neutral": "Серый"
+      }
     },
     "modal": {
       "viewTitle": "Карточка клиента",

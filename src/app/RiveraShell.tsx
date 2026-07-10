@@ -114,6 +114,7 @@ import { EMPTY_DATA, loadAppData, type AppData } from '../api/data';
 import type { ApiCurrentUser } from '../api/types';
 import { PermissionsProvider } from '../components/PermissionsProvider';
 import { canViewNavPage, ENTITY_KIND_BACKEND_PAGE, hasPagePermission } from '../lib/permissions';
+import { BUILT_IN_CLIENT_STATUSES, loadCustomClientStatuses } from '../utils/clientStatuses';
 
 const DashboardPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.DashboardPage })));
 const ClientsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ClientsPage })));
@@ -1143,6 +1144,13 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
     useEffect(() => {
       if (modal.kind === 'order') setOrderCurrency(value('currency', 'UZS') || 'UZS');
     }, [modal.item?.id, modal.kind, raw.currency]);
+    const clientStatusOptions = useMemo(() => {
+      const custom = loadCustomClientStatuses();
+      return [...BUILT_IN_CLIENT_STATUSES, ...custom.map(status => status.key)].map(value => {
+        const match = custom.find(status => status.key === value);
+        return { value, label: match ? match.label : t(`statuses.${value}`) };
+      });
+    }, [modal.kind, modal.item?.id, t]);
     const inputClass = 'h-11 w-full rounded-xl border border-border-soft/60 bg-surface-card px-3 text-sm font-medium text-text-primary outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20';
     const FieldInput = ({ name, label, type = 'text', required = false, fallback = '', step }: { name: string; label: string; type?: string; required?: boolean; fallback?: string; step?: string }) => (
       <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
@@ -1169,7 +1177,7 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
           {modal.kind === 'client' ? <>
             <FieldInput name="full_name" label={f('fullName')} fallback={(modal.item as Client | undefined)?.name} required />
             <FieldInput name="phone" label={f('phone')} fallback={(modal.item as Client | undefined)?.phone} />
-            <SelectInput name="status" label={f('status')} required fallback={(modal.item as Client | undefined)?.statusKey || 'new'} options={['active', 'new', 'vip', 'blocked', 'inactive'].map(value => ({ value, label: t(`statuses.${value}`) }))} />
+            <SelectInput name="status" label={f('status')} required fallback={(modal.item as Client | undefined)?.statusKey || 'new'} options={clientStatusOptions} />
             <TextArea name="address" label={f('address')} />
             <TextArea name="note" label={f('note')} />
           </> : null}

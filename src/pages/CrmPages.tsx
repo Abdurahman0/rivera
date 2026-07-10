@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSearch, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
+import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StockMovement } from '../types/crm';
+import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StatusTone, StockMovement } from '../types/crm';
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
+import { BUILT_IN_CLIENT_STATUSES, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
 import { useDialog } from '../components/DialogProvider';
 import { useToast } from '../components/ToastProvider';
@@ -531,6 +532,8 @@ function ClientDetailModal({ client, onClose, canManage }: { client: Client; onC
 
 export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { clients: Client[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const { confirm } = useDialog();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('clients', 'manage');
   const [query, setQuery] = useState('');
@@ -538,6 +541,8 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
   const [sourceFilter, setSourceFilter] = useState('all');
   const [sortMode, setSortMode] = useState('valueDesc');
   const [viewMode, setViewMode] = useState<'clients' | 'statuses'>('clients');
+  const [customStatuses, setCustomStatuses] = useState<CustomClientStatus[]>(() => loadCustomClientStatuses());
+  const [statusModal, setStatusModal] = useState<{ mode: 'create' | 'edit'; status?: CustomClientStatus } | null>(null);
   const statusOptions = useMemo(() => ['all', ...Array.from(new Set(clients.map(client => client.statusKey)))], [clients]);
   const sourceOptions = useMemo(() => ['all', ...Array.from(new Set(clients.map(client => client.source)))], [clients]);
   const statusCounts = useMemo(() => {
@@ -545,24 +550,64 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
     clients.forEach(client => { counts[client.statusKey] = (counts[client.statusKey] ?? 0) + 1; });
     return counts;
   }, [clients]);
+  const allStatusKeys = useMemo(
+    () => Array.from(new Set([...BUILT_IN_CLIENT_STATUSES, ...customStatuses.map(status => status.key), ...clients.map(client => client.statusKey)])),
+    [customStatuses, clients],
+  );
+  const resolveStatusDisplay = (key: string): { label: string; tone: StatusTone } => {
+    const custom = customStatuses.find(status => status.key === key);
+    return custom ? { label: custom.label, tone: custom.tone } : { label: statusLabel(t, key), tone: statusTone(key) };
+  };
   const filteredClients = useMemo(() => {
     const normalizedQuery = query.toLowerCase();
     return clients
       .filter(client => `${client.name} ${client.phone} ${client.status} ${client.fabric}`.toLowerCase().includes(normalizedQuery))
       .filter(client => statusFilter === 'all' || client.statusKey === statusFilter)
-      .filter(client => viewMode === 'statuses' || sourceFilter === 'all' || client.source === sourceFilter)
+      .filter(client => sourceFilter === 'all' || client.source === sourceFilter)
       .sort((first, second) => {
         if (sortMode === 'valueAsc') return first.value - second.value;
         if (sortMode === 'nameAsc') return first.name.localeCompare(second.name);
         if (sortMode === 'nameDesc') return second.name.localeCompare(first.name);
         return second.value - first.value;
       });
-  }, [clients, query, sortMode, sourceFilter, statusFilter, viewMode]);
+  }, [clients, query, sortMode, sourceFilter, statusFilter]);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
+
+  function persistCustomStatuses(next: CustomClientStatus[]) {
+    setCustomStatuses(next);
+    saveCustomClientStatuses(next);
+  }
+
+  function handleSaveStatus(input: { key?: string; label: string; tone: StatusTone }) {
+    if (input.key) {
+      persistCustomStatuses(customStatuses.map(status => (status.key === input.key ? { ...status, label: input.label, tone: input.tone } : status)));
+    } else {
+      const key = slugifyStatusKey(input.label);
+      if (allStatusKeys.includes(key)) {
+        toast(t('clients.viewModes.statusExists'), 'danger');
+        return;
+      }
+      persistCustomStatuses([...customStatuses, { key, label: input.label, tone: input.tone }]);
+    }
+    setStatusModal(null);
+  }
+
+  async function handleDeleteStatus(status: CustomClientStatus) {
+    const confirmed = await confirm({ title: t('clients.viewModes.deleteStatusTitle'), message: t('clients.viewModes.deleteStatusMessage', { name: status.label }), danger: true });
+    if (!confirmed) return;
+    persistCustomStatuses(customStatuses.filter(entry => entry.key !== status.key));
+  }
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('clients.eyebrow')} title={t('clients.title')} description={t('clients.description')} createLabel={canManage ? t('clients.create') : undefined} onCreate={canManage ? () => openModal({ kind: 'client', mode: 'create' }) : undefined} onExport={() => exportResource(resources.clients)} />
+      <PageHeader
+        eyebrow={t('clients.eyebrow')}
+        title={viewMode === 'statuses' ? t('clients.viewModes.statusesTitle') : t('clients.title')}
+        description={viewMode === 'statuses' ? t('clients.viewModes.statusesDescription') : t('clients.description')}
+        createLabel={canManage ? (viewMode === 'statuses' ? t('clients.viewModes.createStatus') : t('clients.create')) : undefined}
+        onCreate={canManage ? (viewMode === 'statuses' ? () => setStatusModal({ mode: 'create' }) : () => openModal({ kind: 'client', mode: 'create' })) : undefined}
+        onExport={viewMode === 'statuses' ? undefined : () => exportResource(resources.clients)}
+      />
       <div className="flex flex-wrap gap-2">
         {(['clients', 'statuses'] as const).map(mode => (
           <button
@@ -581,77 +626,109 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
         ))}
       </div>
       {viewMode === 'clients' ? (
-        <ClientsFilterBar
-          query={query}
-          setQuery={setQuery}
-          placeholder={t('clients.searchPlaceholder')}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          sourceFilter={sourceFilter}
-          setSourceFilter={setSourceFilter}
-          sortMode={sortMode}
-          setSortMode={setSortMode}
-          statusOptions={statusOptions}
-          sourceOptions={sourceOptions}
-        />
+        <>
+          <ClientsFilterBar
+            query={query}
+            setQuery={setQuery}
+            placeholder={t('clients.searchPlaceholder')}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            sourceFilter={sourceFilter}
+            setSourceFilter={setSourceFilter}
+            sortMode={sortMode}
+            setSortMode={setSortMode}
+            statusOptions={statusOptions}
+            sourceOptions={sourceOptions}
+          />
+          <DataTable
+            columns={[t('clients.columns.client'), t('clients.columns.source'), t('clients.columns.status'), t('clients.columns.fabric'), t('clients.columns.value'), t('common.actions')]}
+            rows={filteredClients.map(client => [
+              <PrimaryCell title={client.name} subtitle={client.phone} />,
+              client.source,
+              <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>,
+              client.fabric,
+              formatMoney(client.value),
+              <RowActions onView={() => setViewingClient(client)} onEdit={canManage ? () => openModal({ kind: 'client', mode: 'edit', item: client }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'client', mode: 'view', item: client }) : undefined} />,
+            ])}
+            onRowClick={(rowIndex) => setViewingClient(filteredClients[rowIndex])}
+          />
+        </>
       ) : (
-        <div className="filter-bar filter-bar--nova relative z-20 flex flex-wrap items-end justify-start gap-3 overflow-visible rounded-xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/25 backdrop-blur-[12px]">
-          <label className="grid w-full gap-1.5 sm:w-[280px] xl:w-[300px]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">{t('common.search')}</span>
-            <span className="relative">
-              <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-              <input
-                value={query}
-                onChange={event => setQuery(event.target.value)}
-                placeholder={t('clients.searchPlaceholder')}
-                className="h-11 w-full rounded-xl border border-border-soft bg-surface-card pl-10 pr-4 text-sm font-medium text-text-primary outline-none transition focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
-              />
-            </span>
-          </label>
-          <div className="flex flex-1 flex-wrap items-center gap-2">
-            {statusOptions.map(status => {
-              const isActive = statusFilter === status;
-              return (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => setStatusFilter(status)}
-                  className={[
-                    'inline-flex items-center gap-1.5 rounded-pill px-3.5 py-1.5 text-xs font-bold transition',
-                    isActive
-                      ? 'bg-primary text-primary-foreground ring-1 ring-primary'
-                      : 'bg-surface-subtle text-text-secondary ring-1 ring-border-soft/40 hover:bg-primary/10 hover:text-text-primary',
-                  ].join(' ')}
-                >
-                  {status === 'all' ? t('clients.filters.allStatuses') : t(`statuses.${status}`)}
-                  <span className={isActive ? 'text-primary-foreground/80' : 'text-text-muted'}>{statusCounts[status] ?? 0}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <DataTable
+          columns={[t('clients.viewModes.statusColumn'), t('clients.viewModes.clientCountColumn'), t('common.actions')]}
+          rows={allStatusKeys.map(key => {
+            const display = resolveStatusDisplay(key);
+            const custom = customStatuses.find(status => status.key === key);
+            return [
+              <StatusBadge tone={display.tone}>{display.label}</StatusBadge>,
+              statusCounts[key] ?? 0,
+              <RowActions
+                onView={() => { setStatusFilter(key); setViewMode('clients'); }}
+                onEdit={canManage && custom ? () => setStatusModal({ mode: 'edit', status: custom }) : undefined}
+                onDelete={canManage && custom ? () => void handleDeleteStatus(custom) : undefined}
+              />,
+            ];
+          })}
+          onRowClick={(rowIndex) => { setStatusFilter(allStatusKeys[rowIndex]); setViewMode('clients'); }}
+        />
       )}
-      <DataTable
-        columns={viewMode === 'clients'
-          ? [t('clients.columns.client'), t('clients.columns.source'), t('clients.columns.status'), t('clients.columns.fabric'), t('clients.columns.value'), t('common.actions')]
-          : [t('clients.columns.client'), t('clients.columns.status'), t('common.actions')]}
-        rows={filteredClients.map(client => viewMode === 'clients'
-          ? [
-            <PrimaryCell title={client.name} subtitle={client.phone} />,
-            client.source,
-            <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>,
-            client.fabric,
-            formatMoney(client.value),
-            <RowActions onView={() => setViewingClient(client)} onEdit={canManage ? () => openModal({ kind: 'client', mode: 'edit', item: client }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'client', mode: 'view', item: client }) : undefined} />,
-          ]
-          : [
-            <PrimaryCell title={client.name} subtitle={client.phone} />,
-            <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>,
-            <RowActions onView={() => setViewingClient(client)} onEdit={canManage ? () => openModal({ kind: 'client', mode: 'edit', item: client }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'client', mode: 'view', item: client }) : undefined} />,
-          ])}
-        onRowClick={(rowIndex) => setViewingClient(filteredClients[rowIndex])}
-      />
       {viewingClient ? <ClientDetailModal client={viewingClient} canManage={canManage} onClose={() => setViewingClient(null)} /> : null}
+      {statusModal ? <ClientStatusModal mode={statusModal.mode} status={statusModal.status} onSave={handleSaveStatus} onClose={() => setStatusModal(null)} /> : null}
+    </div>
+  );
+}
+
+function ClientStatusModal({ mode, status, onSave, onClose }: {
+  mode: 'create' | 'edit';
+  status?: CustomClientStatus;
+  onSave: (input: { key?: string; label: string; tone: StatusTone }) => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [label, setLabel] = useState(status?.label ?? '');
+  const [tone, setTone] = useState<StatusTone>(status?.tone ?? 'info');
+
+  function handleSave() {
+    if (!label.trim()) {
+      toast(t('admin.ui.requiredFieldsMissing'), 'danger');
+      return;
+    }
+    onSave({ key: status?.key, label: label.trim(), tone });
+  }
+
+  return (
+    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <section role="dialog" aria-modal="true" className="w-full max-w-[420px] rounded-[28px] bg-surface-card p-5 shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="font-display text-xl font-extrabold text-text-primary">{mode === 'edit' ? t('clients.viewModes.editStatusTitle') : t('clients.viewModes.createStatus')}</h3>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-5 grid gap-3">
+          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+            {t('clients.viewModes.statusLabel')}
+            <input value={label} onChange={event => setLabel(event.target.value)} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50" />
+          </label>
+          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+            {t('clients.viewModes.statusColor')}
+            <Dropdown
+              value={tone}
+              onChange={value => setTone(value as StatusTone)}
+              options={(['success', 'warning', 'danger', 'info', 'neutral'] as const).map(value => ({ value, label: t(`clients.viewModes.tone.${value}`) }))}
+            />
+          </label>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-surface-subtle px-4 text-sm font-semibold text-text-secondary transition hover:bg-surface-muted hover:text-text-primary" onClick={onClose}>
+            {t('common.cancel')}
+          </button>
+          <button className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90" onClick={handleSave}>
+            {t('common.save')}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
