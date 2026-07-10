@@ -32,6 +32,12 @@ export function saveCustomClientStatuses(statuses: CustomClientStatus[]) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
 }
 
+/** True once the status catalog has been saved at least once (even as an empty list after
+ *  the user deleted everything) — distinguishes "never seeded" from "intentionally empty". */
+export function hasStoredCustomClientStatuses(): boolean {
+  return window.localStorage.getItem(STORAGE_KEY) !== null;
+}
+
 export function slugifyStatusKey(label: string): string {
   const slug = label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
   return slug || `status_${Math.random().toString(36).slice(2, 8)}`;

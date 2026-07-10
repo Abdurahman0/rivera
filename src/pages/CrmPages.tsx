@@ -5,7 +5,7 @@ import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Lin
 import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StatusTone, StockMovement } from '../types/crm';
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
-import { BUILT_IN_CLIENT_STATUSES, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
+import { BUILT_IN_CLIENT_STATUSES, hasStoredCustomClientStatuses, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
 import { useDialog } from '../components/DialogProvider';
 import { useToast } from '../components/ToastProvider';
@@ -541,7 +541,14 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
   const [sourceFilter, setSourceFilter] = useState('all');
   const [sortMode, setSortMode] = useState('valueDesc');
   const [viewMode, setViewMode] = useState<'clients' | 'statuses'>('clients');
-  const [customStatuses, setCustomStatuses] = useState<CustomClientStatus[]>(() => loadCustomClientStatuses());
+  const [customStatuses, setCustomStatuses] = useState<CustomClientStatus[]>(() => {
+    if (hasStoredCustomClientStatuses()) return loadCustomClientStatuses();
+    // First-ever visit: seed the manageable catalog with the built-in statuses (translated),
+    // so they get full edit/delete actions too instead of staying a hardcoded, immutable set.
+    const seeded = BUILT_IN_CLIENT_STATUSES.map(key => ({ key, label: statusLabel(t, key), tone: statusTone(key) }));
+    saveCustomClientStatuses(seeded);
+    return seeded;
+  });
   const [statusModal, setStatusModal] = useState<{ mode: 'create' | 'edit'; status?: CustomClientStatus } | null>(null);
   const statusOptions = useMemo(() => ['all', ...Array.from(new Set(clients.map(client => client.statusKey)))], [clients]);
   const sourceOptions = useMemo(() => ['all', ...Array.from(new Set(clients.map(client => client.source)))], [clients]);
@@ -551,7 +558,7 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
     return counts;
   }, [clients]);
   const allStatusKeys = useMemo(
-    () => Array.from(new Set([...BUILT_IN_CLIENT_STATUSES, ...customStatuses.map(status => status.key), ...clients.map(client => client.statusKey)])),
+    () => Array.from(new Set([...customStatuses.map(status => status.key), ...clients.map(client => client.statusKey)])),
     [customStatuses, clients],
   );
   const resolveStatusDisplay = (key: string): { label: string; tone: StatusTone } => {
@@ -678,6 +685,14 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
   );
 }
 
+const TONE_SWATCH_CLASS: Record<StatusTone, string> = {
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+  info: 'bg-info',
+  neutral: 'bg-neutral',
+};
+
 function ClientStatusModal({ mode, status, onSave, onClose }: {
   mode: 'create' | 'edit';
   status?: CustomClientStatus;
@@ -713,11 +728,16 @@ function ClientStatusModal({ mode, status, onSave, onClose }: {
           </label>
           <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
             {t('clients.viewModes.statusColor')}
-            <Dropdown
-              value={tone}
-              onChange={value => setTone(value as StatusTone)}
-              options={(['success', 'warning', 'danger', 'info', 'neutral'] as const).map(value => ({ value, label: t(`clients.viewModes.tone.${value}`) }))}
-            />
+            <div className="flex items-center gap-3">
+              <span className={['h-9 w-9 shrink-0 rounded-full ring-2 ring-border-soft/50', TONE_SWATCH_CLASS[tone]].join(' ')} aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <Dropdown
+                  value={tone}
+                  onChange={value => setTone(value as StatusTone)}
+                  options={(['success', 'warning', 'danger', 'info', 'neutral'] as const).map(value => ({ value, label: t(`clients.viewModes.tone.${value}`) }))}
+                />
+              </div>
+            </div>
           </label>
         </div>
         <div className="mt-5 flex gap-2">
