@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
+import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StatusTone, StockMovement } from '../types/crm';
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
@@ -1376,26 +1376,37 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('products', 'manage');
-  const [activeTab, setActiveTab] = useState<'products' | 'bom'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'bom'>('products');
   const totalRevenue = products.reduce((sum, product) => sum + product.revenue, 0);
 
   return (
     <div className="grid gap-5">
       <PageHeader
         eyebrow={t('products.eyebrow')}
-        title={t('products.title')}
-        description={t('products.description')}
-        createLabel={canManage ? t('products.create') : undefined}
-        onCreate={canManage ? () => openModal({ kind: 'product', mode: 'create' }) : undefined}
-        onExport={() => exportResource(resources.products)}
+        title={activeTab === 'categories' ? t('products.tabs.categories') : t('products.title')}
+        description={activeTab === 'categories' ? t('products.categoryDescription') : t('products.description')}
+        createLabel={canManage ? (activeTab === 'categories' ? t('products.createCategory') : t('products.create')) : undefined}
+        onCreate={canManage ? (activeTab === 'categories' ? () => openModal({ kind: 'category', mode: 'create' }) : () => openModal({ kind: 'product', mode: 'create' })) : undefined}
+        onExport={activeTab === 'categories' ? () => exportResource(resources.productCategories) : activeTab === 'products' ? () => exportResource(resources.products) : undefined}
       />
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard icon={<FiPackage />} label={t('products.metrics.revenue')} value={formatMoney(totalRevenue)} caption={t('products.metrics.revenueCaption')} tone="success" />
-        <MetricCard icon={<FiArchive />} label={t('products.metrics.stock')} value={totalStock.toLocaleString()} caption={t('products.metrics.stockCaption')} tone="info" />
-        <MetricCard icon={<FiSliders />} label={t('products.metrics.lowStock')} value={lowStockCount.toString()} caption={t('products.metrics.lowStockCaption')} tone="warning" />
-      </div>
-      <SegmentTabs tabs={[{ id: 'products', label: t('products.tabs.products'), icon: <FiPackage /> }, { id: 'bom', label: t('products.tabs.bom'), icon: <FiLayers /> }]} activeTab={activeTab} onChange={(id) => setActiveTab(id as 'products' | 'bom')} />
+      {activeTab === 'products' ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <MetricCard icon={<FiPackage />} label={t('products.metrics.revenue')} value={formatMoney(totalRevenue)} caption={t('products.metrics.revenueCaption')} tone="success" />
+          <MetricCard icon={<FiArchive />} label={t('products.metrics.stock')} value={totalStock.toLocaleString()} caption={t('products.metrics.stockCaption')} tone="info" />
+          <MetricCard icon={<FiSliders />} label={t('products.metrics.lowStock')} value={lowStockCount.toString()} caption={t('products.metrics.lowStockCaption')} tone="warning" />
+        </div>
+      ) : null}
+      <SegmentTabs
+        tabs={[
+          { id: 'products', label: t('products.tabs.products'), icon: <FiPackage /> },
+          { id: 'categories', label: t('products.tabs.categories'), icon: <FiTag /> },
+          { id: 'bom', label: t('products.tabs.bom'), icon: <FiLayers /> },
+        ]}
+        activeTab={activeTab}
+        onChange={(id) => setActiveTab(id as 'products' | 'categories' | 'bom')}
+      />
 
+      {activeTab === 'categories' && <CategoriesTable categories={categories} products={products} openModal={openModal} openDelete={openDelete} />}
       {activeTab === 'products' && (<DataTable
         columns={[t('products.columns.product'), t('products.columns.sku'), t('products.columns.category'), t('products.columns.stock'), t('products.columns.revenue'), t('common.actions')]}
         rows={products.map(product => [
@@ -1520,20 +1531,14 @@ export function CategoriesTable({ categories, products, openModal, openDelete }:
       rows={categories.map(category => {
         const count = products.filter(product => product.categoryId === category.id).length;
         return [
-          <PrimaryCell title={category.name} subtitle={category.id} />,
-          <span className="rounded-pill bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-text-accent">{category.code}</span>,
-          category.description,
+          category.name,
           <span className="font-bold text-text-primary">{count}</span>,
-          category.sortOrder,
           <RowActions onView={() => openModal({ kind: 'category', mode: 'view', item: category })} onEdit={() => openModal({ kind: 'category', mode: 'edit', item: category })} onDelete={() => openDelete({ kind: 'category', mode: 'view', item: category })} />,
         ];
       })}
       columns={[
         t('products.categoryColumns.category'),
-        t('products.categoryColumns.code'),
-        t('products.categoryColumns.description'),
         t('products.categoryColumns.products'),
-        t('products.categoryColumns.sortOrder'),
         t('common.actions'),
       ]}
       onRowClick={(rowIndex) => openModal({ kind: 'category', mode: 'view', item: categories[rowIndex] })}

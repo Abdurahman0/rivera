@@ -390,6 +390,7 @@
     "description": "Mato rulonlari, ip-kalava, tayyor kiyim va ishlab chiqarish uchun kam zaxira ogohlantirishlari.",
     "create": "Mahsulot qo'shish",
     "createCategory": "Kategoriya qo'shish",
+    "categoryDescription": "Mahsulotlarni guruhlash uchun kategoriyalarni boshqaring.",
     "metrics": {
       "revenue": "Mahsulot daromadi",
       "revenueCaption": "O'tgan oyga nisbatan +12%",
@@ -438,22 +439,15 @@
     },
     "categoryColumns": {
       "category": "Kategoriya",
-      "code": "Kod",
-      "description": "Tavsif",
-      "products": "Mahsulotlar",
-      "sortOrder": "Tartib"
+      "products": "Mahsulotlar"
     },
     "categoryModal": {
       "modal": {
         "viewTitle": "Kategoriya kartasi",
         "createTitle": "Yangi kategoriya",
         "editTitle": "Kategoriyani tahrirlash",
-        "summary": "Mahsulot kategoriyasi, kodi, tavsifi va jadvaldagi tartibi.",
+        "summary": "Kategoriya nomi va unga tegishli mahsulotlar.",
         "nextStep": "Keyingi qadam: kategoriya nomini tekshiring va mahsulotlarni shu guruhga bog'lang."
-      },
-      "form": {
-        "details": "Kategoriya tafsilotlari",
-        "detailsHint": "Solar uslubida nomdan kod avtomatik yaratiladi."
       }
     },
     "modal": {
