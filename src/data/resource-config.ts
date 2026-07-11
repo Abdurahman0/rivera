@@ -164,14 +164,14 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
     fields: [
       { name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name' }, table: true },
       { name: 'event_type', label: f('type'), table: true, options: options([['check_in', 'admin.options.eventType.check_in'], ['check_out', 'admin.options.eventType.check_out']]) },
-      { name: 'event_at', label: f('time'), table: true }, { name: 'device', label: f('device'), lookup: { resource: resources.attendanceDevices, label: 'name' }, table: true }, { name: 'confidence', label: f('confidence'), table: true },
+      { name: 'event_at', label: f('time'), type: 'datetime-local', table: true }, { name: 'device', label: f('device'), lookup: { resource: resources.attendanceDevices, label: 'name' }, table: true }, { name: 'confidence', label: f('confidence'), table: true },
     ],
   },
   attendanceRecords: {
     resource: resources.attendanceRecords, title: title('attendanceRecords'), description: description('attendanceRecords'), allowEdit: false, allowArchive: false,
     fields: [
       { name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name', secondary: 'employee_code' }, required: true, table: true }, { name: 'work_date', label: f('workDate'), type: 'date', required: true, table: true },
-      { name: 'first_check_in_at', label: f('firstCheckIn'), type: 'datetime-local', nullable: true }, { name: 'last_check_out_at', label: f('lastCheckOut'), type: 'datetime-local', nullable: true }, { name: 'worked_minutes', label: f('workedMinutes'), readOnly: true, table: true },
+      { name: 'first_check_in_at', label: f('firstCheckIn'), type: 'datetime-local', nullable: true, table: true }, { name: 'last_check_out_at', label: f('lastCheckOut'), type: 'datetime-local', nullable: true, table: true }, { name: 'worked_minutes', label: f('workedMinutes'), readOnly: true, table: true },
       { name: 'status', label: f('status'), type: 'select', required: true, table: true, options: options([['present', 'admin.options.attendanceStatus.present'], ['late', 'admin.options.attendanceStatus.late'], ['absent_excused', 'admin.options.attendanceStatus.absent_excused'], ['absent_unexcused', 'admin.options.attendanceStatus.absent_unexcused']]) }, { name: 'is_manual', label: f('manual'), type: 'checkbox' }, { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
