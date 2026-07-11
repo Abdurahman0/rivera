@@ -656,24 +656,19 @@ function App() {
                 openModal={setModal}
                 openDelete={setPendingDelete}
                 onWorkEntrySaved={() => void refreshData()}
-                onIssue={async id => {
-                  try {
-                    await actions.issueMaterials(String(id));
-                    await refreshData();
-                    toast(t('dialog.issueMaterialsSuccess'), 'success');
-                  } catch (error) {
-                    toast(apiErrorMessage(error, t, 'dialog.issueMaterialsFailed'), 'danger');
-                  }
-                }}
                 onDeliver={async id => {
                   try {
                     const quantityText = await prompt({ title: t('dialog.deliverQuantityTitle'), message: t('dialog.deliverQuantityMessage'), placeholder: t('dialog.deliverQuantityPlaceholder'), inputType: 'number', min: 1, required: true });
                     if (!quantityText) return;
                     const quantity = Number(quantityText);
                     if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(t('dialog.deliverInvalidQuantity'));
-                    await actions.deliverBatch(String(id), { quantity, date: new Date().toISOString().slice(0, 10) });
+                    const result = await actions.deliverBatch<{ requested_quantity: number; delivered_quantity: number; capped_by_material: boolean }>(String(id), { quantity, date: new Date().toISOString().slice(0, 10) });
                     await refreshData();
-                    toast(t('dialog.deliverSuccess'), 'success');
+                    if (result.capped_by_material) {
+                      toast(t('dialog.deliverCappedByMaterial', { requested: result.requested_quantity, delivered: result.delivered_quantity }), 'info');
+                    } else {
+                      toast(t('dialog.deliverSuccess'), 'success');
+                    }
                   } catch (error) {
                     toast(apiErrorMessage(error, t, 'dialog.deliverFailed'), 'danger');
                   }

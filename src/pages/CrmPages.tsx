@@ -2340,7 +2340,7 @@ function BatchDetailModal({ batch, canManage, onClose }: { batch: ProductionBatc
   );
 }
 
-export function ProductionPage({ batches, products, materials, staff, operationTypes, formatMoney, onCreate, openModal, openDelete, onIssue, onDeliver, onWorkEntrySaved }: {
+export function ProductionPage({ batches, products, materials, staff, operationTypes, formatMoney, onCreate, openModal, openDelete, onDeliver, onWorkEntrySaved }: {
   batches: ProductionBatch[];
   products: Product[];
   materials: Material[];
@@ -2350,7 +2350,6 @@ export function ProductionPage({ batches, products, materials, staff, operationT
   onCreate: () => void;
   openModal: (modal: ModalState) => void;
   openDelete: (modal: ModalState) => void;
-  onIssue: (id: string | number) => Promise<void>;
   onDeliver: (id: string | number) => Promise<void>;
   onWorkEntrySaved: () => void;
 }) {
@@ -2429,10 +2428,7 @@ export function ProductionPage({ batches, products, materials, staff, operationT
             const materialsOpen = Boolean(openBatchMaterials[String(batch.id)]);
             const isCompleted = batch.shift === 'completed';
             const remainingQty = Math.max(batch.plannedQty - batch.producedQty, 0);
-            const hasActiveMaterialIssue = batch.materialIssues.some(issue => issue.pendingQuantity > 0 || issue.approvedQuantity > 0);
-            const canIssueMaterials = !isCompleted && !hasActiveMaterialIssue;
             const canDeliver = !isCompleted && remainingQty > 0;
-            const issueDisabledReason = isCompleted ? t('production.batch.issueDisabledCompleted') : hasActiveMaterialIssue ? t('production.batch.issueDisabledPending') : undefined;
             const deliverDisabledReason = isCompleted ? t('production.batch.deliverDisabledCompleted') : remainingQty <= 0 ? t('production.batch.deliverDisabledNoRemaining') : undefined;
 
             return (
@@ -2509,9 +2505,6 @@ export function ProductionPage({ batches, products, materials, staff, operationT
                                   {t('production.batch.issued')}: <span className="font-extrabold">{(item.issued?.quantity ?? 0).toLocaleString()} {unitLabel(item.unit, t)}</span>
                                   {item.issued ? <span className="ml-1 opacity-70">({item.issued.count}x)</span> : null}
                                 </p>
-                                {item.issued && item.issued.pendingQuantity > 0 ? (
-                                  <p className="mt-0.5 text-[10px] font-semibold text-warning">{t('production.batch.pendingIssued')}: {item.issued.pendingQuantity.toLocaleString()} {unitLabel(item.unit, t)}</p>
-                                ) : null}
                               </div>
                             </div>
                           ))}
@@ -2544,7 +2537,6 @@ export function ProductionPage({ batches, products, materials, staff, operationT
                   </div>
                   <div className="ml-auto flex flex-wrap items-center gap-2">
                     <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => setViewingBatchDetail(batch)}>{t('production.batch.detail')}</button>
-                    {canManage ? <button disabled={!canIssueMaterials} title={issueDisabledReason} className="rounded-lg bg-warning-bg px-2.5 py-1.5 text-xs font-bold text-warning transition disabled:cursor-not-allowed disabled:opacity-40" onClick={() => void onIssue(batch.id)}>{t('production.batch.issueMaterials')}</button> : null}
                     {canManage ? <button disabled={!canDeliver} title={deliverDisabledReason} className="rounded-lg bg-success-bg px-2.5 py-1.5 text-xs font-bold text-success transition disabled:cursor-not-allowed disabled:opacity-40" onClick={() => void onDeliver(batch.id)}>{t('production.batch.deliver')}</button> : null}
                     <RowActions onView={() => openModal({ kind: 'batch', mode: 'view', item: batch })} onEdit={canManage ? () => openModal({ kind: 'batch', mode: 'edit', item: batch }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'batch', mode: 'view', item: batch }) : undefined} />
                   </div>

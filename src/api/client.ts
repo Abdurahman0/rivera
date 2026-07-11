@@ -241,7 +241,6 @@ export const actions = {
   topClients: <T>(limit = 10) => api.get<T>(`/dashboard/top_clients/?limit=${limit}`),
   authMe: <T>() => api.get<T>('/auth/me/'),
   deviceAttendanceCheck: <T>(payload: FormData | Record<string, unknown>) => api.post<T>('/attendance-events/check/', payload),
-  issueMaterials: <T>(batchId: string) => api.post<T>(`/production-batches/${batchId}/issue_materials/`),
   deliverBatch: <T>(batchId: string, payload: { quantity: number; date: string; size?: string; color?: string }) => api.post<T>(`/production-batches/${batchId}/deliver/`, payload),
   calculatePayroll: <T>(month: string) => api.post<T>('/monthly-payrolls/calculate/', { month }),
   approvePayroll: <T>(id: string) => api.post<T>(`/monthly-payrolls/${id}/approve/`),
