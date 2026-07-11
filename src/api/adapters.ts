@@ -20,6 +20,7 @@ import type {
   ApiSupplier,
 } from './types';
 import i18n from '../i18n';
+import { categoryColor, loadCategoryColors } from '../utils/categoryColors';
 import type {
   CategoryDatum,
   Client,
@@ -351,10 +352,11 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     amount: number(row.amount_uzs),
   }));
 
+  const savedCategoryColors = loadCategoryColors();
   const categoryAnalytics: CategoryDatum[] = categories.map((category, index) => ({
     name: category.name,
     value: products.length ? Math.round((products.filter(product => product.categoryId === category.id).length / products.length) * 100) : 0,
-    color: ['#6366f1', '#14b8a6', '#f59e0b', '#ec4899', '#0ea5e9'][index % 5],
+    color: categoryColor(String(category.id), index, savedCategoryColors),
   }));
 
   const attendanceDates = [...new Set(data.attendance.map(row => row.work_date))].sort().slice(-5);

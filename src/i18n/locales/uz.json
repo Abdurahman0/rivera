@@ -439,6 +439,7 @@
     },
     "categoryColumns": {
       "category": "Kategoriya",
+      "color": "Rang",
       "products": "Mahsulotlar"
     },
     "categoryModal": {

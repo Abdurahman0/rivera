@@ -6,6 +6,7 @@ import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry,
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
 import { BUILT_IN_CLIENT_STATUSES, hasStoredCustomClientStatuses, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
+import { CATEGORY_COLOR_PALETTE, categoryColor, loadCategoryColors, saveCategoryColors } from '../utils/categoryColors';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
 import { useDialog } from '../components/DialogProvider';
 import { useToast } from '../components/ToastProvider';
@@ -1378,6 +1379,7 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
   const canManage = useHasPermission('products', 'manage');
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'bom'>('products');
   const totalRevenue = products.reduce((sum, product) => sum + product.revenue, 0);
+  const categoryColors = useMemo(() => loadCategoryColors(), []);
 
   return (
     <div className="grid gap-5">
@@ -1426,7 +1428,17 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
             </span>
           </span>,
           <SkuCell sku={product.sku} />,
-          categories.find(category => category.id === product.categoryId)?.name ?? product.category,
+          (() => {
+            const categoryIndex = categories.findIndex(category => category.id === product.categoryId);
+            const categoryName = categoryIndex >= 0 ? categories[categoryIndex].name : product.category;
+            if (categoryIndex < 0) return categoryName;
+            return (
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: categoryColor(String(categories[categoryIndex].id), categoryIndex, categoryColors) }} />
+                {categoryName}
+              </span>
+            );
+          })(),
           <span className={product.stock <= product.minStock ? 'font-bold text-warning' : 'font-bold text-text-primary'}>{product.stock.toLocaleString()} {unitLabel(product.unit, t)}</span>,
           formatMoney(product.revenue),
           <RowActions onView={() => openModal({ kind: 'product', mode: 'view', item: product })} onEdit={canManage ? () => openModal({ kind: 'product', mode: 'edit', item: product }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'product', mode: 'view', item: product }) : undefined} />,
@@ -1525,13 +1537,23 @@ export function SkuCell({ sku }: { sku: string }) {
 
 export function CategoriesTable({ categories, products, openModal, openDelete }: { categories: ProductCategory[]; products: Product[]; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
+  const [colors, setColors] = useState<Record<string, string>>(() => loadCategoryColors());
+
+  function setColor(categoryId: string, color: string) {
+    const next = { ...colors, [categoryId]: color };
+    setColors(next);
+    saveCategoryColors(next);
+  }
 
   return (
     <DataTable
-      rows={categories.map(category => {
+      rows={categories.map((category, index) => {
         const count = products.filter(product => product.categoryId === category.id).length;
         return [
-          category.name,
+          <span className="flex items-center gap-2.5">
+            <CategoryColorPicker categoryId={String(category.id)} color={categoryColor(String(category.id), index, colors)} onPick={setColor} />
+            <span className="font-semibold text-text-primary">{category.name}</span>
+          </span>,
           <span className="font-bold text-text-primary">{count}</span>,
           <RowActions onView={() => openModal({ kind: 'category', mode: 'view', item: category })} onEdit={() => openModal({ kind: 'category', mode: 'edit', item: category })} onDelete={() => openDelete({ kind: 'category', mode: 'view', item: category })} />,
         ];
@@ -1543,6 +1565,48 @@ export function CategoriesTable({ categories, products, openModal, openDelete }:
       ]}
       onRowClick={(rowIndex) => openModal({ kind: 'category', mode: 'view', item: categories[rowIndex] })}
     />
+  );
+}
+
+function CategoryColorPicker({ categoryId, color, onPick }: { categoryId: string; color: string; onPick: (categoryId: string, color: string) => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(event: MouseEvent) {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [open]);
+
+  return (
+    <span ref={ref} className="relative inline-flex" onClick={event => event.stopPropagation()}>
+      <button
+        type="button"
+        className="h-4 w-4 shrink-0 rounded-full ring-2 ring-border-soft/40 transition hover:scale-110"
+        style={{ backgroundColor: color }}
+        onClick={() => setOpen(current => !current)}
+        aria-label={t('products.categoryColumns.color')}
+        title={t('products.categoryColumns.color')}
+      />
+      {open ? (
+        <span className="absolute left-0 top-6 z-30 flex w-[132px] flex-wrap gap-1.5 rounded-xl bg-surface-card p-2.5 shadow-[0_18px_40px_-20px_rgba(15,23,42,0.5)] ring-1 ring-border-soft/50">
+          {CATEGORY_COLOR_PALETTE.map(swatch => (
+            <button
+              key={swatch}
+              type="button"
+              className={['h-6 w-6 rounded-full ring-2 transition hover:scale-110', swatch === color ? 'ring-text-primary' : 'ring-transparent hover:ring-border-soft/60'].join(' ')}
+              style={{ backgroundColor: swatch }}
+              onClick={() => { onPick(categoryId, swatch); setOpen(false); }}
+              aria-label={swatch}
+            />
+          ))}
+        </span>
+      ) : null}
+    </span>
   );
 }
 

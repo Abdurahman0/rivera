@@ -439,6 +439,7 @@
     },
     "categoryColumns": {
       "category": "Категория",
+      "color": "Цвет",
       "products": "Продукты"
     },
     "categoryModal": {
