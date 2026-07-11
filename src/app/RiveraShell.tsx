@@ -1146,7 +1146,8 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
     }, [modal.item?.id, modal.kind, raw.currency]);
     const clientStatusOptions = useMemo(() => {
       const custom = loadCustomClientStatuses();
-      return [...BUILT_IN_CLIENT_STATUSES, ...custom.map(status => status.key)].map(value => {
+      const keys = Array.from(new Set([...BUILT_IN_CLIENT_STATUSES, ...custom.map(status => status.key)]));
+      return keys.map(value => {
         const match = custom.find(status => status.key === value);
         return { value, label: match ? match.label : t(`statuses.${value}`) };
       });
