@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FiArchive, FiDownload, FiEdit2, FiPlus, FiRefreshCcw, FiRotateCcw, FiSearch, FiX } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -27,7 +27,9 @@ export interface ResourceField {
   step?: string;
   /** Option labels are also translation keys. */
   options?: ResourceOption[];
-  lookup?: { resource: string; label: string; secondary?: string };
+  /** `autofill` derives other field values (e.g. price, color) from the selected lookup
+   *  row — fired once when the user picks a value, never overwriting on initial mount. */
+  lookup?: { resource: string; label: string; secondary?: string; autofill?: (row: ResourceRow) => Record<string, string> };
 }
 
 export interface ResourceConfig {
@@ -124,11 +126,13 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
   const { toast } = useToast();
   const [rows, setRows] = useState<ResourceRow[]>([]);
   const [lookups, setLookups] = useState<Record<string, Map<string, string>>>({});
+  const [lookupRowsByResource, setLookupRowsByResource] = useState<Record<string, ResourceRow[]>>({});
   const [query, setQuery] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<ResourceRow | 'new' | null>(null);
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const title = t(config.title);
 
@@ -142,7 +146,9 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
         ...uniqueResources.map(resource => api.list<ResourceRow>(resource)),
       ]);
       const nextLookups: Record<string, Map<string, string>> = {};
+      const nextLookupRowsByResource: Record<string, ResourceRow[]> = {};
       uniqueResources.forEach((resource, index) => {
+        nextLookupRowsByResource[resource] = lookupRows[index];
         const matchingFields = lookupFields.filter(field => field.lookup!.resource === resource);
         matchingFields.forEach(field => {
           nextLookups[field.name] = new Map(lookupRows[index].map(row => {
@@ -154,6 +160,7 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
       });
       setRows(nextRows);
       setLookups(nextLookups);
+      setLookupRowsByResource(nextLookupRowsByResource);
     } catch (requestError) {
       toast(errorMessage(t, requestError), 'danger');
     } finally {
@@ -252,6 +259,18 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
     }
   }
 
+  function handleLookupChange(field: ResourceField, value: string) {
+    const autofill = field.lookup?.autofill;
+    const form = formRef.current;
+    if (!autofill || !value || !form) return;
+    const selectedRow = lookupRowsByResource[field.lookup!.resource]?.find(row => String(row.id) === value);
+    if (!selectedRow) return;
+    Object.entries(autofill(selectedRow)).forEach(([targetName, targetValue]) => {
+      const element = form.elements.namedItem(targetName);
+      if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) element.value = targetValue;
+    });
+  }
+
   async function runAction(label: string, operation: () => Promise<unknown>) {
     try {
       await operation();
@@ -340,13 +359,13 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
       {editing ? <div className="fixed inset-0 z-[200] flex justify-end bg-background-overlay/70" onMouseDown={event => { if (event.target === event.currentTarget) setEditing(null); }}>
         <aside className="h-full w-full max-w-[680px] overflow-y-auto bg-background-subtle p-5 shadow-xl">
           <div className="mb-5 flex items-start justify-between gap-3"><div><p className="text-[11px] font-bold uppercase tracking-wide text-primary">{editing === 'new' ? t('admin.ui.createPanel') : t('admin.ui.editPanel')}</p><h3 className="text-2xl font-extrabold text-text-primary">{title}</h3></div><button className="rounded-xl bg-surface-muted p-3 text-text-secondary" onClick={() => setEditing(null)}><FiX /></button></div>
-          <form className="grid gap-4" onSubmit={submit}>
+          <form ref={formRef} className="grid gap-4" onSubmit={submit}>
             <div className="grid gap-4 rounded-2xl bg-surface-card p-4 ring-1 ring-border-soft/40 sm:grid-cols-2">
               {config.fields.filter(field => !field.readOnly).map(field => {
                 const baseClass = 'h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50';
                 const currentValue = String(fieldValue(editing === 'new' ? null : editing, field));
                 return <label key={field.name} className={`grid gap-1.5 text-sm font-bold text-text-secondary ${field.type === 'textarea' || field.type === 'json' ? 'sm:col-span-2' : ''}`}>{t(field.label)}
-                  {field.type === 'select' || field.lookup ? <Dropdown name={field.name} required={field.required} defaultValue={currentValue} options={field.options?.map(option => ({ value: option.value, label: t(option.label) })) || [...(lookups[field.name]?.entries() || [])].map(([value, label]) => ({ value, label }))} />
+                  {field.type === 'select' || field.lookup ? <Dropdown name={field.name} required={field.required} defaultValue={currentValue} onChange={field.lookup?.autofill ? value => handleLookupChange(field, value) : undefined} options={field.options?.map(option => ({ value: option.value, label: t(option.label) })) || [...(lookups[field.name]?.entries() || [])].map(([value, label]) => ({ value, label }))} />
                     : field.type === 'date' || field.type === 'datetime-local' ? <DatePicker name={field.name} required={field.required} defaultValue={currentValue} type={field.type} />
                     : field.type === 'textarea' || field.type === 'json' ? <textarea name={field.name} required={field.required} defaultValue={currentValue} className={`${baseClass} min-h-28 py-3 font-${field.type === 'json' ? 'mono' : 'sans'}`} />
                     : field.type === 'checkbox' ? <input name={field.name} type="checkbox" defaultChecked={Boolean(fieldValue(editing === 'new' ? null : editing, field))} className="h-5 w-5" />

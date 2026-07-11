@@ -54,7 +54,15 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
   orderItems: {
     resource: resources.clientOrderItems, title: title('orderItems'), description: description('orderItems'),
     fields: [
-      { name: 'product', label: f('product'), lookup: { resource: resources.products, label: 'name', secondary: 'code' }, required: true, table: true },
+      {
+        name: 'product', label: f('product'), required: true, table: true,
+        lookup: {
+          resource: resources.products, label: 'name', secondary: 'code',
+          // Auto-fills the product's own color and UZS retail price into the item row;
+          // both stay editable afterward (e.g. for USD orders, adjust unit_price manually).
+          autofill: row => ({ color: String(row.color ?? ''), unit_price: String(row.unit_price_with_tax_uzs ?? '0') }),
+        },
+      },
       { name: 'size', label: f('size'), table: true }, { name: 'color', label: f('color'), table: true }, { name: 'quantity', label: f('quantity'), type: 'number', required: true, table: true },
       { name: 'unit_price', label: f('unitPrice'), type: 'number', step: '0.01', required: true, table: true }, { name: 'total_amount', label: f('totalAmount'), readOnly: true, table: true },
       { name: 'note', label: f('note'), type: 'textarea' },
