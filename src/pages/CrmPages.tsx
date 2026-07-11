@@ -147,7 +147,31 @@ function matchingDashboardPreset(value: DashboardDateRange | null): DashboardRan
 
 /** Single dropdown combining quick presets (today / last 30 days / this month / last month)
  *  with a custom calendar range — every choice applies immediately, no separate "apply" step. */
-function DashboardDateFilter({ value, onChange }: { value: DashboardDateRange | null; onChange: (range: DashboardDateRange | null) => void }) {
+/** Quick-preset dropdown (All time / Today / Last 30 days / This month / Last month) —
+ *  applies immediately on selection. A separate, independent control from the custom
+ *  calendar range picker below; picking here doesn't open or affect that one. */
+function DashboardPresetDropdown({ value, onChange }: { value: DashboardDateRange | null; onChange: (range: DashboardDateRange | null) => void }) {
+  const { t } = useTranslation();
+  const activePreset = matchingDashboardPreset(value);
+  const options = [
+    { value: 'allTime', label: t('dashboard.filters.allTime') },
+    ...DASHBOARD_RANGE_PRESETS.map(preset => ({ value: preset, label: t(`dashboard.filters.${preset}`) })),
+  ];
+
+  return (
+    <div className="w-[168px]">
+      <Dropdown
+        value={activePreset ?? 'allTime'}
+        onChange={selected => onChange(selected === 'allTime' ? null : dashboardRangePreset(selected as DashboardRangePreset))}
+        options={options}
+      />
+    </div>
+  );
+}
+
+/** Standalone custom date-range calendar dropdown — picking a start and end date applies
+ *  immediately (no separate save step) and closes. Independent from the preset dropdown. */
+function DashboardCustomRangePicker({ value, onChange }: { value: DashboardDateRange | null; onChange: (range: DashboardDateRange | null) => void }) {
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [draftStart, setDraftStart] = useState('');
@@ -195,20 +219,14 @@ function DashboardDateFilter({ value, onChange }: { value: DashboardDateRange | 
 
   const monthLabel = viewDate.toLocaleDateString(lang, { month: 'long', year: 'numeric' });
   const weekdayLabels = lang === 'ru-RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Du', 'Se', 'Cho', 'Pay', 'Ju', 'Sha', 'Ya'];
-  const displayText = activePreset
-    ? t(`dashboard.filters.${activePreset}`)
-    : value
-      ? `${value.startDate.split('-').reverse().join('.')} – ${value.endDate.split('-').reverse().join('.')}`
-      : t('dashboard.filters.allTime');
+  // Only reflect the value here when it's a genuine custom pick (not a preset), so this
+  // control's trigger doesn't fight with the preset dropdown over the same range.
+  const displayText = value && !activePreset
+    ? `${value.startDate.split('-').reverse().join('.')} – ${value.endDate.split('-').reverse().join('.')}`
+    : t('dashboard.filters.customRange');
 
-  // While no in-progress custom pick, the calendar highlights the current value (if any).
-  const highlightStart = draftStart || value?.startDate || '';
-  const highlightEnd = draftStart ? draftEnd : (value?.endDate || '');
-
-  function applyPreset(preset: DashboardRangePreset) {
-    onChange(dashboardRangePreset(preset));
-    setIsOpen(false);
-  }
+  const highlightStart = draftStart || (!activePreset ? value?.startDate ?? '' : '');
+  const highlightEnd = draftStart ? draftEnd : (!activePreset ? value?.endDate ?? '' : '');
 
   function pickDate(iso: string) {
     if (!draftStart || (draftStart && draftEnd)) {
@@ -222,7 +240,7 @@ function DashboardDateFilter({ value, onChange }: { value: DashboardDateRange | 
   }
 
   return (
-    <div ref={menuRef} className="relative w-[210px] max-w-full">
+    <div ref={menuRef} className="relative w-[168px] max-w-full">
       <button
         type="button"
         className={[
@@ -239,60 +257,38 @@ function DashboardDateFilter({ value, onChange }: { value: DashboardDateRange | 
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex w-[420px] max-w-[92vw] overflow-hidden rounded-2xl border border-border-soft/60 bg-surface-card shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl">
-          <div className="grid w-[148px] shrink-0 gap-1 border-r border-border-soft/40 p-2.5">
-            <button
-              type="button"
-              className={['flex h-9 items-center rounded-lg px-2.5 text-left text-[12px] font-bold transition', !value ? 'bg-primary/10 text-primary' : 'text-text-secondary hover:bg-surface-subtle hover:text-text-primary'].join(' ')}
-              onClick={() => { onChange(null); setIsOpen(false); }}
-            >
-              {t('dashboard.filters.allTime')}
+        <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-[292px] rounded-2xl border border-border-soft/60 bg-surface-card p-3 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl">
+          <div className="mb-2 flex items-center justify-between">
+            <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() - 1, 1))}>
+              <FiChevronRight className="h-4 w-4 rotate-180" />
             </button>
-            {DASHBOARD_RANGE_PRESETS.map(preset => (
-              <button
-                key={preset}
-                type="button"
-                className={['flex h-9 items-center rounded-lg px-2.5 text-left text-[12px] font-bold transition', activePreset === preset ? 'bg-primary text-primary-foreground' : 'text-text-secondary hover:bg-surface-subtle hover:text-text-primary'].join(' ')}
-                onClick={() => applyPreset(preset)}
-              >
-                {t(`dashboard.filters.${preset}`)}
-              </button>
-            ))}
-            <p className="mt-2 border-t border-border-soft/40 px-2.5 pt-2.5 text-[10px] font-bold uppercase tracking-wide text-text-muted">{t('dashboard.filters.customRange')}</p>
+            <span className="text-sm font-bold capitalize text-text-primary">{monthLabel}</span>
+            <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() + 1, 1))}>
+              <FiChevronRight className="h-4 w-4" />
+            </button>
           </div>
-          <div className="min-w-0 flex-1 p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() - 1, 1))}>
-                <FiChevronRight className="h-4 w-4 rotate-180" />
-              </button>
-              <span className="text-sm font-bold capitalize text-text-primary">{monthLabel}</span>
-              <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() + 1, 1))}>
-                <FiChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {weekdayLabels.map(label => <span key={label} className="grid h-7 place-items-center text-[10px] font-bold uppercase text-text-muted">{label}</span>)}
-              {days.map(({ date, inMonth }, index) => {
-                const iso = isoDate(date);
-                const isEdge = iso === highlightStart || iso === highlightEnd;
-                const isBetween = Boolean(highlightStart && highlightEnd && iso > highlightStart && iso < highlightEnd);
-                return (
-                  <button
-                    key={`${iso}-${index}`}
-                    type="button"
-                    className={[
-                      'grid h-8 place-items-center rounded-lg text-xs font-semibold transition',
-                      !inMonth ? 'text-text-muted/40 hover:bg-surface-subtle' : 'text-text-primary hover:bg-primary/10',
-                      isBetween ? 'bg-primary/10 text-text-primary' : '',
-                      isEdge ? 'bg-primary text-primary-foreground hover:bg-primary' : '',
-                    ].join(' ')}
-                    onClick={() => pickDate(iso)}
-                  >
-                    {date.getDate()}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="grid grid-cols-7 gap-1">
+            {weekdayLabels.map(label => <span key={label} className="grid h-7 place-items-center text-[10px] font-bold uppercase text-text-muted">{label}</span>)}
+            {days.map(({ date, inMonth }, index) => {
+              const iso = isoDate(date);
+              const isEdge = iso === highlightStart || iso === highlightEnd;
+              const isBetween = Boolean(highlightStart && highlightEnd && iso > highlightStart && iso < highlightEnd);
+              return (
+                <button
+                  key={`${iso}-${index}`}
+                  type="button"
+                  className={[
+                    'grid h-8 place-items-center rounded-lg text-xs font-semibold transition',
+                    !inMonth ? 'text-text-muted/40 hover:bg-surface-subtle' : 'text-text-primary hover:bg-primary/10',
+                    isBetween ? 'bg-primary/10 text-text-primary' : '',
+                    isEdge ? 'bg-primary text-primary-foreground hover:bg-primary' : '',
+                  ].join(' ')}
+                  onClick={() => pickDate(iso)}
+                >
+                  {date.getDate()}
+                </button>
+              );
+            })}
           </div>
         </div>
       ) : null}
@@ -327,8 +323,9 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
   return (
     <div className="grid gap-5">
       <PageHeader eyebrow={t('dashboard.eyebrow')} title={t('dashboard.title')} description={t('dashboard.description')} />
-      <div className="flex justify-end">
-        <DashboardDateFilter value={dateRange} onChange={onDateRangeChange} />
+      <div className="flex justify-end gap-2.5">
+        <DashboardPresetDropdown value={dateRange} onChange={onDateRangeChange} />
+        <DashboardCustomRangePicker value={dateRange} onChange={onDateRangeChange} />
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard icon={<FiBriefcase />} label={t('dashboard.metrics.pipeline')} value={formatMoney(pipelineValue)} caption={t('dashboard.metrics.pipelineCaption', { count: ordersInPeriod })} tone="success" />
