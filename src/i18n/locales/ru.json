@@ -166,12 +166,10 @@
     "filters": {
       "thisMonth": "Этот месяц",
       "lastMonth": "Прошлый месяц",
-      "last30Days": "30 дней",
+      "last30Days": "Последние 30 дней",
       "today": "Сегодня",
-      "startDate": "Начало",
-      "endDate": "Конец",
-      "clear": "Очистить",
-      "range": "Диапазон дат"
+      "allTime": "Всё время",
+      "customRange": "Выбрать даты"
     },
     "metrics": {
       "pipeline": "Стоимость заказов",

@@ -113,7 +113,9 @@ function parseIsoDate(value: string) {
   return new Date(year, month - 1, day);
 }
 
-type DashboardRangePreset = 'thisMonth' | 'lastMonth' | 'last30Days' | 'today';
+type DashboardRangePreset = 'today' | 'last30Days' | 'thisMonth' | 'lastMonth';
+
+const DASHBOARD_RANGE_PRESETS: DashboardRangePreset[] = ['today', 'last30Days', 'thisMonth', 'lastMonth'];
 
 function dashboardRangePreset(preset: DashboardRangePreset, endDateValue?: string): DashboardDateRange {
   const today = endDateValue ? new Date(`${endDateValue}T00:00:00`) : new Date();
@@ -132,28 +134,36 @@ function dashboardRangePreset(preset: DashboardRangePreset, endDateValue?: strin
   return { startDate: isoDate(new Date(safeToday.getFullYear(), safeToday.getMonth(), 1)), endDate: isoDate(safeToday) };
 }
 
-function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value: DashboardDateRange | null; onSave: (range: DashboardDateRange) => void; onClear: () => void; onOpenChange: (open: boolean) => void }) {
+function sameDashboardRange(a: DashboardDateRange, b: DashboardDateRange) {
+  return a.startDate === b.startDate && a.endDate === b.endDate;
+}
+
+/** Matches the current value against a preset so the trigger button and the list can show
+ *  which preset (if any) is active — a custom pick that happens to equal a preset counts. */
+function matchingDashboardPreset(value: DashboardDateRange | null): DashboardRangePreset | null {
+  if (!value) return null;
+  return DASHBOARD_RANGE_PRESETS.find(preset => sameDashboardRange(dashboardRangePreset(preset), value)) ?? null;
+}
+
+/** Single dropdown combining quick presets (today / last 30 days / this month / last month)
+ *  with a custom calendar range — every choice applies immediately, no separate "apply" step. */
+function DashboardDateFilter({ value, onChange }: { value: DashboardDateRange | null; onChange: (range: DashboardDateRange | null) => void }) {
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [draftStart, setDraftStart] = useState(value?.startDate ?? '');
-  const [draftEnd, setDraftEnd] = useState(value?.endDate ?? '');
+  const [draftStart, setDraftStart] = useState('');
+  const [draftEnd, setDraftEnd] = useState('');
   const [viewDate, setViewDate] = useState(() => parseIsoDate(value?.endDate ?? '') ?? new Date());
   const menuRef = useRef<HTMLDivElement | null>(null);
   const lang = i18n.language.startsWith('ru') ? 'ru-RU' : 'uz-UZ';
+  const activePreset = matchingDashboardPreset(value);
 
   useEffect(() => {
     if (!isOpen) return;
     function handlePointerDown(event: MouseEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
-        onOpenChange(false);
-      }
+      if (!menuRef.current?.contains(event.target as Node)) setIsOpen(false);
     }
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-        onOpenChange(false);
-      }
+      if (event.key === 'Escape') setIsOpen(false);
     }
     window.addEventListener('mousedown', handlePointerDown);
     window.addEventListener('keydown', handleKeyDown);
@@ -161,14 +171,14 @@ function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value:
       window.removeEventListener('mousedown', handlePointerDown);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onOpenChange]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) return;
-    setDraftStart(value?.startDate ?? '');
-    setDraftEnd(value?.endDate ?? '');
+    setDraftStart('');
+    setDraftEnd('');
     setViewDate(parseIsoDate(value?.endDate ?? '') ?? new Date());
-  }, [isOpen, value?.endDate, value?.startDate]);
+  }, [isOpen, value?.endDate]);
 
   const days = useMemo(() => {
     const year = viewDate.getFullYear();
@@ -185,19 +195,19 @@ function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value:
 
   const monthLabel = viewDate.toLocaleDateString(lang, { month: 'long', year: 'numeric' });
   const weekdayLabels = lang === 'ru-RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Du', 'Se', 'Cho', 'Pay', 'Ju', 'Sha', 'Ya'];
-  const displayText = value ? `${value.startDate.split('-').reverse().join('.')} - ${value.endDate.split('-').reverse().join('.')}` : t('dashboard.filters.range');
+  const displayText = activePreset
+    ? t(`dashboard.filters.${activePreset}`)
+    : value
+      ? `${value.startDate.split('-').reverse().join('.')} – ${value.endDate.split('-').reverse().join('.')}`
+      : t('dashboard.filters.allTime');
 
-  function openPicker() {
-    setDraftStart(value?.startDate ?? '');
-    setDraftEnd(value?.endDate ?? '');
-    setViewDate(parseIsoDate(value?.endDate ?? '') ?? new Date());
-    setIsOpen(true);
-    onOpenChange(true);
-  }
+  // While no in-progress custom pick, the calendar highlights the current value (if any).
+  const highlightStart = draftStart || value?.startDate || '';
+  const highlightEnd = draftStart ? draftEnd : (value?.endDate || '');
 
-  function closePicker() {
+  function applyPreset(preset: DashboardRangePreset) {
+    onChange(dashboardRangePreset(preset));
     setIsOpen(false);
-    onOpenChange(false);
   }
 
   function pickDate(iso: string) {
@@ -206,78 +216,83 @@ function DashboardRangePicker({ value, onSave, onClear, onOpenChange }: { value:
       setDraftEnd('');
       return;
     }
-    if (iso < draftStart) {
-      setDraftEnd(draftStart);
-      setDraftStart(iso);
-      return;
-    }
-    setDraftEnd(iso);
+    const range = iso < draftStart ? { startDate: iso, endDate: draftStart } : { startDate: draftStart, endDate: iso };
+    onChange(range);
+    setIsOpen(false);
   }
 
   return (
-    <div ref={menuRef} className="relative w-[238px] max-w-full">
+    <div ref={menuRef} className="relative w-[210px] max-w-full">
       <button
         type="button"
         className={[
-          'flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border-soft bg-surface-card px-2.5 text-left text-[11px] font-bold text-text-primary outline-none transition',
+          'flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-border-soft bg-surface-card px-3 text-left text-[12px] font-bold text-text-primary outline-none transition',
           isOpen ? 'border-primary/50 ring-4 ring-primary/10' : 'hover:border-primary/35',
         ].join(' ')}
-        onClick={() => isOpen ? closePicker() : openPicker()}
+        onClick={() => setIsOpen(current => !current)}
       >
-        <span className="min-w-0 truncate">{displayText}</span>
-        <FiCalendar className="h-3.5 w-3.5 shrink-0 text-text-muted" />
+        <span className="flex min-w-0 items-center gap-2">
+          <FiCalendar className="h-3.5 w-3.5 shrink-0 text-text-muted" />
+          <span className="min-w-0 truncate">{displayText}</span>
+        </span>
+        <FiChevronRight className={['h-3.5 w-3.5 shrink-0 text-text-muted transition-transform', isOpen ? 'rotate-90' : ''].join(' ')} />
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-[292px] rounded-2xl border border-border-soft/60 bg-surface-card p-3 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl">
-          <div className="mb-2 flex items-center justify-between">
-            <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() - 1, 1))}>
-              <FiChevronRight className="h-4 w-4 rotate-180" />
-            </button>
-            <span className="text-sm font-bold capitalize text-text-primary">{monthLabel}</span>
-            <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() + 1, 1))}>
-              <FiChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {weekdayLabels.map(label => <span key={label} className="grid h-7 place-items-center text-[10px] font-bold uppercase text-text-muted">{label}</span>)}
-            {days.map(({ date, inMonth }, index) => {
-              const iso = isoDate(date);
-              const isEdge = iso === draftStart || iso === draftEnd;
-              const isBetween = Boolean(draftStart && draftEnd && iso > draftStart && iso < draftEnd);
-              return (
-                <button
-                  key={`${iso}-${index}`}
-                  type="button"
-                  className={[
-                    'grid h-8 place-items-center rounded-lg text-xs font-semibold transition',
-                    !inMonth ? 'text-text-muted/40 hover:bg-surface-subtle' : 'text-text-primary hover:bg-primary/10',
-                    isBetween ? 'bg-primary/10 text-text-primary' : '',
-                    isEdge ? 'bg-primary text-primary-foreground hover:bg-primary' : '',
-                  ].join(' ')}
-                  onClick={() => pickDate(iso)}
-                >
-                  {date.getDate()}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button type="button" className="h-9 rounded-lg bg-surface-subtle px-3 text-xs font-bold text-text-secondary transition hover:bg-surface-muted hover:text-text-primary" onClick={() => { onClear(); closePicker(); }}>
-              {t('dashboard.filters.clear')}
-            </button>
+        <div className="absolute right-0 top-[calc(100%+6px)] z-50 flex w-[420px] max-w-[92vw] overflow-hidden rounded-2xl border border-border-soft/60 bg-surface-card shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl">
+          <div className="grid w-[148px] shrink-0 gap-1 border-r border-border-soft/40 p-2.5">
             <button
               type="button"
-              className="h-9 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:bg-primary-accent disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!draftStart || !draftEnd}
-              onClick={() => {
-                if (!draftStart || !draftEnd) return;
-                onSave({ startDate: draftStart, endDate: draftEnd });
-                closePicker();
-              }}
+              className={['flex h-9 items-center rounded-lg px-2.5 text-left text-[12px] font-bold transition', !value ? 'bg-primary/10 text-primary' : 'text-text-secondary hover:bg-surface-subtle hover:text-text-primary'].join(' ')}
+              onClick={() => { onChange(null); setIsOpen(false); }}
             >
-              {t('common.save')}
+              {t('dashboard.filters.allTime')}
             </button>
+            {DASHBOARD_RANGE_PRESETS.map(preset => (
+              <button
+                key={preset}
+                type="button"
+                className={['flex h-9 items-center rounded-lg px-2.5 text-left text-[12px] font-bold transition', activePreset === preset ? 'bg-primary text-primary-foreground' : 'text-text-secondary hover:bg-surface-subtle hover:text-text-primary'].join(' ')}
+                onClick={() => applyPreset(preset)}
+              >
+                {t(`dashboard.filters.${preset}`)}
+              </button>
+            ))}
+            <p className="mt-2 border-t border-border-soft/40 px-2.5 pt-2.5 text-[10px] font-bold uppercase tracking-wide text-text-muted">{t('dashboard.filters.customRange')}</p>
+          </div>
+          <div className="min-w-0 flex-1 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() - 1, 1))}>
+                <FiChevronRight className="h-4 w-4 rotate-180" />
+              </button>
+              <span className="text-sm font-bold capitalize text-text-primary">{monthLabel}</span>
+              <button type="button" className="flex h-8 w-8 items-center justify-center rounded-lg text-text-secondary transition hover:bg-surface-subtle" onClick={() => setViewDate(date => new Date(date.getFullYear(), date.getMonth() + 1, 1))}>
+                <FiChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {weekdayLabels.map(label => <span key={label} className="grid h-7 place-items-center text-[10px] font-bold uppercase text-text-muted">{label}</span>)}
+              {days.map(({ date, inMonth }, index) => {
+                const iso = isoDate(date);
+                const isEdge = iso === highlightStart || iso === highlightEnd;
+                const isBetween = Boolean(highlightStart && highlightEnd && iso > highlightStart && iso < highlightEnd);
+                return (
+                  <button
+                    key={`${iso}-${index}`}
+                    type="button"
+                    className={[
+                      'grid h-8 place-items-center rounded-lg text-xs font-semibold transition',
+                      !inMonth ? 'text-text-muted/40 hover:bg-surface-subtle' : 'text-text-primary hover:bg-primary/10',
+                      isBetween ? 'bg-primary/10 text-text-primary' : '',
+                      isEdge ? 'bg-primary text-primary-foreground hover:bg-primary' : '',
+                    ].join(' ')}
+                    onClick={() => pickDate(iso)}
+                  >
+                    {date.getDate()}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : null}
@@ -308,56 +323,12 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const lowStockMaterials = materials.filter(m => m.stock <= m.minStock);
-  const presets: DashboardRangePreset[] = ['thisMonth', 'last30Days', 'lastMonth', 'today'];
-  const [activePreset, setActivePreset] = useState<DashboardRangePreset | null>('thisMonth');
-  const changePreset = (preset: DashboardRangePreset) => {
-    if (activePreset === preset) {
-      setActivePreset(null);
-      onDateRangeChange(null);
-      return;
-    }
-    setActivePreset(preset);
-    onDateRangeChange(dashboardRangePreset(preset, dateRange?.endDate));
-  };
-  const saveCustomRange = (range: DashboardDateRange) => {
-    setActivePreset(null);
-    onDateRangeChange(range);
-  };
-  const clearCustomRange = () => {
-    setActivePreset(null);
-    onDateRangeChange(null);
-  };
 
   return (
     <div className="grid gap-5">
       <PageHeader eyebrow={t('dashboard.eyebrow')} title={t('dashboard.title')} description={t('dashboard.description')} />
       <div className="flex justify-end">
-        <div className="flex w-full max-w-full flex-wrap items-center justify-end gap-1.5 rounded-xl bg-surface-card p-1.5 shadow-sm ring-1 ring-border-soft/35 sm:w-auto">
-          {presets.map(preset => {
-            const active = activePreset === preset;
-            return (
-              <button
-                key={preset}
-                type="button"
-                className={[
-                  'inline-flex h-8 items-center rounded-lg px-2.5 text-[11px] font-extrabold transition',
-                  active ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-surface-subtle text-text-secondary hover:bg-primary/10 hover:text-text-primary',
-                ].join(' ')}
-                onClick={() => changePreset(preset)}
-              >
-                {t(`dashboard.filters.${preset}`)}
-              </button>
-            );
-          })}
-          <DashboardRangePicker
-            value={dateRange}
-            onSave={saveCustomRange}
-            onClear={clearCustomRange}
-            onOpenChange={open => {
-              if (open) setActivePreset(null);
-            }}
-          />
-        </div>
+        <DashboardDateFilter value={dateRange} onChange={onDateRangeChange} />
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard icon={<FiBriefcase />} label={t('dashboard.metrics.pipeline')} value={formatMoney(pipelineValue)} caption={t('dashboard.metrics.pipelineCaption', { count: ordersInPeriod })} tone="success" />

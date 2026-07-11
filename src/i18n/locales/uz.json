@@ -166,12 +166,10 @@
     "filters": {
       "thisMonth": "Bu oy",
       "lastMonth": "O'tgan oy",
-      "last30Days": "30 kun",
+      "last30Days": "So'nggi 30 kun",
       "today": "Bugun",
-      "startDate": "Boshlanish",
-      "endDate": "Tugash",
-      "clear": "Tozalash",
-      "range": "Sana oralig'i"
+      "allTime": "Barcha vaqt",
+      "customRange": "Sana tanlash"
     },
     "metrics": {
       "pipeline": "Buyurtmalar qiymati",
