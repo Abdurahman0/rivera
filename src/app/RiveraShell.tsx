@@ -1411,9 +1411,6 @@ function detailRows(modal: ModalState, formatMoney: (value: number) => string, t
     const item = modal.item as ProductCategory;
     return [
       { label: t('products.categoryColumns.category'), value: item.name },
-      { label: t('products.categoryColumns.code'), value: item.code },
-      { label: t('products.categoryColumns.description'), value: item.description },
-      { label: t('products.categoryColumns.sortOrder'), value: String(item.sortOrder) },
     ];
   }
 

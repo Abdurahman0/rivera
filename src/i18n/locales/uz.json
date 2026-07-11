@@ -510,7 +510,9 @@
       "history": "Harakat tarixi"
     },
     "columns": {
+      "date": "Sana",
       "product": "Mahsulot",
+      "type": "Turi",
       "quantity": "Qoldiq",
       "value": "Qiymat",
       "lowStock": "Kam zaxira"

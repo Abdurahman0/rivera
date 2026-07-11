@@ -2126,7 +2126,7 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
         />
       ) : (
         <DataTable
-          columns={[t('warehouse.columns.date'), t('warehouse.columns.product'), t('common.type'), t('warehouse.columns.quantity'), t('staff.columns.staff')]}
+          columns={[t('warehouse.columns.date'), t('warehouse.columns.product'), t('warehouse.columns.type'), t('warehouse.columns.quantity'), t('staff.columns.staff')]}
           rows={allMovements.map(row => [
             formatDisplayDate(row.date, t),
             <span className="block min-w-0 max-w-[220px] truncate text-sm font-semibold text-text-primary" title={row.product}>{row.product}</span>,
