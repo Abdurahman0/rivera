@@ -200,7 +200,7 @@ function App() {
   // that's already dead on first load redirects to login silently instead of
   // announcing a "session expired" the user never experienced.
   const hadActiveSessionRef = useRef(false);
-  const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, movementHistory, revenueEntries, expenseEntries, productionRecords, materials: rawMaterials, pieceworkRecords, productionBatches, staffFlow, approvals, operationTypeOptions } = appData;
+  const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, movementHistory, revenueEntries, expenseEntries, productionRecords, materials: rawMaterials, pieceworkRecords, productionBatches, attendanceLog, approvals, operationTypeOptions } = appData;
 
   const refreshData = useCallback(async (page: PageId = activePage) => {
     if (!isAuthenticated) return;
@@ -679,7 +679,7 @@ function App() {
               <MaterialsPage materials={rawMaterials} formatMoney={formatMoney} onCreate={() => setModal({ kind: 'material', mode: 'create' })} openModal={setModal} openDelete={setPendingDelete} />
             )}
             {activePage === 'staff' && (
-              <StaffPage staff={staff} staffFlow={staffFlow} pieceworkRecords={pieceworkRecords} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
+              <StaffPage staff={staff} attendanceLog={attendanceLog} pieceworkRecords={pieceworkRecords} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
             )}
             {activePage === 'products' && (
               <ProductsPage

@@ -19,9 +19,9 @@ import type {
   ApiProductionBatch,
   ApiSupplier,
 } from './types';
-import i18n from '../i18n';
 import { categoryColor, loadCategoryColors } from '../utils/categoryColors';
 import type {
+  AttendanceLogEntry,
   CategoryDatum,
   Client,
   FinanceEntry,
@@ -82,7 +82,7 @@ export interface FrontendData {
   pieceworkRecords: PieceworkRecord[];
   productionBatches: ProductionBatch[];
   categoryAnalytics: CategoryDatum[];
-  staffFlow: Array<{ day: string; came: number; late: number; left: number }>;
+  attendanceLog: AttendanceLogEntry[];
   operationTypeOptions: Array<{ id: string; name: string }>;
 }
 
@@ -359,19 +359,15 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     color: categoryColor(String(category.id), index, savedCategoryColors),
   }));
 
-  const attendanceDates = [...new Set(data.attendance.map(row => row.work_date))].sort().slice(-5);
-  const weekdayLocale = i18n.language === 'ru' ? 'ru-RU' : 'uz-UZ';
-  const staffFlow = attendanceDates.map(day => {
-    const rows = data.attendance.filter(row => row.work_date === day);
-    return {
-      day: new Date(`${day}T00:00:00`).toLocaleDateString(weekdayLocale, { weekday: 'short' }),
-      came: rows.filter(row => row.first_check_in_at).length,
-      late: rows.filter(row => row.status === 'late').length,
-      left: rows.filter(row => row.last_check_out_at).length,
-    };
-  });
+  const attendanceLog: AttendanceLogEntry[] = data.attendance.map(row => ({
+    id: row.id,
+    employeeId: row.employee,
+    workDate: row.work_date,
+    checkIn: row.first_check_in_at,
+    checkOut: row.last_check_out_at,
+  }));
 
   const operationTypeOptions = data.operationTypes.map(row => ({ id: row.id, name: row.name }));
 
-  return { clients, staff, products, categories, orders, materials, stockIn: movementHistory.filter(row => row.type === 'in'), stockOut: movementHistory.filter(row => row.type === 'out'), movementHistory, revenueEntries, expenseEntries, productionRecords, pieceworkRecords, productionBatches, categoryAnalytics, staffFlow, operationTypeOptions };
+  return { clients, staff, products, categories, orders, materials, stockIn: movementHistory.filter(row => row.type === 'in'), stockOut: movementHistory.filter(row => row.type === 'out'), movementHistory, revenueEntries, expenseEntries, productionRecords, pieceworkRecords, productionBatches, categoryAnalytics, attendanceLog, operationTypeOptions };
 }

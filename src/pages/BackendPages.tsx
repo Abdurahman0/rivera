@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FiDatabase, FiLock, FiSettings, FiShield, FiUsers } from 'react-icons/fi';
+import { FiClock, FiDatabase, FiLock, FiSettings, FiShield, FiUsers } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { actions } from '../api/client';
 import { ApiResourceManager, type ResourceConfig } from '../components/ApiResourceManager';
@@ -11,6 +11,7 @@ import { RESOURCE_BACKEND_PAGE } from '../lib/permissions';
 const systemGroups = [
   { id: 'access', label: 'admin.page.systemGroups.access', icon: FiUsers, resources: ['users', 'permissions'] },
   { id: 'configuration', label: 'admin.page.systemGroups.configuration', icon: FiSettings, resources: ['settings', 'backups'] },
+  { id: 'attendanceConfig', label: 'admin.page.systemGroups.attendanceConfig', icon: FiClock, resources: ['schedules', 'devices'] },
   { id: 'audit', label: 'admin.page.systemGroups.audit', icon: FiDatabase, resources: ['audit', 'exports'] },
   { id: 'security', label: 'admin.page.systemGroups.security', icon: FiShield, resources: ['security', 'stockLogs', 'payrollLogs', 'attendanceLogs', 'backupLogs'] },
 ] as const;

@@ -9,6 +9,14 @@ export interface DashboardDateRange {
   endDate: string;
 }
 
+export interface AttendanceLogEntry {
+  id: EntityId;
+  employeeId: EntityId;
+  workDate: string;
+  checkIn: string | null;
+  checkOut: string | null;
+}
+
 export interface Material {
   id: EntityId;
   name: string;

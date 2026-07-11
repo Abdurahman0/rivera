@@ -34,7 +34,7 @@ export interface AppData extends FrontendData {
 export const EMPTY_DATA: AppData = {
   clients: [], staff: [], products: [], categories: [], orders: [], materials: [], stockIn: [], stockOut: [], movementHistory: [],
   revenueEntries: [], expenseEntries: [], productionRecords: [], pieceworkRecords: [], productionBatches: [], categoryAnalytics: [], summary: null,
-  staffFlow: [],
+  attendanceLog: [],
   approvals: [],
   topClientIds: [],
   operationTypeOptions: [],

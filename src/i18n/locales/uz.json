@@ -315,6 +315,10 @@
       "salary": "Ish haqi",
       "piecework": "Akkord (dona hisobi)"
     },
+    "attendance": {
+      "allEmployees": "Barcha xodimlar",
+      "unknownEmployee": "Noma'lum xodim"
+    },
     "piecework": {
       "title": "Akkord ish haqi",
       "description": "Har bir xodim bajargan operatsiya va miqdoriga qarab to'lanadigan akkord hisob-kitobi.",
@@ -2240,6 +2244,7 @@
       "systemGroups": {
         "access": "Kirish huquqi",
         "configuration": "Sozlamalar",
+        "attendanceConfig": "Davomat sozlamalari",
         "audit": "Audit",
         "security": "Xavfsizlik"
       },

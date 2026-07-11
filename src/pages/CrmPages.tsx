@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StatusTone, StockMovement } from '../types/crm';
+import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StatusTone, StockMovement } from '../types/crm';
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
 import { BUILT_IN_CLIENT_STATUSES, hasStoredCustomClientStatuses, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
@@ -939,20 +939,15 @@ function StaffDetailModal({ member, records, formatMoney, onClose }: { member: S
   );
 }
 
-export function StaffPage({ staff, staffFlow, pieceworkRecords, formatMoney, openModal, openDelete }: { staff: StaffMember[]; staffFlow: Array<{ day: string; came: number; late: number; left: number }>; pieceworkRecords: PieceworkRecord[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
+export function StaffPage({ staff, attendanceLog, pieceworkRecords, formatMoney, openModal, openDelete }: { staff: StaffMember[]; attendanceLog: AttendanceLogEntry[]; pieceworkRecords: PieceworkRecord[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('employees', 'manage');
   const [activeTab, setActiveTab] = useState<'employees' | 'attendance' | 'piecework' | 'departments'>('employees');
-  const [attendanceSubTab, setAttendanceSubTab] = useState<'overview' | 'schedules' | 'devices' | 'records' | 'events'>('overview');
-  const [enrolling, setEnrolling] = useState(false);
-  const onTimeCount = staff.filter(m => m.statusKey === 'onTime').length;
-  const lateCount = staff.filter(m => m.statusKey === 'late').length;
-  const avgAttendance = staff.length > 0 ? (staff.reduce((sum, m) => sum + m.attendance, 0) / staff.length).toFixed(1) : '0';
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('staff.eyebrow')} title={t('staff.title')} description={t('staff.description')} createLabel={canManage && activeTab !== 'departments' && !(activeTab === 'attendance' && attendanceSubTab !== 'overview') ? t('staff.create') : undefined} onCreate={canManage && activeTab !== 'departments' && !(activeTab === 'attendance' && attendanceSubTab !== 'overview') ? () => openModal({ kind: 'staff', mode: 'create' }) : undefined} onExport={() => exportResource(activeTab === 'departments' ? resources.departments : activeTab === 'attendance' ? (attendanceSubTab === 'schedules' ? resources.workSchedules : attendanceSubTab === 'devices' ? resources.attendanceDevices : attendanceSubTab === 'records' ? resources.attendanceRecords : attendanceSubTab === 'events' ? resources.attendanceEvents : resources.attendanceRecords) : resources.employees)} />
+      <PageHeader eyebrow={t('staff.eyebrow')} title={t('staff.title')} description={t('staff.description')} createLabel={canManage && activeTab !== 'departments' && activeTab !== 'attendance' ? t('staff.create') : undefined} onCreate={canManage && activeTab !== 'departments' && activeTab !== 'attendance' ? () => openModal({ kind: 'staff', mode: 'create' }) : undefined} onExport={() => exportResource(activeTab === 'departments' ? resources.departments : activeTab === 'attendance' ? resources.attendanceRecords : resources.employees)} />
       <SegmentTabs
         tabs={[
           { id: 'employees', label: t('staff.tabs.employees'), icon: <FiUsers className="h-4 w-4" /> },
@@ -970,88 +965,56 @@ export function StaffPage({ staff, staffFlow, pieceworkRecords, formatMoney, ope
       ) : activeTab === 'departments' ? (
         <ApiResourceManager config={{ ...operationsConfigs.departments, readOnly: !canManage }} />
       ) : (
-        <>
-          <SegmentTabs
-            tabs={[
-              { id: 'overview', label: t('staff.detail.overview'), icon: <FiClock className="h-4 w-4" /> },
-              { id: 'records', label: t('admin.resources.attendanceRecords.title'), icon: <FiCheckCircle className="h-4 w-4" /> },
-              { id: 'events', label: t('admin.resources.attendanceEvents.title'), icon: <FiActivity className="h-4 w-4" /> },
-              { id: 'schedules', label: t('admin.resources.schedules.title'), icon: <FiCalendar className="h-4 w-4" /> },
-              { id: 'devices', label: t('admin.resources.devices.title'), icon: <FiCpu className="h-4 w-4" /> },
-            ]}
-            activeTab={attendanceSubTab}
-            onChange={id => setAttendanceSubTab(id as typeof attendanceSubTab)}
-          />
-          {canManage ? <div className="flex justify-end"><button className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => setEnrolling(true)}>{t('faceEnroll.buttonLabel')}</button></div> : null}
-          {attendanceSubTab === 'schedules' ? (
-            <ApiResourceManager config={{ ...operationsConfigs.schedules, readOnly: !canManage }} />
-          ) : attendanceSubTab === 'devices' ? (
-            <ApiResourceManager config={{ ...operationsConfigs.devices, readOnly: !canManage }} />
-          ) : attendanceSubTab === 'records' ? (
-            <ApiResourceManager config={{ ...operationsConfigs.attendanceRecords, readOnly: !canManage }} />
-          ) : attendanceSubTab === 'events' ? (
-            <ApiResourceManager config={operationsConfigs.attendanceEvents} />
-          ) : (
-          <>
-          <div className="grid gap-4 md:grid-cols-3">
-            <MetricCard icon={<FiCheckCircle />} label={t('staff.metrics.onTime')} value={String(onTimeCount)} caption={t('staff.metrics.onTimeCaption')} tone="success" />
-            <MetricCard icon={<FiClock />} label={t('staff.metrics.late')} value={String(lateCount)} caption={t('staff.metrics.lateCaption')} tone="warning" />
-            <MetricCard icon={<FiUsers />} label={t('staff.metrics.attendance')} value={`${avgAttendance}%`} caption={t('staff.metrics.attendanceCaption')} tone="info" />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {(['onTime', 'late', 'leftEarly', 'remote'] as const).map(key => {
-              const toneMap = { onTime: 'success', late: 'warning', leftEarly: 'danger', remote: 'info' } as const;
-              const members = staff.filter(m => m.statusKey === key);
-              return (
-                <div key={key} className="app-card--nova p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <StatusBadge tone={toneMap[key]}>{t(`statuses.${key}`)}</StatusBadge>
-                    <span className="text-sm font-bold text-text-muted">({members.length})</span>
-                  </div>
-                  {members.length === 0 ? (
-                    <p className="text-sm text-text-muted">—</p>
-                  ) : (
-                    <div className="grid gap-2">
-                      {members.map(m => {
-                        const initials = m.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('');
-                        return (
-                          <div key={m.id} className="flex items-center gap-2 rounded-xl bg-surface-subtle p-2.5">
-                            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-extrabold text-primary">{initials}</span>
-                            <div className="min-w-0">
-                              <p className="truncate text-xs font-bold text-text-primary">{m.name}</p>
-                              <p className="text-[10px] text-text-muted">{m.arrival} → {m.leaving}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <Panel title={t('staff.flowTitle')} action={t('common.report')}>
-            <div className="h-[260px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={staffFlow} barGap={8} barCategoryGap="28%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-border-soft))" opacity={0.55} vertical={false} />
-                  <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 12, fontWeight: 700 }} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 12, fontWeight: 700 }} />
-                  <Tooltip content={<PremiumTooltip />} cursor={false} />
-                  <Bar name={t('staff.columns.arrival')} dataKey="came" fill="#6366f1" radius={[10, 10, 4, 4]}>
-                    <LabelList dataKey="came" position="top" className="fill-text-secondary text-[11px] font-bold" />
-                  </Bar>
-                  <Bar name={t('statuses.late')} dataKey="late" fill="#f59e0b" radius={[10, 10, 4, 4]}>
-                    <LabelList dataKey="late" position="top" className="fill-text-secondary text-[11px] font-bold" />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Panel>
-          </>
-          )}
-        </>
+        <AttendanceLogView staff={staff} attendanceLog={attendanceLog} canManage={canManage} />
       )}
+    </div>
+  );
+}
+
+/** Xodimlar > Davomat: a single filterable log — who checked in/out and when, by employee
+ *  and by date range. Replaces the earlier 5-tab layout (overview stats, raw event log,
+ *  schedules, devices) which buried this behind unnecessary sub-navigation; schedules and
+ *  devices are config, not something checked daily, so they moved to Tizim > System. */
+function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMember[]; attendanceLog: AttendanceLogEntry[]; canManage: boolean }) {
+  const { t } = useTranslation();
+  const [enrolling, setEnrolling] = useState(false);
+  const [employeeFilter, setEmployeeFilter] = useState('all');
+  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(null);
+  const employeeNames = useMemo(() => new Map(staff.map(member => [String(member.id), member.name])), [staff]);
+
+  const rows = useMemo(() => attendanceLog
+    .filter(entry => employeeFilter === 'all' || String(entry.employeeId) === employeeFilter)
+    .filter(entry => !dateRange || (entry.workDate >= dateRange.startDate && entry.workDate <= dateRange.endDate))
+    .sort((a, b) => b.workDate.localeCompare(a.workDate) || (employeeNames.get(String(a.employeeId)) ?? '').localeCompare(employeeNames.get(String(b.employeeId)) ?? '')),
+  [attendanceLog, employeeFilter, dateRange, employeeNames]);
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        {canManage ? (
+          <button className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => setEnrolling(true)}>{t('faceEnroll.buttonLabel')}</button>
+        ) : <span />}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="w-[200px]">
+            <Dropdown
+              value={employeeFilter}
+              onChange={setEmployeeFilter}
+              options={[{ value: 'all', label: t('staff.attendance.allEmployees') }, ...staff.map(member => ({ value: String(member.id), label: member.name }))]}
+            />
+          </div>
+          <DashboardCustomRangePicker value={dateRange} onChange={setDateRange} />
+        </div>
+      </div>
+      <DataTable
+        columns={[t('staff.columns.staff'), t('admin.fields.workDate'), t('admin.fields.firstCheckIn'), t('admin.fields.lastCheckOut')]}
+        rows={rows.map(entry => [
+          employeeNames.get(String(entry.employeeId)) ?? t('staff.attendance.unknownEmployee'),
+          formatDisplayDate(entry.workDate, t),
+          formatDisplayDateTime(entry.checkIn, t),
+          formatDisplayDateTime(entry.checkOut, t),
+        ])}
+      />
+      {rows.length === 0 ? <p className="py-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p> : null}
       {enrolling ? <FaceEnrollDrawer onClose={() => setEnrolling(false)} onEnrolled={() => setEnrolling(false)} /> : null}
     </div>
   );
