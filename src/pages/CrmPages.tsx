@@ -7,7 +7,7 @@ import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, Ent
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
 import { BUILT_IN_CLIENT_STATUSES, hasStoredCustomClientStatuses, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
-import { CATEGORY_COLOR_PALETTE, categoryColor, loadCategoryColors, saveCategoryColors } from '../utils/categoryColors';
+import { CATEGORY_COLOR_PALETTE } from '../utils/categoryColors';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
 import { useDialog } from '../components/DialogProvider';
 import { useToast } from '../components/ToastProvider';
@@ -525,7 +525,10 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
     return seeded;
   });
   const [statusModal, setStatusModal] = useState<{ mode: 'create' | 'edit'; status?: CustomClientStatus } | null>(null);
-  const statusOptions = useMemo(() => ['all', ...Array.from(new Set(clients.map(client => client.statusKey)))], [clients]);
+  const statusOptions = useMemo(
+    () => ['all', ...Array.from(new Set([...customStatuses.map(status => status.key), ...clients.map(client => client.statusKey)]))],
+    [customStatuses, clients],
+  );
   const sourceOptions = useMemo(() => ['all', ...Array.from(new Set(clients.map(client => client.source)))], [clients]);
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: clients.length };
@@ -619,7 +622,7 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
             setSourceFilter={setSourceFilter}
             sortMode={sortMode}
             setSortMode={setSortMode}
-            statusOptions={statusOptions}
+            statusOptions={statusOptions.map(value => ({ value, label: value === 'all' ? t('clients.filters.allStatuses') : resolveStatusDisplay(value).label }))}
             sourceOptions={sourceOptions}
           />
           <DataTable
@@ -1317,7 +1320,6 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
   const canManage = useHasPermission('products', 'manage');
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'bom'>('products');
   const totalRevenue = products.reduce((sum, product) => sum + product.revenue, 0);
-  const categoryColors = useMemo(() => loadCategoryColors(), []);
 
   return (
     <div className="grid gap-5">
@@ -1372,7 +1374,7 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
             if (categoryIndex < 0) return categoryName;
             return (
               <span className="inline-flex items-center gap-2">
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: categoryColor(String(categories[categoryIndex].id), categoryIndex, categoryColors) }} />
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: categories[categoryIndex].color }} />
                 {categoryName}
               </span>
             );
@@ -1475,21 +1477,28 @@ export function SkuCell({ sku }: { sku: string }) {
 
 export function CategoriesTable({ categories, products, openModal, openDelete }: { categories: ProductCategory[]; products: Product[]; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
-  const [colors, setColors] = useState<Record<string, string>>(() => loadCategoryColors());
+  const { toast } = useToast();
+  const [colorOverrides, setColorOverrides] = useState<Record<string, string>>({});
 
   function setColor(categoryId: string, color: string) {
-    const next = { ...colors, [categoryId]: color };
-    setColors(next);
-    saveCategoryColors(next);
+    setColorOverrides(current => ({ ...current, [categoryId]: color }));
+    void api.update(resources.productCategories, categoryId, { color }).catch((error: unknown) => {
+      setColorOverrides(current => {
+        const next = { ...current };
+        delete next[categoryId];
+        return next;
+      });
+      toast(apiErrorMessage(error, t), 'danger');
+    });
   }
 
   return (
     <DataTable
-      rows={categories.map((category, index) => {
+      rows={categories.map(category => {
         const count = products.filter(product => product.categoryId === category.id).length;
         return [
           <span className="flex items-center gap-2.5">
-            <CategoryColorPicker categoryId={String(category.id)} color={categoryColor(String(category.id), index, colors)} onPick={setColor} />
+            <CategoryColorPicker categoryId={String(category.id)} color={colorOverrides[String(category.id)] ?? category.color} onPick={setColor} />
             <span className="font-semibold text-text-primary">{category.name}</span>
           </span>,
           <span className="font-bold text-text-primary">{count}</span>,

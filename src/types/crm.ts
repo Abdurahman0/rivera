@@ -110,6 +110,8 @@ export interface ProductCategory {
   code: string;
   description: string;
   sortOrder: number;
+  /** Display color — backend-stored hex, with palette fallback resolved in the adapter. */
+  color: string;
   api?: Record<string, unknown>;
 }
 

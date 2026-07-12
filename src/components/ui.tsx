@@ -306,7 +306,7 @@ export function ClientsFilterBar({
   setSourceFilter: (value: string) => void;
   sortMode: string;
   setSortMode: (value: string) => void;
-  statusOptions: string[];
+  statusOptions: Array<{ value: string; label: string }>;
   sourceOptions: string[];
 }) {
   const { t } = useTranslation();
@@ -325,7 +325,7 @@ export function ClientsFilterBar({
           />
         </span>
       </label>
-      <SelectField label={t('clients.filters.status')} value={statusFilter} onChange={setStatusFilter} options={statusOptions.map(value => ({ value, label: value === 'all' ? t('clients.filters.allStatuses') : t(`statuses.${value}`) }))} />
+      <SelectField label={t('clients.filters.status')} value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
       <SelectField label={t('clients.filters.source')} value={sourceFilter} onChange={setSourceFilter} options={sourceOptions.map(value => ({ value, label: value === 'all' ? t('clients.filters.allSources') : value }))} />
       <SelectField
         label={t('clients.filters.sort')}

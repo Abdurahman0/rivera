@@ -111,6 +111,7 @@ export interface ApiSupplier extends ApiBaseModel {
 
 export interface ApiProductCategory extends ApiBaseModel {
   name: string;
+  color: string;
 }
 
 export interface ApiProduct extends ApiBaseModel {

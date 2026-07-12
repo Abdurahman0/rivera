@@ -1,7 +1,7 @@
-/** The backend `ProductCategory` model only has a `name` field — no color of its own —
- *  so category colors are a client-side-only preference (localStorage), keyed by the
- *  category's real backend id. Categories with no saved color fall back to a palette
- *  color picked by their position, matching the existing dashboard analytics palette. */
+/** Category colors live on the backend `ProductCategory.color` field. The localStorage
+ *  map below is read-only legacy: colors picked before the backend field existed still
+ *  render (via the adapter fallback) until the user re-picks them, which now persists
+ *  server-side. Categories with no color at all fall back to a palette color by position. */
 export const CATEGORY_COLOR_PALETTE = ['#6366f1', '#14b8a6', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6', '#ef4444', '#22c55e'] as const;
 
 const STORAGE_KEY = 'rivera-category-colors';
@@ -16,10 +16,6 @@ export function loadCategoryColors(): Record<string, string> {
   } catch {
     return {};
   }
-}
-
-export function saveCategoryColors(colors: Record<string, string>) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(colors));
 }
 
 export function defaultCategoryColor(index: number): string {

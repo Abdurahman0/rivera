@@ -105,12 +105,14 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
   const normsByProduct = new Map<string, ApiProductMaterialNorm[]>();
   data.norms.forEach(row => normsByProduct.set(row.product, [...(normsByProduct.get(row.product) || []), row]));
 
+  const legacyCategoryColors = loadCategoryColors();
   const categories: ProductCategory[] = data.categories.map((row, index) => ({
     id: row.id,
     name: row.name,
     code: row.name.slice(0, 3).toUpperCase(),
     description: '',
     sortOrder: index + 1,
+    color: row.color || categoryColor(String(row.id), index, legacyCategoryColors),
     api: row as unknown as Record<string, unknown>,
   }));
 
@@ -336,11 +338,10 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     amount: number(row.amount_uzs),
   }));
 
-  const savedCategoryColors = loadCategoryColors();
-  const categoryAnalytics: CategoryDatum[] = categories.map((category, index) => ({
+  const categoryAnalytics: CategoryDatum[] = categories.map(category => ({
     name: category.name,
     value: products.length ? Math.round((products.filter(product => product.categoryId === category.id).length / products.length) * 100) : 0,
-    color: categoryColor(String(category.id), index, savedCategoryColors),
+    color: category.color,
   }));
 
   const attendanceLog: AttendanceLogEntry[] = data.attendance.map(row => ({
