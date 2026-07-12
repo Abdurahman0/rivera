@@ -296,6 +296,9 @@
       "editTitle": "Mijozni tahrirlash",
       "summary": "Mijozning buyurtma ehtiyoji, mas'ul menejeri va pipeline holati.",
       "nextStep": "Keyingi qadam: namuna matoni tasdiqlash va yetkazib berish muddatini kelishish."
+    },
+    "detail": {
+      "ordersHint": "Bu mijozning buyurtmalari. Mahsulotlar, yetkazishlar, to'lovlar va qaytarishlar — buyurtmaning ichida: Buyurtmalar sahifasida buyurtmani bosing."
     }
   },
   "staff": {
@@ -559,7 +562,8 @@
     },
     "items": "Mahsulotlar",
     "paid": "To'langan",
-    "remaining": "Qolgan"
+    "remaining": "Qolgan",
+    "deliveredShort": "yetkazilgan"
   },
   "production": {
     "eyebrow": "Ishlab chiqarish",

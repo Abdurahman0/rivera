@@ -715,7 +715,7 @@ function App() {
               <ClientsPage clients={clients} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} openClientId={pendingClientId} onOpenClientConsumed={() => setPendingClientId(null)} />
             )}
             {activePage === 'orders' && (
-              <OrdersPage orders={orders} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} onOpenClient={clientId => { setPendingClientId(clientId); navigate('clients'); }} />
+              <OrdersPage orders={orders} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} onOpenClient={clientId => { setPendingClientId(clientId); navigate('clients'); }} onDataChanged={() => void refreshData()} />
             )}
             {activePage === 'production' && (
               <ProductionPage

@@ -458,14 +458,9 @@ function scopedClientConfig(base: ResourceConfig, canManage: boolean): ResourceC
 
 function ClientDetailModal({ client, onClose, canManage }: { client: Client; onClose: () => void; canManage: boolean }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'deliveries' | 'payments' | 'returns'>('deliveries');
   const extraParams = useMemo(() => ({ client: String(client.id) }), [client.id]);
   const fixedValues = useMemo(() => ({ client: String(client.id) }), [client.id]);
-  const configs = useMemo(() => ({
-    deliveries: scopedClientConfig(operationsConfigs.deliveries, canManage),
-    payments: scopedClientConfig(operationsConfigs.payments, canManage),
-    returns: scopedClientConfig(operationsConfigs.returns, canManage),
-  }), [canManage]);
+  const ordersConfig = useMemo(() => scopedClientConfig(operationsConfigs.clientOrders, canManage), [canManage]);
 
   return (
     <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
@@ -484,18 +479,8 @@ function ClientDetailModal({ client, onClose, canManage }: { client: Client; onC
           </button>
         </div>
         <div className="overflow-y-auto p-6">
-          <SegmentTabs
-            tabs={[
-              { id: 'deliveries', label: t('admin.resources.deliveries.title'), icon: <FiPackage className="h-4 w-4" /> },
-              { id: 'payments', label: t('admin.resources.payments.title'), icon: <FiDollarSign className="h-4 w-4" /> },
-              { id: 'returns', label: t('admin.resources.returns.title'), icon: <FiArchive className="h-4 w-4" /> },
-            ]}
-            activeTab={activeTab}
-            onChange={id => setActiveTab(id as typeof activeTab)}
-          />
-          <div className="mt-4">
-            <ApiResourceManager key={`${activeTab}-${client.id}`} config={configs[activeTab]} extraParams={extraParams} fixedValues={fixedValues} />
-          </div>
+          <p className="mb-3 text-xs font-semibold text-text-muted">{t('clients.detail.ordersHint')}</p>
+          <ApiResourceManager key={`orders-${client.id}`} config={ordersConfig} extraParams={extraParams} fixedValues={fixedValues} />
         </div>
       </section>
     </div>
@@ -1045,11 +1030,11 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
   );
 }
 
-export function OrdersPage({ orders, formatMoney, openModal, openDelete, onOpenClient }: { orders: Order[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void; onOpenClient: (clientId: string) => void }) {
+export function OrdersPage({ orders, formatMoney, openModal, openDelete, onOpenClient, onDataChanged }: { orders: Order[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void; onOpenClient: (clientId: string) => void; onDataChanged?: () => void }) {
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('clients', 'manage');
-  const [viewingItemsFor, setViewingItemsFor] = useState<Order | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const pending = orders.filter(o => o.statusKey === 'draft').length;
   const inProd = orders.filter(o => o.statusKey === 'confirmed').length;
   const delivered = orders.filter(o => o.statusKey === 'completed').length;
@@ -1071,7 +1056,7 @@ export function OrdersPage({ orders, formatMoney, openModal, openDelete, onOpenC
         ))}
       </div>
       <DataTable
-        columns={[t('orders.columns.orderId'), t('orders.columns.client'), t('clients.columns.orderedDelivered'), t('orders.columns.total'), t('orders.columns.dueDate'), t('orders.columns.status'), t('common.actions')]}
+        columns={[t('orders.columns.orderId'), t('orders.columns.client'), t('orders.columns.product'), t('orders.columns.total'), t('orders.columns.status'), t('common.actions')]}
         rows={orders.map(order => [
           <PrimaryCell title={order.orderId} subtitle={formatDisplayDate(order.orderDate, t)} />,
           order.clientId ? (
@@ -1086,38 +1071,103 @@ export function OrdersPage({ orders, formatMoney, openModal, openDelete, onOpenC
           order.items.length === 0 ? (
             <span className="text-xs text-text-muted">—</span>
           ) : (
-            <span className="block min-w-[170px]" title={order.items.map(item => `${item.productName}: ${item.delivered}/${item.ordered}`).join(' · ')}>
-              <span className="block text-xs text-text-muted">{t('clients.columns.ordered')}: <span className="font-bold text-text-primary">{order.orderedQty.toLocaleString()} {t('common.pcs')}</span></span>
-              <span className="mt-0.5 block text-xs text-text-muted">{t('clients.columns.delivered')}: <span className={['font-bold', order.deliveredQty >= order.orderedQty ? 'text-success' : 'text-warning'].join(' ')}>{order.deliveredQty.toLocaleString()} {t('common.pcs')}</span></span>
-              <span className="mt-0.5 block max-w-[240px] truncate text-[11px] text-text-muted">{order.items.map(item => `${item.productName} ${item.delivered}/${item.ordered}`).join(', ')}</span>
+            <span className="block" title={order.items.map(item => `${item.productName}: ${item.delivered}/${item.ordered}`).join(' · ')}>
+              <span className="block text-sm">
+                <span className="font-bold text-text-primary">{order.orderedQty.toLocaleString()} {t('common.pcs')}</span>
+                <span className={['ml-1.5 font-bold', order.deliveredQty >= order.orderedQty ? 'text-success' : 'text-warning'].join(' ')}>· {order.deliveredQty.toLocaleString()} {t('orders.deliveredShort')}</span>
+              </span>
+              <span className="mt-0.5 block max-w-[200px] truncate text-[11px] text-text-muted">{order.items.map(item => item.productName).join(', ')}</span>
             </span>
           ),
-          <span className="block min-w-[150px]">
+          <span className="block">
             <span className="block text-sm font-bold text-text-primary">{formatMoney(order.totalAmount)}</span>
-            <span className="mt-0.5 block text-xs text-text-muted">{t('orders.paid')}: <span className={['font-bold', order.paidTotal >= order.totalAmount && order.totalAmount > 0 ? 'text-success' : 'text-text-primary'].join(' ')}>{formatMoney(order.paidTotal)}</span></span>
-            {order.totalAmount - order.paidTotal > 0 ? (
-              <span className="mt-0.5 block text-xs text-text-muted">{t('orders.remaining')}: <span className="font-bold text-warning">{formatMoney(order.totalAmount - order.paidTotal)}</span></span>
+            {order.paidTotal > 0 || order.totalAmount > 0 ? (
+              <span className="mt-0.5 block text-[11px] text-text-muted">
+                {t('orders.paid')}: <span className={order.paidTotal >= order.totalAmount && order.totalAmount > 0 ? 'font-bold text-success' : 'font-bold text-warning'}>{formatMoney(order.paidTotal)}</span>
+              </span>
             ) : null}
           </span>,
-          formatDisplayDate(order.dueDate, t),
           <StatusBadge tone={orderStatusTone(order.statusKey)}>{statusLabel(t, order.statusKey)}</StatusBadge>,
-          <div className="flex items-center gap-2">
-            <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={event => { event.stopPropagation(); setViewingItemsFor(order); }}>{t('orders.items')}</button>
-            <RowActions onView={() => openModal({ kind: 'order', mode: 'view', item: order })} onEdit={canManage ? () => openModal({ kind: 'order', mode: 'edit', item: order }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'order', mode: 'view', item: order }) : undefined} />
-          </div>,
+          <RowActions onView={() => setViewingOrder(order)} onEdit={canManage ? () => openModal({ kind: 'order', mode: 'edit', item: order }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'order', mode: 'view', item: order }) : undefined} />,
         ])}
-        onRowClick={(rowIndex) => openModal({ kind: 'order', mode: 'view', item: orders[rowIndex] })}
+        onRowClick={(rowIndex) => setViewingOrder(orders[rowIndex])}
       />
-      {viewingItemsFor ? (
-        <ScopedResourceModal
-          title={viewingItemsFor.orderId}
-          subtitle={t('admin.resources.orderItems.title')}
-          config={{ ...operationsConfigs.orderItems, readOnly: !canManage }}
-          extraParams={{ order: String(viewingItemsFor.id) }}
-          fixedValues={{ order: String(viewingItemsFor.id) }}
-          onClose={() => setViewingItemsFor(null)}
+      {viewingOrder ? (
+        <OrderDetailModal
+          order={viewingOrder}
+          canManage={canManage}
+          formatMoney={formatMoney}
+          onOpenClient={onOpenClient}
+          onClose={() => { setViewingOrder(null); onDataChanged?.(); }}
         />
       ) : null}
+    </div>
+  );
+}
+
+function OrderDetailModal({ order, canManage, formatMoney, onOpenClient, onClose }: { order: Order; canManage: boolean; formatMoney: (value: number) => string; onOpenClient: (clientId: string) => void; onClose: () => void }) {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<'items' | 'deliveries' | 'payments' | 'returns'>('items');
+  const orderScope = useMemo(() => ({ order: String(order.id) }), [order.id]);
+  const fixedValues = useMemo(
+    () => (order.clientId ? { order: String(order.id), client: String(order.clientId) } : { order: String(order.id) }),
+    [order.id, order.clientId],
+  );
+  const configs = useMemo(() => ({
+    items: { ...operationsConfigs.orderItems, readOnly: !canManage },
+    deliveries: scopedFieldConfig(scopedClientConfig(operationsConfigs.deliveries, canManage), canManage, 'order'),
+    payments: scopedFieldConfig(scopedClientConfig(operationsConfigs.payments, canManage), canManage, 'order'),
+    returns: scopedFieldConfig(scopedClientConfig(operationsConfigs.returns, canManage), canManage, 'order'),
+  }), [canManage]);
+  const remaining = order.totalAmount - order.paidTotal;
+
+  return (
+    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <section role="dialog" aria-modal="true" className="grid max-h-[90vh] w-full max-w-[1080px] grid-rows-[auto_1fr] overflow-hidden rounded-[28px] bg-surface-card shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <div className="flex items-start justify-between gap-4 border-b border-border-soft/30 p-6">
+          <div className="min-w-0">
+            <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">{formatDisplayDate(order.orderDate, t)}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <h3 className="m-0 truncate font-display text-xl font-extrabold text-text-primary">{order.orderId}</h3>
+              {order.clientId ? (
+                <button type="button" className="text-sm font-bold text-text-accent underline-offset-2 transition hover:underline" onClick={() => onOpenClient(String(order.clientId))}>
+                  {translateMovementLabel(t, order.client)}
+                </button>
+              ) : (
+                <span className="text-sm font-bold text-text-secondary">{translateMovementLabel(t, order.client)}</span>
+              )}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <StatusBadge tone={orderStatusTone(order.statusKey)}>{statusLabel(t, order.statusKey)}</StatusBadge>
+              <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{t('clients.columns.ordered')}: {order.orderedQty.toLocaleString()} {t('common.pcs')}</span>
+              <span className={['rounded-pill px-2.5 py-0.5 text-[11px] font-bold ring-1', order.deliveredQty >= order.orderedQty && order.orderedQty > 0 ? 'bg-success/10 text-success ring-success/20' : 'bg-warning/10 text-warning ring-warning/20'].join(' ')}>{t('clients.columns.delivered')}: {order.deliveredQty.toLocaleString()} {t('common.pcs')}</span>
+              <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{t('orders.columns.total')}: {formatMoney(order.totalAmount)}</span>
+              <span className={['rounded-pill px-2.5 py-0.5 text-[11px] font-bold ring-1', order.paidTotal >= order.totalAmount && order.totalAmount > 0 ? 'bg-success/10 text-success ring-success/20' : 'bg-surface-subtle text-text-secondary ring-border-soft/40'].join(' ')}>{t('orders.paid')}: {formatMoney(order.paidTotal)}</span>
+              {remaining > 0 ? (
+                <span className="rounded-pill bg-warning/10 px-2.5 py-0.5 text-[11px] font-bold text-warning ring-1 ring-warning/20">{t('orders.remaining')}: {formatMoney(remaining)}</span>
+              ) : null}
+            </div>
+          </div>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="overflow-y-auto p-6">
+          <SegmentTabs
+            tabs={[
+              { id: 'items', label: t('admin.resources.orderItems.title'), icon: <FiShoppingBag className="h-4 w-4" /> },
+              { id: 'deliveries', label: t('admin.resources.deliveries.title'), icon: <FiPackage className="h-4 w-4" /> },
+              { id: 'payments', label: t('admin.resources.payments.title'), icon: <FiDollarSign className="h-4 w-4" /> },
+              { id: 'returns', label: t('admin.resources.returns.title'), icon: <FiArchive className="h-4 w-4" /> },
+            ]}
+            activeTab={activeTab}
+            onChange={id => setActiveTab(id as typeof activeTab)}
+          />
+          <div className="mt-4">
+            <ApiResourceManager key={`${activeTab}-${order.id}`} config={configs[activeTab]} extraParams={orderScope} fixedValues={activeTab === 'items' ? orderScope : fixedValues} />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

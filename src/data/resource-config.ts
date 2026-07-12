@@ -16,6 +16,19 @@ const title = r('title');
 const description = r('description');
 
 export const operationsConfigs: Record<string, ResourceConfig> = {
+  clientOrders: {
+    resource: resources.clientOrders, title: title('clientOrders'), description: description('clientOrders'),
+    fields: [
+      { name: 'client', label: f('client'), lookup: { resource: resources.clients, label: 'full_name', secondary: 'phone' }, required: true },
+      { name: 'order_number', label: f('orderNumber'), required: true, table: true },
+      { name: 'order_date', label: f('orderDate'), type: 'date', required: true, table: true },
+      { name: 'due_date', label: f('dueDate'), type: 'date', nullable: true, table: true },
+      { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
+      { name: 'total_amount_uzs', label: f('totalAmount'), readOnly: true, table: true },
+      { name: 'status', label: f('status'), type: 'select', required: true, table: true, options: options([['draft', 'admin.options.orderStatus.draft'], ['confirmed', 'admin.options.orderStatus.confirmed'], ['completed', 'admin.options.orderStatus.completed'], ['cancelled', 'admin.options.orderStatus.cancelled']]) },
+      { name: 'note', label: f('note'), type: 'textarea' },
+    ],
+  },
   deliveries: {
     resource: resources.clientDeliveries, title: title('deliveries'), description: description('deliveries'), allowEdit: false, allowArchive: false,
     fields: [
@@ -43,6 +56,7 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
     resource: resources.clientReturns, title: title('returns'), description: description('returns'), allowEdit: false, allowArchive: false,
     fields: [
       { name: 'client', label: f('client'), lookup: { resource: resources.clients, label: 'full_name' }, required: true, table: true },
+      { name: 'order', label: f('order'), lookup: { resource: resources.clientOrders, label: 'order_number', secondary: 'order_date' }, nullable: true, table: true },
       { name: 'product', label: f('product'), lookup: { resource: resources.products, label: 'name', secondary: 'code' }, required: true, table: true },
       { name: 'size', label: f('size') }, { name: 'color', label: f('color') }, { name: 'quantity', label: f('quantity'), type: 'number', required: true, table: true },
       { name: 'unit_price', label: f('unitPrice'), type: 'number', step: '0.01', required: true }, { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
