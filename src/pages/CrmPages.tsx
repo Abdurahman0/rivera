@@ -723,7 +723,7 @@ function ClientStatusModal({ mode, status, onSave, onClose }: {
   );
 }
 
-function EmployeeGrid({ staff, pieceworkRecords, formatMoney, openModal, openDelete }: { staff: StaffMember[]; pieceworkRecords: PieceworkRecord[]; formatMoney: (v: number) => string; openModal: (m: ModalState) => void; openDelete: (m: ModalState) => void }) {
+function EmployeeGrid({ staff, pieceworkRecords, attendanceLog, formatMoney, openModal, openDelete }: { staff: StaffMember[]; pieceworkRecords: PieceworkRecord[]; attendanceLog: AttendanceLogEntry[]; formatMoney: (v: number) => string; openModal: (m: ModalState) => void; openDelete: (m: ModalState) => void }) {
   const { t } = useTranslation();
   const canManage = useHasPermission('employees', 'manage');
   const [detailId, setDetailId] = useState<EntityId | null>(null);
@@ -783,6 +783,7 @@ function EmployeeGrid({ staff, pieceworkRecords, formatMoney, openModal, openDel
         <StaffDetailModal
           member={detailMember}
           records={pieceworkRecords.filter(r => r.employeeName === detailMember.name)}
+          attendanceLog={attendanceLog}
           formatMoney={formatMoney}
           onClose={() => setDetailId(null)}
         />
@@ -791,7 +792,7 @@ function EmployeeGrid({ staff, pieceworkRecords, formatMoney, openModal, openDel
   );
 }
 
-function StaffDetailModal({ member, records, formatMoney, onClose }: { member: StaffMember; records: PieceworkRecord[]; formatMoney: (v: number) => string; onClose: () => void }) {
+function StaffDetailModal({ member, records, attendanceLog, formatMoney, onClose }: { member: StaffMember; records: PieceworkRecord[]; attendanceLog: AttendanceLogEntry[]; formatMoney: (v: number) => string; onClose: () => void }) {
   const { t } = useTranslation();
   const canManage = useHasPermission('employees', 'manage');
   const [activeTab, setActiveTab] = useState<'overview' | 'leaveRequests'>('overview');
@@ -799,6 +800,10 @@ function StaffDetailModal({ member, records, formatMoney, onClose }: { member: S
   const totalEarned = records.reduce((sum, r) => sum + r.quantity * r.ratePerPiece, 0);
   const totalPieces = records.reduce((sum, r) => sum + r.quantity, 0);
   const hasPiecework = records.length > 0;
+  const monthPrefix = isoDate(new Date()).slice(0, 7);
+  const monthWorkedMinutes = attendanceLog
+    .filter(entry => String(entry.employeeId) === String(member.id) && entry.workDate.startsWith(monthPrefix))
+    .reduce((sum, entry) => sum + entry.workedMinutes, 0);
   const extraParams = useMemo(() => ({ employee: String(member.id) }), [member.id]);
   const fixedValues = useMemo(() => ({ employee: String(member.id) }), [member.id]);
   const leaveConfig = useMemo(() => scopedFieldConfig(operationsConfigs.leaveRequests, canManage, 'employee'), [canManage]);
@@ -846,13 +851,17 @@ function StaffDetailModal({ member, records, formatMoney, onClose }: { member: S
           ) : (
           <>
           <h4 className="mt-4 text-sm font-extrabold text-text-primary">{t('staff.detail.monthStats')}</h4>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <div className="rounded-2xl bg-surface-subtle p-4 ring-1 ring-border-soft/30">
               <p className="text-xs text-text-muted">{t('staff.tabs.attendance')}</p>
               <p className="mt-1 text-2xl font-extrabold text-text-primary">{member.attendance}%</p>
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-pill bg-surface-muted">
                 <div className={['h-full rounded-pill', member.attendance >= 90 ? 'bg-success' : member.attendance >= 75 ? 'bg-warning' : 'bg-danger'].join(' ')} style={{ width: `${member.attendance}%` }} />
               </div>
+            </div>
+            <div className="rounded-2xl bg-primary/5 p-4 ring-1 ring-primary/20">
+              <p className="text-xs text-text-muted">{t('staff.detail.workedHoursMonth')}</p>
+              <p className="mt-1 text-xl font-extrabold text-primary">{formatWorkedHours(t, monthWorkedMinutes)}</p>
             </div>
             <div className="rounded-2xl bg-surface-subtle p-4 ring-1 ring-border-soft/30">
               <p className="text-xs text-text-muted">{t('staff.detail.arrivalTime')}</p>
@@ -962,7 +971,7 @@ export function StaffPage({ staff, attendanceLog, pieceworkRecords, formatMoney,
         onChange={(id) => setActiveTab(id as 'employees' | 'attendance' | 'piecework' | 'departments')}
       />
       {activeTab === 'employees' ? (
-        <EmployeeGrid staff={staff} pieceworkRecords={pieceworkRecords} formatMoney={formatMoney} openModal={openModal} openDelete={openDelete} />
+        <EmployeeGrid staff={staff} pieceworkRecords={pieceworkRecords} attendanceLog={attendanceLog} formatMoney={formatMoney} openModal={openModal} openDelete={openDelete} />
       ) : activeTab === 'piecework' ? (
         <PieceworkTab staff={staff} pieceworkRecords={pieceworkRecords} formatMoney={formatMoney} />
       ) : activeTab === 'departments' ? (
@@ -987,33 +996,18 @@ function formatWorkedHours(t: TFunction, minutes: number) {
 function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMember[]; attendanceLog: AttendanceLogEntry[]; canManage: boolean }) {
   const { t } = useTranslation();
   const [enrolling, setEnrolling] = useState(false);
-  const [employeeFilter, setEmployeeFilter] = useState('all');
-  // Defaults to the current month so "how many hours this month, per employee" is visible
+  // Empty string = all employees (the dropdown's placeholder state, no explicit "all" option).
+  const [employeeFilter, setEmployeeFilter] = useState('');
+  // Defaults to the current month so "how many hours this month" is visible
   // immediately — no filter clicks needed. Still fully adjustable via the dropdowns below.
   const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
   const employeeNames = useMemo(() => new Map(staff.map(member => [String(member.id), member.name])), [staff]);
 
-  const inRange = useMemo(() => attendanceLog
-    .filter(entry => !dateRange || (entry.workDate >= dateRange.startDate && entry.workDate <= dateRange.endDate)),
-  [attendanceLog, dateRange]);
-
-  // Per-employee totals for the selected date range — always covers everyone, independent
-  // of the employee dropdown below (which only narrows the day-by-day detail table).
-  const totalsByEmployee = useMemo(() => {
-    const totals = new Map<string, number>();
-    inRange.forEach(entry => {
-      const key = String(entry.employeeId);
-      totals.set(key, (totals.get(key) ?? 0) + entry.workedMinutes);
-    });
-    return [...totals.entries()]
-      .map(([employeeId, minutes]) => ({ employeeId, name: employeeNames.get(employeeId) ?? t('staff.attendance.unknownEmployee'), minutes }))
-      .sort((a, b) => b.minutes - a.minutes);
-  }, [inRange, employeeNames, t]);
-
-  const rows = useMemo(() => inRange
-    .filter(entry => employeeFilter === 'all' || String(entry.employeeId) === employeeFilter)
+  const rows = useMemo(() => attendanceLog
+    .filter(entry => !dateRange || (entry.workDate >= dateRange.startDate && entry.workDate <= dateRange.endDate))
+    .filter(entry => !employeeFilter || String(entry.employeeId) === employeeFilter)
     .sort((a, b) => b.workDate.localeCompare(a.workDate) || (employeeNames.get(String(a.employeeId)) ?? '').localeCompare(employeeNames.get(String(b.employeeId)) ?? '')),
-  [inRange, employeeFilter, employeeNames]);
+  [attendanceLog, dateRange, employeeFilter, employeeNames]);
 
   const activePreset = matchingDashboardPreset(dateRange);
   const rangeLabel = activePreset
@@ -1021,6 +1015,7 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
     : dateRange
       ? `${formatDisplayDate(dateRange.startDate, t)} – ${formatDisplayDate(dateRange.endDate, t)}`
       : t('dashboard.filters.allTime');
+  const selectedTotalMinutes = employeeFilter ? rows.reduce((sum, entry) => sum + entry.workedMinutes, 0) : null;
 
   return (
     <div className="grid gap-4">
@@ -1029,33 +1024,23 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
           <button className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => setEnrolling(true)}>{t('faceEnroll.buttonLabel')}</button>
         ) : <span />}
         <div className="flex flex-wrap items-center gap-2.5">
+          {selectedTotalMinutes !== null ? (
+            <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary/10 px-3 text-xs font-bold text-primary">
+              {t('staff.attendance.totalsHeading', { range: rangeLabel })}: {formatWorkedHours(t, selectedTotalMinutes)}
+            </span>
+          ) : null}
           <div className="w-[200px]">
             <Dropdown
               value={employeeFilter}
               onChange={setEmployeeFilter}
-              options={[{ value: 'all', label: t('staff.attendance.allEmployees') }, ...staff.map(member => ({ value: String(member.id), label: member.name }))]}
+              placeholder={t('staff.attendance.allEmployees')}
+              options={staff.map(member => ({ value: String(member.id), label: member.name }))}
             />
           </div>
           <DashboardPresetDropdown value={dateRange} onChange={setDateRange} />
           <DashboardCustomRangePicker value={dateRange} onChange={setDateRange} />
         </div>
       </div>
-
-      {totalsByEmployee.length > 0 ? (
-        <div className="grid gap-2.5">
-          <h3 className="text-sm font-extrabold text-text-primary">
-            {t('staff.attendance.totalsHeading', { range: rangeLabel })}
-          </h3>
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {totalsByEmployee.map(item => (
-              <div key={item.employeeId} className="app-card--nova flex items-center justify-between gap-3 p-3.5">
-                <p className="min-w-0 truncate text-sm font-bold text-text-primary">{item.name}</p>
-                <span className="shrink-0 rounded-lg bg-primary/10 px-2.5 py-1.5 text-sm font-extrabold text-primary">{formatWorkedHours(t, item.minutes)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       <DataTable
         columns={[t('staff.columns.staff'), t('admin.fields.workDate'), t('admin.fields.firstCheckIn'), t('admin.fields.lastCheckOut'), t('staff.attendance.hoursColumn')]}
@@ -2188,7 +2173,7 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
   );
 }
 
-export function FinancePage({ revenueEntries, expenseEntries, revenueData, formatMoney, onCreate }: { revenueEntries: FinanceEntry[]; expenseEntries: FinanceEntry[]; revenueData: Array<{ month: string; revenue: number; orders: number }>; formatMoney: (value: number) => string; onCreate: () => void }) {
+export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCreate }: { revenueEntries: FinanceEntry[]; expenseEntries: FinanceEntry[]; formatMoney: (value: number) => string; onCreate: () => void }) {
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('clients', 'manage');
@@ -2196,12 +2181,6 @@ export function FinancePage({ revenueEntries, expenseEntries, revenueData, forma
   const revenue = revenueEntries.reduce((sum, e) => sum + e.amount, 0);
   const expenses = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
   const profit = revenue - expenses;
-  const financeData = revenueData.map(entry => {
-    const monthExpenses = expenseEntries
-      .filter(expense => expense.date.startsWith(entry.month))
-      .reduce((sum, expense) => sum + expense.amount, 0);
-    return { month: entry.month, revenue: entry.revenue, expenses: monthExpenses, profit: entry.revenue - monthExpenses };
-  });
   const exportResourceMap = {
     revenue: resources.clientPayments, expenses: resources.expenses, cashAccounts: resources.cashAccounts, cashTransactions: resources.cashTransactions, invoices: resources.invoices,
   } as const;
@@ -2226,21 +2205,6 @@ export function FinancePage({ revenueEntries, expenseEntries, revenueData, forma
           <p className={['mt-0.5 text-xs', profit >= 0 ? 'text-primary/60' : 'text-danger/60'].join(' ')}>{t('finance.metrics.profitCaption')}</p>
         </div>
       </div>
-      <Panel title={t('finance.profitAnalysis')} action="">
-        <div className="h-[240px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={financeData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-border-soft))" opacity={0.4} vertical={false} />
-              <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 12, fontWeight: 700 }} />
-              <YAxis tickLine={false} axisLine={false} width={70} tick={{ fill: 'rgb(var(--color-text-muted))', fontSize: 11, fontWeight: 700 }} />
-              <Tooltip content={<PremiumTooltip />} cursor={false} />
-              <Area name={t('finance.metrics.revenue')} type="monotone" dataKey="revenue" stroke="#0f766e" strokeWidth={2.5} fill="#0f766e" fillOpacity={0.12} />
-              <Area name={t('finance.metrics.expenses')} type="monotone" dataKey="expenses" stroke="#f59e0b" strokeWidth={2.5} fill="#f59e0b" fillOpacity={0.08} />
-              <Line name={t('finance.metrics.profit')} type="monotone" dataKey="profit" stroke="#6366f1" strokeWidth={2.5} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      </Panel>
       <SegmentTabs
         tabs={[
           { id: 'revenue', label: t('finance.revenueTable'), icon: <FiCheckCircle className="h-4 w-4" /> },

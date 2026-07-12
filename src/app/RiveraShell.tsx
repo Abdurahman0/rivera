@@ -778,7 +778,7 @@ function App() {
               />
             )}
             {activePage === 'finance' && (
-              <FinancePage revenueEntries={revenueEntries} expenseEntries={expenseEntries} revenueData={revenueData} formatMoney={formatMoney} onCreate={() => setModal({ kind: 'payment', mode: 'create' })} />
+              <FinancePage revenueEntries={revenueEntries} expenseEntries={expenseEntries} formatMoney={formatMoney} onCreate={() => setModal({ kind: 'payment', mode: 'create' })} />
             )}
             {activePage === 'approvals' && (
               <ApprovalsPage

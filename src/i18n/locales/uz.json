@@ -382,6 +382,7 @@
     "detail": {
       "toggleClose": "Yopish",
       "monthStats": "Bu oy ko'rsatkichlari",
+      "workedHoursMonth": "Ishlagan soat (bu oy)",
       "arrivalTime": "Kelish vaqti",
       "leaving": "Ketish",
       "baseSalary": "Asosiy oylik",
@@ -675,7 +676,6 @@
     },
     "revenueTable": "Daromad jadvali",
     "expensesTable": "Xarajatlar jadvali",
-    "profitAnalysis": "Foyda tahlili",
     "columns": {
       "date": "Sana",
       "client": "Mijoz",

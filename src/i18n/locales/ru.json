@@ -382,6 +382,7 @@
     "detail": {
       "toggleClose": "Свернуть",
       "monthStats": "Показатели за месяц",
+      "workedHoursMonth": "Отработано (этот месяц)",
       "arrivalTime": "Время прихода",
       "leaving": "Уход",
       "baseSalary": "Базовый оклад",
@@ -675,7 +676,6 @@
     },
     "revenueTable": "Таблица выручки",
     "expensesTable": "Таблица расходов",
-    "profitAnalysis": "Анализ прибыли",
     "columns": {
       "date": "Дата",
       "client": "Клиент",
