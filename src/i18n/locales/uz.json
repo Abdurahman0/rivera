@@ -234,7 +234,10 @@
     "addStock": "Kirim",
     "addStockTitle": "Material kirimi",
     "addStockCurrent": "Hozirgi qoldiq: {{stock}} {{unit}}",
-    "addStockPending": "Kirim so'rovi yuborildi (tasdiqlash kutilmoqda)"
+    "addStockPending": "Kirim so'rovi yuborildi (tasdiqlash kutilmoqda)",
+    "stock": {
+      "value": "Ombordagi qiymati"
+    }
   },
   "clients": {
     "eyebrow": "CRM pipeline",
@@ -586,7 +589,14 @@
       "material": "Material",
       "totalUsed": "Jami sarflangan",
       "remaining": "Qoldiq",
-      "source": "Qaysi partiyalardan"
+      "source": "Qaysi partiyalardan",
+      "subtitle": "Barcha partiyalar bo'yicha hisoblangan material sarfi. Qatorni bosib, qaysi mahsulotga qancha ketganini ko'ring.",
+      "share": "Ulush",
+      "shareUsed": "{{pct}}% sarflandi",
+      "byProduct": "Mahsulotlar kesimida",
+      "productCount": "{{count}} ta mahsulotga ishlatilgan",
+      "producedInfo": "{{qty}} dona ishlab chiqarilgan · {{batches}} ta partiya",
+      "usedForProduct": "shu mahsulotga ketgan"
     }
   },
   "finance": {

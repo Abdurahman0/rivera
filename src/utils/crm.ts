@@ -43,6 +43,13 @@ export function parseQuantity(value: string) {
   return Number(normalized) || 0;
 }
 
+/** Backend decimals arrive as strings like "70000.00" / "15.5000" — strip the pointless
+ *  trailing zeros. Only touches strings with a decimal point, so codes like "0005" survive. */
+export function trimTrailingZeros(value: string) {
+  if (!/^-?\d+\.\d+$/.test(value)) return value;
+  return value.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+}
+
 export function calculateInventory(stockIn: StockMovement[], stockOut: StockMovement[]) {
   const inventory: Record<string, number> = {};
 

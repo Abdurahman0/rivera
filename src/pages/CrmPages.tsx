@@ -1683,7 +1683,7 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
       {activeTab === 'suppliers' ? (
         <ApiResourceManager config={{ ...operationsConfigs.suppliers, readOnly: !canManage }} />
       ) : activeTab === 'stock' ? (
-        <ApiResourceManager config={operationsConfigs.materialStocks} />
+        <MaterialStockGrid materials={materials} formatMoney={formatMoney} />
       ) : (
         <>
       <div className="flex flex-wrap gap-3">
@@ -1747,6 +1747,76 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
         />
       ) : null}
       {addingStockFor ? <AddMaterialStockModal material={addingStockFor} formatMoney={formatMoney} onClose={() => setAddingStockFor(null)} /> : null}
+    </div>
+  );
+}
+
+function MaterialStockGrid({ materials, formatMoney }: { materials: Material[]; formatMoney: (value: number) => string }) {
+  const { t } = useTranslation();
+  const [query, setQuery] = useState('');
+
+  const rank = (m: Material) => (m.stock === 0 ? 0 : m.stock <= m.minStock ? 1 : 2);
+  const filtered = materials
+    .filter(m => `${m.name} ${m.supplier}`.toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+  const totalValue = filtered.reduce((sum, m) => sum + m.stock * m.price, 0);
+  const lowCount = filtered.filter(m => m.stock <= m.minStock).length;
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="relative block w-full max-w-md">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder={t('materials.searchPlaceholder')} className="h-10 w-full rounded-xl border border-border-soft bg-surface-card pl-9 pr-3 text-sm text-text-primary outline-none focus:border-primary/50" />
+        </label>
+        {lowCount > 0 ? (
+          <span className="inline-flex items-center gap-1.5 rounded-xl bg-warning/8 px-3 py-2 text-xs font-bold text-warning ring-1 ring-warning/20">
+            <FiAlertTriangle className="h-3.5 w-3.5" /> {t('materials.metrics.lowStock')}: {lowCount}
+          </span>
+        ) : null}
+        <span className="ml-auto text-xs font-bold text-text-muted">{t('materials.metrics.totalValue')}: <span className="text-success">{formatMoney(totalValue)}</span></span>
+      </div>
+      {filtered.length === 0 ? (
+        <p className="rounded-xl bg-surface-subtle p-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map(mat => {
+            const pct = Math.min(100, Math.round((mat.stock / Math.max(mat.minStock, 1)) * 100));
+            const tone = mat.stock === 0 ? 'danger' : mat.stock <= mat.minStock ? 'warning' : 'success';
+            const label = mat.stock === 0 ? t('production.stock.noStock') : mat.stock <= mat.minStock ? t('production.stock.lowStock') : t('production.stock.inStock');
+            return (
+              <div key={mat.id} className="app-card--nova flex flex-col gap-4 p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <FiLayers className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-extrabold text-text-primary">{mat.name}</p>
+                    {mat.supplier ? <p className="mt-0.5 truncate text-xs text-text-muted">{mat.supplier}</p> : null}
+                  </div>
+                  <StatusBadge tone={tone}>{label}</StatusBadge>
+                </div>
+                <div>
+                  <div className="flex items-end justify-between text-xs text-text-muted">
+                    <span>{t('production.stock.currentStock')}</span>
+                    <span>{t('production.stock.minStock')}: {mat.minStock.toLocaleString()}</span>
+                  </div>
+                  <p className={['mt-1 text-2xl font-extrabold', tone === 'danger' ? 'text-danger' : tone === 'warning' ? 'text-warning' : 'text-text-primary'].join(' ')}>
+                    {mat.stock.toLocaleString()} <span className="text-sm font-semibold text-text-muted">{unitLabel(mat.unit, t)}</span>
+                  </p>
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-surface-muted">
+                    <div className={['h-full rounded-pill transition-all', tone === 'danger' ? 'bg-danger' : tone === 'warning' ? 'bg-warning' : 'bg-success'].join(' ')} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between rounded-xl bg-surface-subtle p-3 text-xs">
+                  <span className="text-text-muted">{t('materials.stock.value')}</span>
+                  <span className="font-bold text-text-primary">{formatMoney(mat.stock * mat.price)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -2147,21 +2217,29 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
   const [activeTab, setActiveTab] = useState<'batches' | 'stock' | 'consumption'>('batches');
   const [viewingBatchDetail, setViewingBatchDetail] = useState<ProductionBatch | null>(null);
   const [openBatchMaterials, setOpenBatchMaterials] = useState<Record<string, boolean>>({});
+  const [openConsumption, setOpenConsumption] = useState<Record<string, boolean>>({});
 
   const totalProduced = batches.reduce((sum, b) => sum + b.producedQty, 0);
 
-  // Aggregate material consumption across all batches
-  const consumptionMap: Record<string, { materialName: string; unit: 'm' | 'kg' | 'pcs'; totalUsed: number; batches: number }> = {};
+  // Aggregate material consumption across all batches, broken down per product
+  const consumptionMap: Record<string, { materialName: string; unit: 'm' | 'kg' | 'pcs'; totalUsed: number; batches: number; products: Record<string, { productName: string; producedQty: number; used: number; batches: number }> }> = {};
   batches.forEach(batch => {
     const product = products.find(p => p.id === batch.productId);
     if (!product?.recipe) return;
     product.recipe.forEach(item => {
       const used = item.qtyPerUnit * batch.producedQty;
       if (!consumptionMap[item.materialName]) {
-        consumptionMap[item.materialName] = { materialName: item.materialName, unit: item.unit, totalUsed: 0, batches: 0 };
+        consumptionMap[item.materialName] = { materialName: item.materialName, unit: item.unit, totalUsed: 0, batches: 0, products: {} };
       }
-      consumptionMap[item.materialName].totalUsed += used;
-      consumptionMap[item.materialName].batches += 1;
+      const entry = consumptionMap[item.materialName];
+      entry.totalUsed += used;
+      entry.batches += 1;
+      if (!entry.products[product.name]) {
+        entry.products[product.name] = { productName: product.name, producedQty: 0, used: 0, batches: 0 };
+      }
+      entry.products[product.name].used += used;
+      entry.products[product.name].producedQty += batch.producedQty;
+      entry.products[product.name].batches += 1;
     });
   });
   const consumptionList = Object.values(consumptionMap).sort((a, b) => b.totalUsed - a.totalUsed);
@@ -2328,7 +2406,7 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
                   </div>
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-surface-subtle p-3 text-xs">
-                  <span className="text-text-muted">Ombordagi qiymati</span>
+                  <span className="text-text-muted">{t('materials.stock.value')}</span>
                   <span className="font-bold text-text-primary">{formatMoney(product.stock * product.price)}</span>
                 </div>
               </div>
@@ -2339,39 +2417,74 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
 
       {activeTab === 'consumption' && (
         <div className="grid gap-5">
-          <p className="text-sm text-text-muted">{t('production.consumption.title')} — barcha partiyalar bo'yicha hisoblangan.</p>
+          <p className="text-sm text-text-muted">{t('production.consumption.subtitle')}</p>
           <div className="grid gap-3">
-            {consumptionList.map((item, idx) => {
+            {consumptionList.map(item => {
               const mat = materials.find(m => m.name === item.materialName);
               const remaining = mat?.stock ?? 0;
               const pct = remaining + item.totalUsed > 0 ? Math.round((item.totalUsed / (remaining + item.totalUsed)) * 100) : 0;
+              const productRows = Object.values(item.products).sort((a, b) => b.used - a.used);
+              const isOpen = Boolean(openConsumption[item.materialName]);
               return (
-                <div key={idx} className="app-card--nova flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <FiLayers className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate font-bold text-text-primary">{item.materialName}</p>
-                      <div className="mt-1.5 h-1.5 w-48 max-w-full overflow-hidden rounded-pill bg-surface-muted">
-                        <div className="h-full rounded-pill bg-primary/60" style={{ width: `${pct}%` }} />
+                <div key={item.materialName} className="app-card--nova overflow-hidden">
+                  <button
+                    type="button"
+                    className="flex w-full flex-col gap-3 p-5 text-left transition hover:bg-primary/5 sm:flex-row sm:items-center"
+                    onClick={() => setOpenConsumption(current => ({ ...current, [item.materialName]: !current[item.materialName] }))}
+                    aria-expanded={isOpen}
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <FiChevronRight className={['h-4 w-4 shrink-0 text-text-muted transition-transform', isOpen ? 'rotate-90' : ''].join(' ')} />
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <FiLayers className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-bold text-text-primary">{item.materialName}</p>
+                        <p className="mt-0.5 text-xs text-text-muted">{t('production.consumption.productCount', { count: productRows.length })}</p>
+                        <div className="mt-1.5 h-1.5 w-48 max-w-full overflow-hidden rounded-pill bg-surface-muted">
+                          <div className="h-full rounded-pill bg-primary/60" style={{ width: `${pct}%` }} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 text-right text-sm sm:flex sm:gap-6">
-                    <div>
-                      <p className="text-xs text-text-muted">{t('production.consumption.totalUsed')}</p>
-                      <p className="font-extrabold text-primary">{item.totalUsed.toLocaleString()} {unitLabel(item.unit, t)}</p>
+                    <div className="grid grid-cols-3 gap-4 text-right text-sm sm:flex sm:gap-6">
+                      <div>
+                        <p className="text-xs text-text-muted">{t('production.consumption.totalUsed')}</p>
+                        <p className="font-extrabold text-primary">{item.totalUsed.toLocaleString()} {unitLabel(item.unit, t)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-text-muted">{t('production.consumption.remaining')}</p>
+                        <p className={['font-bold', remaining <= 0 ? 'text-danger' : 'text-text-primary'].join(' ')}>{remaining.toLocaleString()} {unitLabel(item.unit, t)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-text-muted">{t('production.consumption.share')}</p>
+                        <p className="font-bold text-text-muted">{t('production.consumption.shareUsed', { pct })}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-text-muted">{t('production.consumption.remaining')}</p>
-                      <p className={['font-bold', remaining <= 0 ? 'text-danger' : 'text-text-primary'].join(' ')}>{remaining.toLocaleString()} {unitLabel(item.unit, t)}</p>
+                  </button>
+                  {isOpen ? (
+                    <div className="border-t border-border-soft/25 bg-surface-subtle/40 p-5">
+                      <p className="mb-3 text-[11px] font-extrabold uppercase tracking-wide text-text-muted">{t('production.consumption.byProduct')}</p>
+                      <div className="grid gap-2">
+                        {productRows.map(row => (
+                          <div key={row.productName} className="flex flex-wrap items-center gap-3 rounded-xl bg-surface-card p-3 ring-1 ring-border-soft/30">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-text-muted">
+                              <FiPackage className="h-3.5 w-3.5" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-bold text-text-primary">{row.productName}</p>
+                              <p className="mt-0.5 text-[11px] text-text-muted">
+                                {t('production.consumption.producedInfo', { qty: row.producedQty.toLocaleString(), batches: row.batches })}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-extrabold text-primary">{row.used.toLocaleString()} {unitLabel(item.unit, t)}</p>
+                              <p className="text-[11px] text-text-muted">{t('production.consumption.usedForProduct')}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-text-muted">Ulush</p>
-                      <p className="font-bold text-text-muted">{pct}% sarflandi</p>
-                    </div>
-                  </div>
+                  ) : null}
                 </div>
               );
             })}

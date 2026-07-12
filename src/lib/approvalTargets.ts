@@ -1,6 +1,6 @@
 import { resources } from '../api/client';
 import type { ApiRecord } from '../api/types';
-import { formatDisplayDate } from '../utils/crm';
+import { formatDisplayDate, trimTrailingZeros } from '../utils/crm';
 
 type Translator = (key: string, options?: Record<string, unknown>) => string;
 
@@ -55,7 +55,7 @@ export function buildApprovalObjectLabel(
     }
   }
   if (config.quantityField && row[config.quantityField] != null && row[config.quantityField] !== '') {
-    parts.push(String(row[config.quantityField]));
+    parts.push(trimTrailingZeros(String(row[config.quantityField])));
   }
   if (config.dateField && row[config.dateField]) {
     parts.push(formatDisplayDate(String(row[config.dateField]), t));

@@ -95,6 +95,7 @@ import {
   orderStatusTone,
   statusLabel,
   statusTone,
+  trimTrailingZeros,
   unitLabel,
 } from '../utils/crm';
 import {
@@ -1217,7 +1218,7 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
     const FieldInput = ({ name, label, type = 'text', required = false, fallback = '', step }: { name: string; label: string; type?: string; required?: boolean; fallback?: string; step?: string }) => {
       // Backend decimals come as "70000.00" — trim pointless trailing zeros in number inputs.
       const raw = value(name, fallback);
-      const defaultValue = type === 'number' && /^-?\d+\.\d+$/.test(raw) ? raw.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '') : raw;
+      const defaultValue = type === 'number' ? trimTrailingZeros(raw) : raw;
       return (
         <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
           {label}
