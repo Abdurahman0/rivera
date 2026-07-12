@@ -372,8 +372,7 @@
       "pieceworkOperations": "Akkord operatsiyalari",
       "noPieceworkData": "Bu xodim uchun akkord ma'lumotlari yo'q",
       "total": "Jami",
-      "pieceworkBadge": "akkord",
-      "overview": "Umumiy"
+      "pieceworkBadge": "akkord"
     }
   },
   "products": {
@@ -1761,11 +1760,10 @@
       "lastCheckOut": "Oxirgi chiqish",
       "workedMinutes": "Ishlagan daqiqa",
       "manual": "Qo'lda",
-      "sequence": "Tartib",
-      "timeNormMinutes": "Vaqt normasi (daq)",
-      "hourlyNorm": "Soatlik norma",
-      "dailyNorm": "Kunlik norma",
-      "monthlyNorm": "Oylik norma",
+      "timeNormMinutes": "1 dona uchun vaqt (daqiqa)",
+      "hourlyNorm": "Soatiga norma (dona)",
+      "dailyNorm": "Kuniga norma (dona)",
+      "monthlyNorm": "Oyiga norma (dona)",
       "pricePerUnit": "Birlik narxi",
       "operation": "Operatsiya",
       "month": "Oy",
@@ -1821,8 +1819,6 @@
       "terminationDate": "Ishdan bo'shatilgan sana",
       "startDate": "Boshlanish sanasi",
       "endDate": "Tugash sanasi",
-      "workEntry": "Ish yozuvi",
-      "hourLabel": "Soat oralig'i",
       "cashAccount": "Kassa hisobi",
       "invoiceNumber": "Hisob-faktura raqami",
       "balance": "Balans"
@@ -1901,16 +1897,12 @@
         "description": "Kunlik davomat jamlanmasi va qo'lda tuzatishlar."
       },
       "operationTypes": {
-        "title": "Akkord amaliyot turlari",
-        "description": "Amaliyotlar, normalar, tartib va narxlar."
+        "title": "Ish turlari",
+        "description": "Ish turlari: har biriga narx va vaqt normasi (masalan, 1 dona = 3 daqiqa yoki soatiga 20 dona)."
       },
       "workEntries": {
         "title": "Kunlik ish yozuvlari",
         "description": "Xodim akkord ishlab chiqarishi va hisoblangan to'lov."
-      },
-      "adjustments": {
-        "title": "Maosh tuzatishlari",
-        "description": "Oylik mukofot va jarimalar."
       },
       "payrolls": {
         "title": "Oylik hisob-kitoblar",
@@ -1972,21 +1964,9 @@
         "title": "Material xaridlari",
         "description": "Yetkazib beruvchilardan xarid qilingan materiallar."
       },
-      "departments": {
-        "title": "Bo'limlar",
-        "description": "Xodimlar bo'limlari."
-      },
       "employeeTerminations": {
         "title": "Ishdan bo'shatishlar",
         "description": "Xodimlarning ishdan bo'shatilish tarixi."
-      },
-      "leaveRequests": {
-        "title": "Ta'til so'rovlari",
-        "description": "Xodimlarning ta'til so'rovlari."
-      },
-      "workHourBreakdowns": {
-        "title": "Soatlik taqsimot",
-        "description": "Ishbay ish yozuvlarining soatlik taqsimoti."
       },
       "cashAccounts": {
         "title": "Kassa hisoblari",
@@ -2027,10 +2007,6 @@
         "out_client": "Mijozga",
         "out_defect": "Brak",
         "return_client": "Mijoz qaytarishi"
-      },
-      "adjustmentType": {
-        "bonus": "Mukofot",
-        "penalty": "Jarima"
       },
       "attendanceStatus": {
         "present": "Keldi",

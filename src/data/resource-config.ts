@@ -124,23 +124,11 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'delivered_date', label: f('deliveredDate'), type: 'date', nullable: true }, { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
-  departments: {
-    resource: resources.departments, title: title('departments'), description: description('departments'),
-    fields: [{ name: 'name', label: f('name'), required: true, table: true }, { name: 'note', label: f('note'), type: 'textarea' }],
-  },
-  leaveRequests: {
-    resource: resources.leaveRequests, title: title('leaveRequests'), description: description('leaveRequests'), allowEdit: false, allowArchive: false,
-    fields: [
-      { name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name', secondary: 'employee_code' }, required: true, table: true },
-      { name: 'start_date', label: f('startDate'), type: 'date', required: true, table: true }, { name: 'end_date', label: f('endDate'), type: 'date', required: true, table: true },
-      { name: 'reason', label: f('reason'), type: 'textarea', required: true, table: true }, { ...statusField },
-    ],
-  },
   operationTypes: {
     resource: resources.operationTypes, title: title('operationTypes'), description: description('operationTypes'),
     fields: [
-      { name: 'name', label: f('name'), required: true, table: true }, { name: 'sequence_order', label: f('sequence'), type: 'number', nullable: true }, { name: 'time_norm_minutes', label: f('timeNormMinutes'), type: 'number', step: '0.01', nullable: true },
-      { name: 'hourly_norm', label: f('hourlyNorm'), type: 'number', step: '0.01', nullable: true }, { name: 'daily_norm', label: f('dailyNorm'), type: 'number', step: '0.01', nullable: true }, { name: 'monthly_norm', label: f('monthlyNorm'), type: 'number', step: '0.01', nullable: true },
+      { name: 'name', label: f('name'), required: true, table: true }, { name: 'time_norm_minutes', label: f('timeNormMinutes'), type: 'number', step: '0.01', nullable: true, table: true },
+      { name: 'hourly_norm', label: f('hourlyNorm'), type: 'number', step: '0.01', nullable: true, table: true }, { name: 'daily_norm', label: f('dailyNorm'), type: 'number', step: '0.01', nullable: true }, { name: 'monthly_norm', label: f('monthlyNorm'), type: 'number', step: '0.01', nullable: true },
       { name: 'price_per_unit', label: f('pricePerUnit'), type: 'number', step: '0.01', required: true, table: true },
     ],
   },
@@ -151,17 +139,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'date', label: f('date'), type: 'date', required: true, table: true }, { name: 'quantity_done', label: f('quantity'), type: 'number', required: true, table: true }, { name: 'amount', label: f('amount'), readOnly: true, table: true },
       { name: 'note', label: f('note'), type: 'textarea' },
     ],
-  },
-  workHourBreakdowns: {
-    resource: resources.dailyWorkHourBreakdowns, title: title('workHourBreakdowns'), description: description('workHourBreakdowns'),
-    fields: [
-      { name: 'entry', label: f('workEntry'), lookup: { resource: resources.dailyWorkEntries, label: 'date', secondary: 'quantity_done' }, required: true, table: true },
-      { name: 'hour_label', label: f('hourLabel'), required: true, table: true }, { name: 'quantity', label: f('quantity'), type: 'number', required: true, table: true },
-    ],
-  },
-  adjustments: {
-    resource: resources.salaryAdjustments, title: title('adjustments'), description: description('adjustments'),
-    fields: [{ name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name' }, required: true, table: true }, { name: 'month', label: f('month'), type: 'date', required: true, table: true }, { name: 'adjustment_type', label: f('type'), type: 'select', required: true, table: true, options: options([['bonus', 'admin.options.adjustmentType.bonus'], ['penalty', 'admin.options.adjustmentType.penalty']]) }, { name: 'amount', label: f('amount'), type: 'number', step: '0.01', required: true, table: true }, { name: 'reason', label: f('reason'), type: 'textarea', required: true }],
   },
   payrolls: {
     resource: resources.monthlyPayrolls, title: title('payrolls'), description: description('payrolls'), readOnly: true,

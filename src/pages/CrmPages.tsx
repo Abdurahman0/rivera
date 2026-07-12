@@ -800,7 +800,6 @@ function EmployeeGrid({ staff, pieceworkRecords, attendanceLog, formatMoney, ope
 function StaffDetailModal({ member, records, attendanceLog, formatMoney, onClose }: { member: StaffMember; records: PieceworkRecord[]; attendanceLog: AttendanceLogEntry[]; formatMoney: (v: number) => string; onClose: () => void }) {
   const { t } = useTranslation();
   const canManage = useHasPermission('employees', 'manage');
-  const [activeTab, setActiveTab] = useState<'overview' | 'leaveRequests'>('overview');
   const initials = member.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('');
   const totalEarned = records.reduce((sum, r) => sum + r.quantity * r.ratePerPiece, 0);
   const totalPieces = records.reduce((sum, r) => sum + r.quantity, 0);
@@ -809,9 +808,6 @@ function StaffDetailModal({ member, records, attendanceLog, formatMoney, onClose
   const monthWorkedMinutes = attendanceLog
     .filter(entry => String(entry.employeeId) === String(member.id) && entry.workDate.startsWith(monthPrefix))
     .reduce((sum, entry) => sum + entry.workedMinutes, 0);
-  const extraParams = useMemo(() => ({ employee: String(member.id) }), [member.id]);
-  const fixedValues = useMemo(() => ({ employee: String(member.id) }), [member.id]);
-  const leaveConfig = useMemo(() => scopedFieldConfig(operationsConfigs.leaveRequests, canManage, 'employee'), [canManage]);
 
   return (
     <div
@@ -841,21 +837,7 @@ function StaffDetailModal({ member, records, attendanceLog, formatMoney, onClose
         </div>
 
         <div className="overflow-y-auto p-6">
-          <SegmentTabs
-            tabs={[
-              { id: 'overview', label: t('staff.detail.overview'), icon: <FiUsers className="h-4 w-4" /> },
-              { id: 'leaveRequests', label: t('admin.resources.leaveRequests.title'), icon: <FiCalendar className="h-4 w-4" /> },
-            ]}
-            activeTab={activeTab}
-            onChange={id => setActiveTab(id as typeof activeTab)}
-          />
-          {activeTab === 'leaveRequests' ? (
-            <div className="mt-4">
-              <ApiResourceManager key={`leave-${member.id}`} config={leaveConfig} extraParams={extraParams} fixedValues={fixedValues} />
-            </div>
-          ) : (
-          <>
-          <h4 className="mt-4 text-sm font-extrabold text-text-primary">{t('staff.detail.monthStats')}</h4>
+          <h4 className="text-sm font-extrabold text-text-primary">{t('staff.detail.monthStats')}</h4>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <div className="rounded-2xl bg-surface-subtle p-4 ring-1 ring-border-soft/30">
               <p className="text-xs text-text-muted">{t('staff.tabs.attendance')}</p>
@@ -945,8 +927,6 @@ function StaffDetailModal({ member, records, attendanceLog, formatMoney, onClose
               </div>
             </div>
           )}
-          </>
-          )}
         </div>
       </section>
     </div>
@@ -957,27 +937,24 @@ export function StaffPage({ staff, attendanceLog, pieceworkRecords, formatMoney,
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('employees', 'manage');
-  const [activeTab, setActiveTab] = useState<'employees' | 'attendance' | 'piecework' | 'departments'>('employees');
+  const [activeTab, setActiveTab] = useState<'employees' | 'attendance' | 'piecework'>('employees');
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('staff.eyebrow')} title={t('staff.title')} description={t('staff.description')} createLabel={canManage && activeTab !== 'departments' && activeTab !== 'attendance' ? t('staff.create') : undefined} onCreate={canManage && activeTab !== 'departments' && activeTab !== 'attendance' ? () => openModal({ kind: 'staff', mode: 'create' }) : undefined} onExport={() => exportResource(activeTab === 'departments' ? resources.departments : activeTab === 'attendance' ? resources.attendanceRecords : resources.employees)} />
+      <PageHeader eyebrow={t('staff.eyebrow')} title={t('staff.title')} description={t('staff.description')} createLabel={canManage && activeTab === 'employees' ? t('staff.create') : undefined} onCreate={canManage && activeTab === 'employees' ? () => openModal({ kind: 'staff', mode: 'create' }) : undefined} onExport={() => exportResource(activeTab === 'attendance' ? resources.attendanceRecords : resources.employees)} />
       <SegmentTabs
         tabs={[
           { id: 'employees', label: t('staff.tabs.employees'), icon: <FiUsers className="h-4 w-4" /> },
           { id: 'attendance', label: t('staff.tabs.attendance'), icon: <FiClock className="h-4 w-4" /> },
           { id: 'piecework', label: t('staff.tabs.piecework'), icon: <FiTool className="h-4 w-4" /> },
-          { id: 'departments', label: t('admin.resources.departments.title'), icon: <FiBriefcase className="h-4 w-4" /> },
         ]}
         activeTab={activeTab}
-        onChange={(id) => setActiveTab(id as 'employees' | 'attendance' | 'piecework' | 'departments')}
+        onChange={(id) => setActiveTab(id as 'employees' | 'attendance' | 'piecework')}
       />
       {activeTab === 'employees' ? (
         <EmployeeGrid staff={staff} pieceworkRecords={pieceworkRecords} attendanceLog={attendanceLog} formatMoney={formatMoney} openModal={openModal} openDelete={openDelete} />
       ) : activeTab === 'piecework' ? (
         <PieceworkTab staff={staff} pieceworkRecords={pieceworkRecords} formatMoney={formatMoney} />
-      ) : activeTab === 'departments' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.departments, readOnly: !canManage }} />
       ) : (
         <AttendanceLogView staff={staff} attendanceLog={attendanceLog} canManage={canManage} />
       )}
@@ -1843,23 +1820,17 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
           { id: 'summary', label: t('staff.piecework.tabs.summary'), icon: <FiDollarSign className="h-4 w-4" /> },
           { id: 'workEntries', label: t('admin.resources.workEntries.title'), icon: <FiCheckCircle className="h-4 w-4" /> },
           { id: 'operationTypes', label: t('admin.resources.operationTypes.title'), icon: <FiTool className="h-4 w-4" /> },
-          { id: 'adjustments', label: t('admin.resources.adjustments.title'), icon: <FiSliders className="h-4 w-4" /> },
           { id: 'payroll', label: t('admin.resources.payrolls.title'), icon: <FiArchive className="h-4 w-4" /> },
-          { id: 'workHourBreakdowns', label: t('admin.resources.workHourBreakdowns.title'), icon: <FiClock className="h-4 w-4" /> },
         ]}
         activeTab={subTab}
         onChange={id => setSubTab(id as typeof subTab)}
       />
       {subTab === 'operationTypes' ? (
         <ApiResourceManager config={{ ...operationsConfigs.operationTypes, readOnly: !canManage }} />
-      ) : subTab === 'adjustments' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.adjustments, readOnly: !canManage }} />
       ) : subTab === 'payroll' ? (
         <PayrollTab />
       ) : subTab === 'workEntries' ? (
         <ApiResourceManager config={{ ...operationsConfigs.workEntries, readOnly: !canManage }} />
-      ) : subTab === 'workHourBreakdowns' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.workHourBreakdowns, readOnly: !canManage }} />
       ) : (
       <>
       <div className="flex flex-wrap items-center justify-end gap-2.5">

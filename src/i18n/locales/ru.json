@@ -372,8 +372,7 @@
       "pieceworkOperations": "Сдельные операции",
       "noPieceworkData": "Нет сдельных данных для этого сотрудника",
       "total": "Итого",
-      "pieceworkBadge": "сдельно",
-      "overview": "Общее"
+      "pieceworkBadge": "сдельно"
     }
   },
   "products": {
@@ -1756,11 +1755,10 @@
       "lastCheckOut": "Последний уход",
       "workedMinutes": "Отработано минут",
       "manual": "Вручную",
-      "sequence": "Порядок",
-      "timeNormMinutes": "Норма времени (мин)",
-      "hourlyNorm": "Часовая норма",
-      "dailyNorm": "Дневная норма",
-      "monthlyNorm": "Месячная норма",
+      "timeNormMinutes": "Время на 1 шт (минут)",
+      "hourlyNorm": "Норма в час (шт)",
+      "dailyNorm": "Норма в день (шт)",
+      "monthlyNorm": "Норма в месяц (шт)",
       "pricePerUnit": "Цена за единицу",
       "operation": "Операция",
       "month": "Месяц",
@@ -1816,8 +1814,6 @@
       "terminationDate": "Дата увольнения",
       "startDate": "Дата начала",
       "endDate": "Дата окончания",
-      "workEntry": "Запись работы",
-      "hourLabel": "Часовой интервал",
       "cashAccount": "Кассовый счёт",
       "invoiceNumber": "Номер счёта",
       "balance": "Баланс"
@@ -1896,16 +1892,12 @@
         "description": "Дневной итог посещаемости и ручные правки."
       },
       "operationTypes": {
-        "title": "Виды сдельных операций",
-        "description": "Операции, нормы, порядок и расценки."
+        "title": "Виды работ",
+        "description": "Виды работ: для каждой — расценка и норма времени (например, 1 шт = 3 минуты или 20 шт в час)."
       },
       "workEntries": {
         "title": "Дневные записи работ",
         "description": "Сдельная выработка сотрудника и начисление."
-      },
-      "adjustments": {
-        "title": "Корректировки зарплаты",
-        "description": "Ежемесячные премии и штрафы."
       },
       "payrolls": {
         "title": "Месячные начисления",
@@ -1967,21 +1959,9 @@
         "title": "Закупки материалов",
         "description": "Материалы, закупленные у поставщиков."
       },
-      "departments": {
-        "title": "Отделы",
-        "description": "Отделы сотрудников."
-      },
       "employeeTerminations": {
         "title": "Увольнения",
         "description": "История увольнений сотрудников."
-      },
-      "leaveRequests": {
-        "title": "Заявки на отпуск",
-        "description": "Заявки сотрудников на отпуск."
-      },
-      "workHourBreakdowns": {
-        "title": "Почасовая разбивка",
-        "description": "Почасовая разбивка сдельных записей."
       },
       "cashAccounts": {
         "title": "Кассовые счета",
@@ -2022,10 +2002,6 @@
         "out_client": "Клиенту",
         "out_defect": "Брак",
         "return_client": "Возврат клиента"
-      },
-      "adjustmentType": {
-        "bonus": "Премия",
-        "penalty": "Штраф"
       },
       "attendanceStatus": {
         "present": "Присутствовал",

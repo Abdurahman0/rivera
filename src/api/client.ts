@@ -220,10 +220,10 @@ export const resources = {
   products: 'products', productMaterialNorms: 'product-material-norms', materialStocks: 'material-stocks', materialTransactions: 'material-transactions',
   defectiveMaterialStocks: 'defective-material-stocks', defectiveMaterialTransactions: 'defective-material-transactions', finishedGoodsStocks: 'finished-goods-stocks',
   finishedGoodsTransactions: 'finished-goods-transactions', productionBatches: 'production-batches', productionBatchItems: 'production-batch-items',
-  productionMaterialUsages: 'production-material-usages', employees: 'employees', departments: 'departments', employeeTerminations: 'employee-terminations',
+  productionMaterialUsages: 'production-material-usages', employees: 'employees', employeeTerminations: 'employee-terminations',
   leaveRequests: 'leave-requests', workSchedules: 'work-schedules', employeeFaceEncodings: 'employee-face-encodings',
   attendanceDevices: 'attendance-devices', attendanceEvents: 'attendance-events', attendanceRecords: 'attendance-records', operationTypes: 'operation-types',
-  dailyWorkEntries: 'daily-work-entries', dailyWorkHourBreakdowns: 'daily-work-hour-breakdowns', salaryAdjustments: 'salary-adjustments', monthlyPayrolls: 'monthly-payrolls',
+  dailyWorkEntries: 'daily-work-entries', monthlyPayrolls: 'monthly-payrolls',
   cashAccounts: 'cash-accounts', cashTransactions: 'cash-transactions', expenses: 'expenses', invoices: 'invoices', dashboard: 'dashboard',
 } as const;
 
