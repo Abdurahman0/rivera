@@ -610,7 +610,7 @@
       "totalUsed": "Jami sarflangan",
       "remaining": "Qoldiq",
       "source": "Qaysi partiyalardan",
-      "subtitle": "Barcha partiyalar bo'yicha hisoblangan material sarfi. Qatorni bosib, qaysi mahsulotga qancha ketganini ko'ring.",
+      "subtitle": "Tanlangan davrdagi partiyalar bo'yicha material sarfi; Qoldiq esa har doim hozirgi real holat. Qatorni bosib, qaysi mahsulotga qancha ketganini ko'ring.",
       "share": "Ulush",
       "shareUsed": "{{pct}}% sarflandi",
       "byProduct": "Mahsulotlar kesimida",

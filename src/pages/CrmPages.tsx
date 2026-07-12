@@ -2271,12 +2271,18 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
   const [viewingBatchDetail, setViewingBatchDetail] = useState<ProductionBatch | null>(null);
   const [openBatchMaterials, setOpenBatchMaterials] = useState<Record<string, boolean>>({});
   const [openConsumption, setOpenConsumption] = useState<Record<string, boolean>>({});
+  // Date range for the consumption tab only: totals/breakdown follow the selected period
+  // (by batch start date), while remaining stock always stays real-time.
+  const [consumptionRange, setConsumptionRange] = useState<DashboardDateRange | null>(null);
 
   const totalProduced = batches.reduce((sum, b) => sum + b.producedQty, 0);
 
-  // Aggregate material consumption across all batches, broken down per product
+  // Aggregate material consumption across batches in the selected period, broken down per product
+  const consumptionBatches = consumptionRange
+    ? batches.filter(batch => batch.dateLabel >= consumptionRange.startDate && batch.dateLabel <= consumptionRange.endDate)
+    : batches;
   const consumptionMap: Record<string, { materialName: string; unit: 'm' | 'kg' | 'pcs'; totalUsed: number; batches: number; products: Record<string, { productName: string; producedQty: number; used: number; batches: number }> }> = {};
-  batches.forEach(batch => {
+  consumptionBatches.forEach(batch => {
     const product = products.find(p => p.id === batch.productId);
     if (!product?.recipe) return;
     product.recipe.forEach(item => {
@@ -2296,7 +2302,8 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
     });
   });
   const consumptionList = Object.values(consumptionMap).sort((a, b) => b.totalUsed - a.totalUsed);
-  const totalMaterialTypes = consumptionList.length;
+  // The page-level metric chip always reflects all batches, independent of the tab filter.
+  const totalMaterialTypes = new Set(batches.flatMap(batch => (products.find(p => p.id === batch.productId)?.recipe ?? []).map(item => item.materialName))).size;
 
   return (
     <div className="grid gap-5">
@@ -2470,7 +2477,14 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
 
       {activeTab === 'consumption' && (
         <div className="grid gap-5">
-          <p className="text-sm text-text-muted">{t('production.consumption.subtitle')}</p>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <DashboardPresetDropdown value={consumptionRange} onChange={setConsumptionRange} />
+            <DashboardCustomRangePicker value={consumptionRange} onChange={setConsumptionRange} />
+            <p className="m-0 text-sm text-text-muted">{t('production.consumption.subtitle')}</p>
+          </div>
+          {consumptionList.length === 0 ? (
+            <p className="rounded-xl bg-surface-subtle p-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p>
+          ) : null}
           <div className="grid gap-3">
             {consumptionList.map(item => {
               const mat = materials.find(m => m.name === item.materialName);
