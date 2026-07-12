@@ -502,7 +502,7 @@ function ClientDetailModal({ client, onClose, canManage }: { client: Client; onC
   );
 }
 
-export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { clients: Client[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
+export function ClientsPage({ clients, formatMoney, openModal, openDelete, openClientId, onOpenClientConsumed }: { clients: Client[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void; openClientId?: string | null; onOpenClientConsumed?: () => void }) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { confirm } = useDialog();
@@ -554,6 +554,14 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
       });
   }, [clients, query, sortMode, sourceFilter, statusFilter]);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
+
+  useEffect(() => {
+    if (!openClientId) return;
+    const target = clients.find(client => String(client.id) === openClientId);
+    if (!target) return;
+    setViewingClient(target);
+    onOpenClientConsumed?.();
+  }, [openClientId, clients, onOpenClientConsumed]);
 
   function persistCustomStatuses(next: CustomClientStatus[]) {
     setCustomStatuses(next);
@@ -1037,7 +1045,7 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
   );
 }
 
-export function OrdersPage({ orders, formatMoney, openModal, openDelete }: { orders: Order[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
+export function OrdersPage({ orders, formatMoney, openModal, openDelete, onOpenClient }: { orders: Order[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void; onOpenClient: (clientId: string) => void }) {
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('clients', 'manage');
@@ -1066,7 +1074,15 @@ export function OrdersPage({ orders, formatMoney, openModal, openDelete }: { ord
         columns={[t('orders.columns.orderId'), t('orders.columns.client'), t('clients.columns.orderedDelivered'), t('orders.columns.total'), t('orders.columns.dueDate'), t('orders.columns.status'), t('common.actions')]}
         rows={orders.map(order => [
           <PrimaryCell title={order.orderId} subtitle={formatDisplayDate(order.orderDate, t)} />,
-          translateMovementLabel(t, order.client),
+          order.clientId ? (
+            <button
+              type="button"
+              className="text-left text-sm font-bold text-text-accent underline-offset-2 transition hover:underline"
+              onClick={event => { event.stopPropagation(); onOpenClient(String(order.clientId)); }}
+            >
+              {translateMovementLabel(t, order.client)}
+            </button>
+          ) : translateMovementLabel(t, order.client),
           order.items.length === 0 ? (
             <span className="text-xs text-text-muted">—</span>
           ) : (
@@ -1076,7 +1092,13 @@ export function OrdersPage({ orders, formatMoney, openModal, openDelete }: { ord
               <span className="mt-0.5 block max-w-[240px] truncate text-[11px] text-text-muted">{order.items.map(item => `${item.productName} ${item.delivered}/${item.ordered}`).join(', ')}</span>
             </span>
           ),
-          formatMoney(order.totalAmount),
+          <span className="block min-w-[150px]">
+            <span className="block text-sm font-bold text-text-primary">{formatMoney(order.totalAmount)}</span>
+            <span className="mt-0.5 block text-xs text-text-muted">{t('orders.paid')}: <span className={['font-bold', order.paidTotal >= order.totalAmount && order.totalAmount > 0 ? 'text-success' : 'text-text-primary'].join(' ')}>{formatMoney(order.paidTotal)}</span></span>
+            {order.totalAmount - order.paidTotal > 0 ? (
+              <span className="mt-0.5 block text-xs text-text-muted">{t('orders.remaining')}: <span className="font-bold text-warning">{formatMoney(order.totalAmount - order.paidTotal)}</span></span>
+            ) : null}
+          </span>,
           formatDisplayDate(order.dueDate, t),
           <StatusBadge tone={orderStatusTone(order.statusKey)}>{statusLabel(t, order.statusKey)}</StatusBadge>,
           <div className="flex items-center gap-2">

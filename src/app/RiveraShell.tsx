@@ -300,6 +300,8 @@ function App() {
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ModalState | null>(null);
+  // Client to auto-open on the clients page after cross-page navigation (e.g. clicking a client name on Buyurtmalar).
+  const [pendingClientId, setPendingClientId] = useState<string | null>(null);
   const [appData, setAppData] = useState<AppData>(EMPTY_DATA);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [currentUser, setCurrentUser] = useState<ApiCurrentUser | null>(null);
@@ -710,10 +712,10 @@ function App() {
               />
             )}
             {activePage === 'clients' && (
-              <ClientsPage clients={clients} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
+              <ClientsPage clients={clients} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} openClientId={pendingClientId} onOpenClientConsumed={() => setPendingClientId(null)} />
             )}
             {activePage === 'orders' && (
-              <OrdersPage orders={orders} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
+              <OrdersPage orders={orders} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} onOpenClient={clientId => { setPendingClientId(clientId); navigate('clients'); }} />
             )}
             {activePage === 'production' && (
               <ProductionPage

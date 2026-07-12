@@ -184,6 +184,10 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     perProduct.set(row.product, (perProduct.get(row.product) || 0) + number(row.quantity));
     deliveredByOrder.set(String(row.order), perProduct);
   });
+  const paidByOrder = new Map<string, number>();
+  data.payments.filter(row => row.order).forEach(row => {
+    paidByOrder.set(String(row.order), (paidByOrder.get(String(row.order)) || 0) + number(row.amount_uzs));
+  });
 
   const orders: Order[] = data.clientOrders.map(row => {
     const ordered = orderedByOrder.get(String(row.id)) ?? new Map<string, number>();
@@ -207,6 +211,7 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
       orderedQty: items.reduce((sum, item) => sum + item.ordered, 0),
       deliveredQty: items.reduce((sum, item) => sum + item.delivered, 0),
       items,
+      paidTotal: paidByOrder.get(String(row.id)) || 0,
       api: row as unknown as Record<string, unknown>,
     };
   });

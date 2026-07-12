@@ -32,6 +32,7 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
     resource: resources.clientPayments, title: title('payments'), description: description('payments'), allowEdit: false, allowArchive: false,
     fields: [
       { name: 'client', label: f('client'), lookup: { resource: resources.clients, label: 'full_name', secondary: 'phone' }, required: true, table: true },
+      { name: 'order', label: f('order'), lookup: { resource: resources.clientOrders, label: 'order_number', secondary: 'order_date' }, nullable: true, table: true },
       { name: 'payment_method', label: f('method'), type: 'select', required: true, table: true, options: options([['cash', 'admin.options.paymentMethod.cash'], ['card', 'admin.options.paymentMethod.card'], ['bank_transfer', 'admin.options.paymentMethod.bank_transfer'], ['usd_cash', 'admin.options.paymentMethod.usd_cash']]) },
       { name: 'amount', label: f('amount'), type: 'number', step: '0.01', required: true, table: true }, { name: 'amount_uzs', label: f('amountUzs'), readOnly: true },
       { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true }, { name: 'exchange_rate', label: f('exchangeRate'), type: 'number', step: '0.0001', nullable: true },

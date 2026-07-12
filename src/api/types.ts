@@ -84,6 +84,7 @@ export interface ApiClientDelivery extends ApiBaseModel {
 
 export interface ApiClientPayment extends ApiBaseModel {
   client: ApiId;
+  order: ApiId | null;
   payment_method: 'cash' | 'card' | 'bank_transfer' | 'usd_cash';
   amount: string;
   amount_uzs: string;

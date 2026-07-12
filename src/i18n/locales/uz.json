@@ -557,7 +557,9 @@
       "summary": "Mijoz, buyurtma raqami, sana va summani boshqarish.",
       "nextStep": "Keyingi qadam: ishlab chiqarish rejasi va sklad qoldig'ini tekshirish."
     },
-    "items": "Mahsulotlar"
+    "items": "Mahsulotlar",
+    "paid": "To'langan",
+    "remaining": "Qolgan"
   },
   "production": {
     "eyebrow": "Ishlab chiqarish",
