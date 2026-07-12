@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTag, FiTool, FiUsers, FiSliders, FiX } from 'react-icons/fi';
+import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSearch, FiSettings, FiShoppingBag, FiTag, FiTool, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StatusTone, StockMovement } from '../types/crm';
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
@@ -727,50 +727,58 @@ function EmployeeGrid({ staff, pieceworkRecords, formatMoney, openModal, openDel
   const { t } = useTranslation();
   const canManage = useHasPermission('employees', 'manage');
   const [detailId, setDetailId] = useState<EntityId | null>(null);
+  const [query, setQuery] = useState('');
   const detailMember = staff.find(member => member.id === detailId) ?? null;
+
+  const earnedByEmployee = useMemo(() => {
+    const totals = new Map<string, number>();
+    pieceworkRecords.forEach(record => totals.set(record.employeeName, (totals.get(record.employeeName) ?? 0) + record.quantity * record.ratePerPiece));
+    return totals;
+  }, [pieceworkRecords]);
+
+  const filteredStaff = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return staff;
+    return staff.filter(member => `${member.name} ${member.phone} ${optionLabel(t, 'employeePosition', member.role)}`.toLowerCase().includes(needle));
+  }, [staff, query, t]);
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {staff.map(member => {
-          const initials = member.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('');
-          const myRecords = pieceworkRecords.filter(r => r.employeeName === member.name);
-          const totalEarned = myRecords.reduce((sum, r) => sum + r.quantity * r.ratePerPiece, 0);
-          const hasPiecework = myRecords.length > 0;
-
-          return (
-            <article key={member.id} className="app-card--nova flex flex-col gap-4 p-5">
-              <div className="flex items-start gap-4">
-                <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-xl font-extrabold text-primary">{initials}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-extrabold text-text-primary">{member.name}</p>
-                  <p className="mt-0.5 truncate text-sm text-text-muted">{optionLabel(t, 'employeePosition', member.role)}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <StatusBadge tone={statusTone(member.statusKey)}>{statusLabel(t, member.statusKey)}</StatusBadge>
-                    {hasPiecework && (
-                      <span className="rounded-pill bg-success/10 px-2.5 py-0.5 text-[11px] font-bold text-success ring-1 ring-success/20">{formatMoney(totalEarned)} {t('staff.detail.pieceworkBadge')}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 rounded-xl bg-surface-subtle p-3 text-xs">
-                <div><p className="text-text-muted">{t('staff.columns.phone')}</p><p className="mt-0.5 font-semibold text-text-primary">{member.phone}</p></div>
-                <div><p className="text-text-muted">{t('staff.columns.hireDate')}</p><p className="mt-0.5 font-semibold text-text-primary">{formatDisplayDate(member.hireDate, t)}</p></div>
-                <div><p className="text-text-muted">{t('staff.columns.shift')}</p><p className="mt-0.5 font-semibold text-text-primary">{optionLabel(t, 'salaryType', member.shift)}</p></div>
-                <div><p className="text-text-muted">{t('staff.columns.salary')}</p><p className="mt-0.5 font-bold text-success">{formatMoney(member.salary)}</p></div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setDetailId(member.id)} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl bg-surface-subtle text-xs font-bold text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary">
-                  <FiChevronRight className="h-3.5 w-3.5" />
-                  {t('staff.detail.toggleOpen')}
-                </button>
-                {canManage ? <button onClick={() => openModal({ kind: 'staff', mode: 'edit', item: member })} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-surface-subtle text-xs font-bold text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary"><FiSettings className="h-3.5 w-3.5" /></button> : null}
-                {canManage ? <button onClick={() => openDelete({ kind: 'staff', mode: 'view', item: member })} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-danger-bg text-xs font-bold text-danger ring-1 ring-danger/15 transition hover:bg-danger/15">✕</button> : null}
-              </div>
-            </article>
-          );
-        })}
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="relative block w-full max-w-md">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+          <input value={query} onChange={event => setQuery(event.target.value)} placeholder={t('staff.searchPlaceholder')} className="h-10 w-full rounded-xl border border-border-soft bg-surface-card pl-9 pr-3 text-sm text-text-primary outline-none focus:border-primary/50" />
+        </label>
+        <span className="text-xs font-bold text-text-muted">{t('admin.ui.recordsCount', { count: filteredStaff.length })}</span>
       </div>
+      <DataTable
+        columns={[t('staff.columns.staff'), t('staff.columns.phone'), t('staff.columns.salary'), t('staff.columns.hireDate'), t('staff.columns.status'), t('common.actions')]}
+        rows={filteredStaff.map(member => {
+          const initials = member.name.split(' ').map((word: string) => word[0]).slice(0, 2).join('');
+          const earned = earnedByEmployee.get(member.name) ?? 0;
+          return [
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-extrabold text-primary">{initials}</span>
+              <span className="block min-w-0">
+                <span className="block truncate text-sm font-extrabold text-text-primary">{member.name}</span>
+                <span className="block truncate text-xs text-text-muted">{optionLabel(t, 'employeePosition', member.role)}</span>
+              </span>
+            </span>,
+            member.phone || '—',
+            <span className="block min-w-0">
+              <span className="block truncate text-sm font-bold text-text-primary">{formatMoney(member.salary)}</span>
+              <span className="block truncate text-xs text-text-muted">
+                {optionLabel(t, 'salaryType', member.shift)}
+                {earned > 0 ? <span className="font-bold text-success"> · +{formatMoney(earned)} {t('staff.detail.pieceworkBadge')}</span> : null}
+              </span>
+            </span>,
+            formatDisplayDate(member.hireDate, t),
+            <StatusBadge tone={statusTone(member.statusKey)}>{statusLabel(t, member.statusKey)}</StatusBadge>,
+            <RowActions onView={() => setDetailId(member.id)} onEdit={canManage ? () => openModal({ kind: 'staff', mode: 'edit', item: member }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'staff', mode: 'view', item: member }) : undefined} />,
+          ];
+        })}
+        onRowClick={rowIndex => setDetailId(filteredStaff[rowIndex].id)}
+      />
       {detailMember ? (
         <StaffDetailModal
           member={detailMember}

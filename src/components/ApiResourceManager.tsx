@@ -283,30 +283,19 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
 
   return (
     <section className="grid gap-4">
-      <div className="app-card--nova p-4 md:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-primary">{t('admin.ui.backendResource')}</p>
-            <h3 className="mt-1 text-xl font-extrabold text-text-primary">{title}</h3>
-            <p className="mt-1 text-sm text-text-muted">{t(config.description)}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {headerActions?.map(action => <button key={action.label} className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => void runAction(action.label, action.run)}>{t(action.label)}</button>)}
-            {config.allowExport !== false ? <button className="inline-flex items-center gap-2 rounded-xl bg-surface-subtle px-3 py-2 text-xs font-bold text-text-secondary" onClick={() => void runAction('admin.ui.exportXlsx', () => api.export(config.resource))}><FiDownload />{t('admin.ui.exportXlsx')}</button> : null}
-            <button className="inline-flex items-center gap-2 rounded-xl bg-surface-subtle px-3 py-2 text-xs font-bold text-text-secondary" onClick={() => void load()}><FiRefreshCcw />{t('admin.ui.refresh')}</button>
-            {!config.readOnly ? <button className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => setEditing('new')}><FiPlus />{t('admin.ui.create')}</button> : null}
-          </div>
-        </div>
-      </div>
-
-
       <div className="app-card--nova overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-border-soft/30 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <label className="relative block min-w-0 flex-1 sm:max-w-md">
+        <div className="flex flex-wrap items-center gap-2.5 border-b border-border-soft/30 p-4">
+          <label className="relative block w-full min-w-[180px] sm:w-auto sm:flex-1 sm:max-w-md">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input value={query} onChange={event => setQuery(event.target.value)} placeholder={t('admin.ui.searchPlaceholder', { title })} className="h-10 w-full rounded-xl border border-border-soft bg-surface-card pl-9 pr-3 text-sm text-text-primary outline-none focus:border-primary/50" />
           </label>
-          {config.allowArchive !== false ? <label className="inline-flex items-center gap-2 text-xs font-bold text-text-secondary"><input type="checkbox" checked={includeArchived} onChange={event => setIncludeArchived(event.target.checked)} />{t('admin.ui.includeArchived')}</label> : null}
+          {config.allowArchive !== false ? <label className="inline-flex items-center gap-2 whitespace-nowrap text-xs font-bold text-text-secondary"><input type="checkbox" checked={includeArchived} onChange={event => setIncludeArchived(event.target.checked)} />{t('admin.ui.includeArchived')}</label> : null}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {headerActions?.map(action => <button key={action.label} className="inline-flex h-10 items-center rounded-xl bg-primary/10 px-3 text-xs font-bold text-primary transition hover:bg-primary/20" onClick={() => void runAction(action.label, action.run)}>{t(action.label)}</button>)}
+            {config.allowExport !== false ? <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-surface-subtle text-text-secondary ring-1 ring-border-soft/40 transition hover:bg-primary/10 hover:text-text-primary" title={t('admin.ui.exportXlsx')} aria-label={t('admin.ui.exportXlsx')} onClick={() => void runAction('admin.ui.exportXlsx', () => api.export(config.resource))}><FiDownload /></button> : null}
+            <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-surface-subtle text-text-secondary ring-1 ring-border-soft/40 transition hover:bg-primary/10 hover:text-text-primary" title={t('admin.ui.refresh')} aria-label={t('admin.ui.refresh')} onClick={() => void load()}><FiRefreshCcw /></button>
+            {!config.readOnly ? <button className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:bg-primary-strong" onClick={() => setEditing('new')}><FiPlus className="h-4 w-4" />{t('admin.ui.create')}</button> : null}
+          </div>
         </div>
         {loading ? <div className="px-4 py-10 text-center text-sm text-text-muted">{t('admin.ui.loading')}</div> : null}
         {!loading && filteredRows.length === 0 ? <div className="px-4 py-10 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</div> : null}

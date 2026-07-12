@@ -292,6 +292,7 @@
     "title": "Xodimlarning kelishi va ketishi",
     "description": "Smena, kelish vaqti, ketish vaqti, kechikishlar va davomat foizi.",
     "create": "Xodim qo'shish",
+    "searchPlaceholder": "Ism, telefon yoki lavozim bo'yicha qidirish...",
     "metrics": {
       "onTime": "Vaqtida kelgan",
       "onTimeCaption": "Jamoaning 60%",
@@ -379,7 +380,6 @@
       "nextStep": "Keyingi qadam: smena jadvalini tekshirish va HR izohini qo'shish."
     },
     "detail": {
-      "toggleOpen": "Batafsil ko'rish",
       "toggleClose": "Yopish",
       "monthStats": "Bu oy ko'rsatkichlari",
       "arrivalTime": "Kelish vaqti",
@@ -2207,7 +2207,6 @@
       }
     },
     "ui": {
-      "backendResource": "Backend bo'limi",
       "exportXlsx": "Excel eksport",
       "refresh": "Yangilash",
       "create": "Yaratish",
