@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
+import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTag, FiTool, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StatusTone, StockMovement } from '../types/crm';
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
@@ -786,7 +786,7 @@ function EmployeeGrid({ staff, pieceworkRecords, formatMoney, openModal, openDel
 function StaffDetailModal({ member, records, formatMoney, onClose }: { member: StaffMember; records: PieceworkRecord[]; formatMoney: (v: number) => string; onClose: () => void }) {
   const { t } = useTranslation();
   const canManage = useHasPermission('employees', 'manage');
-  const [activeTab, setActiveTab] = useState<'overview' | 'leaveRequests' | 'terminations'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leaveRequests'>('overview');
   const initials = member.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('');
   const totalEarned = records.reduce((sum, r) => sum + r.quantity * r.ratePerPiece, 0);
   const totalPieces = records.reduce((sum, r) => sum + r.quantity, 0);
@@ -794,7 +794,6 @@ function StaffDetailModal({ member, records, formatMoney, onClose }: { member: S
   const extraParams = useMemo(() => ({ employee: String(member.id) }), [member.id]);
   const fixedValues = useMemo(() => ({ employee: String(member.id) }), [member.id]);
   const leaveConfig = useMemo(() => scopedFieldConfig(operationsConfigs.leaveRequests, canManage, 'employee'), [canManage]);
-  const terminationConfig = useMemo(() => scopedFieldConfig(operationsConfigs.employeeTerminations, canManage, 'employee'), [canManage]);
 
   return (
     <div
@@ -828,7 +827,6 @@ function StaffDetailModal({ member, records, formatMoney, onClose }: { member: S
             tabs={[
               { id: 'overview', label: t('staff.detail.overview'), icon: <FiUsers className="h-4 w-4" /> },
               { id: 'leaveRequests', label: t('admin.resources.leaveRequests.title'), icon: <FiCalendar className="h-4 w-4" /> },
-              { id: 'terminations', label: t('admin.resources.employeeTerminations.title'), icon: <FiUserX className="h-4 w-4" /> },
             ]}
             activeTab={activeTab}
             onChange={id => setActiveTab(id as typeof activeTab)}
@@ -836,10 +834,6 @@ function StaffDetailModal({ member, records, formatMoney, onClose }: { member: S
           {activeTab === 'leaveRequests' ? (
             <div className="mt-4">
               <ApiResourceManager key={`leave-${member.id}`} config={leaveConfig} extraParams={extraParams} fixedValues={fixedValues} />
-            </div>
-          ) : activeTab === 'terminations' ? (
-            <div className="mt-4">
-              <ApiResourceManager key={`termination-${member.id}`} config={terminationConfig} extraParams={extraParams} fixedValues={fixedValues} />
             </div>
           ) : (
           <>
@@ -986,7 +980,9 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
   const { t } = useTranslation();
   const [enrolling, setEnrolling] = useState(false);
   const [employeeFilter, setEmployeeFilter] = useState('all');
-  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(null);
+  // Defaults to the current month so "how many hours this month, per employee" is visible
+  // immediately — no filter clicks needed. Still fully adjustable via the dropdowns below.
+  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
   const employeeNames = useMemo(() => new Map(staff.map(member => [String(member.id), member.name])), [staff]);
 
   const inRange = useMemo(() => attendanceLog
@@ -1011,6 +1007,13 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
     .sort((a, b) => b.workDate.localeCompare(a.workDate) || (employeeNames.get(String(a.employeeId)) ?? '').localeCompare(employeeNames.get(String(b.employeeId)) ?? '')),
   [inRange, employeeFilter, employeeNames]);
 
+  const activePreset = matchingDashboardPreset(dateRange);
+  const rangeLabel = activePreset
+    ? t(`dashboard.filters.${activePreset}`)
+    : dateRange
+      ? `${formatDisplayDate(dateRange.startDate, t)} – ${formatDisplayDate(dateRange.endDate, t)}`
+      : t('dashboard.filters.allTime');
+
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2.5">
@@ -1031,16 +1034,18 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
       </div>
 
       {totalsByEmployee.length > 0 ? (
-        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {totalsByEmployee.map(item => (
-            <div key={item.employeeId} className="app-card--nova flex items-center justify-between gap-3 p-3.5">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-text-primary">{item.name}</p>
-                <p className="text-xs text-text-muted">{t('staff.attendance.totalInRange')}</p>
+        <div className="grid gap-2.5">
+          <h3 className="text-sm font-extrabold text-text-primary">
+            {t('staff.attendance.totalsHeading', { range: rangeLabel })}
+          </h3>
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {totalsByEmployee.map(item => (
+              <div key={item.employeeId} className="app-card--nova flex items-center justify-between gap-3 p-3.5">
+                <p className="min-w-0 truncate text-sm font-bold text-text-primary">{item.name}</p>
+                <span className="shrink-0 rounded-lg bg-primary/10 px-2.5 py-1.5 text-sm font-extrabold text-primary">{formatWorkedHours(t, item.minutes)}</span>
               </div>
-              <span className="shrink-0 rounded-lg bg-primary/10 px-2.5 py-1.5 text-sm font-extrabold text-primary">{formatWorkedHours(t, item.minutes)}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : null}
 

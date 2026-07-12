@@ -323,7 +323,7 @@
       "allEmployees": "Barcha xodimlar",
       "unknownEmployee": "Noma'lum xodim",
       "hoursMinutes": "{{hours}} soat {{minutes}} daqiqa",
-      "totalInRange": "Tanlangan davrda jami",
+      "totalsHeading": "Jami ishlagan soat — {{range}}",
       "hoursColumn": "Ishlagan vaqt"
     },
     "piecework": {

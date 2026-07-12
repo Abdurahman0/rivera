@@ -323,7 +323,7 @@
       "allEmployees": "Все сотрудники",
       "unknownEmployee": "Неизвестный сотрудник",
       "hoursMinutes": "{{hours}} ч {{minutes}} мин",
-      "totalInRange": "Всего за период",
+      "totalsHeading": "Всего отработано — {{range}}",
       "hoursColumn": "Отработано"
     },
     "piecework": {

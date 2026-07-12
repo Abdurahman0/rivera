@@ -132,13 +132,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
     resource: resources.departments, title: title('departments'), description: description('departments'),
     fields: [{ name: 'name', label: f('name'), required: true, table: true }, { name: 'note', label: f('note'), type: 'textarea' }],
   },
-  employeeTerminations: {
-    resource: resources.employeeTerminations, title: title('employeeTerminations'), description: description('employeeTerminations'), allowEdit: false, allowArchive: false,
-    fields: [
-      { name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name', secondary: 'employee_code' }, required: true, table: true },
-      { name: 'termination_date', label: f('terminationDate'), type: 'date', required: true, table: true }, { name: 'reason', label: f('reason'), type: 'textarea', required: true, table: true },
-    ],
-  },
   leaveRequests: {
     resource: resources.leaveRequests, title: title('leaveRequests'), description: description('leaveRequests'), allowEdit: false, allowArchive: false,
     fields: [
