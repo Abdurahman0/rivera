@@ -156,63 +156,60 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     };
   });
 
-  // Per-client, per-product piece counts: what was ordered (order items) vs what
-  // actually went out (approved deliveries).
-  const orderClient = new Map(data.clientOrders.map(row => [row.id, row.client]));
-  const orderedByClient = new Map<string, Map<string, number>>();
+  const clients: Client[] = data.clients.map(row => ({
+    id: row.id,
+    name: row.full_name,
+    phone: row.phone,
+    source: row.address || '—',
+    status: row.status || 'active',
+    statusKey: row.status || 'active',
+    manager: '—',
+    value: number(row.balance),
+    lastContact: row.updated_at.slice(0, 10),
+    fabric: row.note || '—',
+    api: row as unknown as Record<string, unknown>,
+  }));
+
+  // Per-order, per-product piece counts: what the order asked for (its items) vs what
+  // actually went out against it (approved deliveries linked to the order).
+  const orderedByOrder = new Map<string, Map<string, number>>();
   data.orderItems.forEach(item => {
-    const clientId = orderClient.get(item.order);
-    if (!clientId) return;
-    const perProduct = orderedByClient.get(clientId) ?? new Map<string, number>();
+    const perProduct = orderedByOrder.get(item.order) ?? new Map<string, number>();
     perProduct.set(item.product, (perProduct.get(item.product) || 0) + number(item.quantity));
-    orderedByClient.set(clientId, perProduct);
+    orderedByOrder.set(item.order, perProduct);
   });
-  const deliveredByClient = new Map<string, Map<string, number>>();
-  data.deliveries.filter(row => row.status === 'approved').forEach(row => {
-    const perProduct = deliveredByClient.get(row.client) ?? new Map<string, number>();
+  const deliveredByOrder = new Map<string, Map<string, number>>();
+  data.deliveries.filter(row => row.status === 'approved' && row.order).forEach(row => {
+    const perProduct = deliveredByOrder.get(String(row.order)) ?? new Map<string, number>();
     perProduct.set(row.product, (perProduct.get(row.product) || 0) + number(row.quantity));
-    deliveredByClient.set(row.client, perProduct);
+    deliveredByOrder.set(String(row.order), perProduct);
   });
 
-  const clients: Client[] = data.clients.map(row => {
-    const ordered = orderedByClient.get(String(row.id)) ?? new Map<string, number>();
-    const delivered = deliveredByClient.get(String(row.id)) ?? new Map<string, number>();
-    const orderedItems = [...new Set([...ordered.keys(), ...delivered.keys()])].map(productId => ({
+  const orders: Order[] = data.clientOrders.map(row => {
+    const ordered = orderedByOrder.get(String(row.id)) ?? new Map<string, number>();
+    const delivered = deliveredByOrder.get(String(row.id)) ?? new Map<string, number>();
+    const items = [...new Set([...ordered.keys(), ...delivered.keys()])].map(productId => ({
       productName: productNames.get(productId) || '—',
       ordered: ordered.get(productId) || 0,
       delivered: delivered.get(productId) || 0,
     })).sort((a, b) => b.ordered - a.ordered);
     return {
       id: row.id,
-      name: row.full_name,
-      phone: row.phone,
-      source: row.address || '—',
-      status: row.status || 'active',
-      statusKey: row.status || 'active',
-      manager: '—',
-      value: number(row.balance),
-      lastContact: row.updated_at.slice(0, 10),
-      fabric: row.note || '—',
-      orderedQty: orderedItems.reduce((sum, item) => sum + item.ordered, 0),
-      deliveredQty: orderedItems.reduce((sum, item) => sum + item.delivered, 0),
-      orderedItems,
+      orderId: row.order_number,
+      client: clientNames.get(row.client) || '__deleted__',
+      orderDate: row.order_date,
+      dueDate: row.due_date || '—',
+      totalAmount: number(row.total_amount_uzs),
+      status: row.status,
+      statusKey: row.status,
+      notes: row.note,
+      clientId: row.client,
+      orderedQty: items.reduce((sum, item) => sum + item.ordered, 0),
+      deliveredQty: items.reduce((sum, item) => sum + item.delivered, 0),
+      items,
       api: row as unknown as Record<string, unknown>,
     };
   });
-
-  const orders: Order[] = data.clientOrders.map(row => ({
-    id: row.id,
-    orderId: row.order_number,
-    client: clientNames.get(row.client) || row.client,
-    orderDate: row.order_date,
-    dueDate: row.due_date || '—',
-    totalAmount: number(row.total_amount_uzs),
-    status: row.status,
-    statusKey: row.status,
-    notes: row.note,
-    clientId: row.client,
-    api: row as unknown as Record<string, unknown>,
-  }));
 
   const materials: Material[] = data.materials.map(row => {
     const stock = materialStock.get(row.id) || 0;

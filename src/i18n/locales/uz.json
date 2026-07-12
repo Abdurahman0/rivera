@@ -1845,7 +1845,8 @@
       "endDate": "Tugash sanasi",
       "cashAccount": "Kassa hisobi",
       "invoiceNumber": "Hisob-faktura raqami",
-      "balance": "Balans"
+      "balance": "Balans",
+      "order": "Buyurtma"
     },
     "resources": {
       "deliveries": {

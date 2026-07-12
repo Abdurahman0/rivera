@@ -1840,7 +1840,8 @@
       "endDate": "Дата окончания",
       "cashAccount": "Кассовый счёт",
       "invoiceNumber": "Номер счёта",
-      "balance": "Баланс"
+      "balance": "Баланс",
+      "order": "Заказ"
     },
     "resources": {
       "deliveries": {

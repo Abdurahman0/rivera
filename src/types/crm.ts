@@ -43,12 +43,6 @@ export interface Client {
   value: number;
   lastContact: string;
   fabric: string;
-  /** Total pieces the client ordered across all their orders. */
-  orderedQty: number;
-  /** Total pieces actually delivered (approved deliveries only). */
-  deliveredQty: number;
-  /** Per-product breakdown of ordered vs delivered pieces. */
-  orderedItems: Array<{ productName: string; ordered: number; delivered: number }>;
   api?: Record<string, unknown>;
 }
 
@@ -128,6 +122,12 @@ export interface Order {
   statusKey: string;
   notes: string;
   clientId?: string;
+  /** Total pieces across this order's items. */
+  orderedQty: number;
+  /** Pieces delivered against this order (approved deliveries linked to it). */
+  deliveredQty: number;
+  /** Per-product breakdown of ordered vs delivered pieces for this order. */
+  items: Array<{ productName: string; ordered: number; delivered: number }>;
   api?: Record<string, unknown>;
 }
 

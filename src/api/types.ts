@@ -67,6 +67,7 @@ export interface ApiClientOrderItem extends ApiBaseModel {
 
 export interface ApiClientDelivery extends ApiBaseModel {
   client: ApiId;
+  order: ApiId | null;
   product: ApiId;
   size: string;
   color: string;
