@@ -610,8 +610,6 @@
       "noNotes": "Izoh yo'q",
       "deliver": "Yetkazish",
       "detail": "Batafsil",
-      "notIssued": "Material sarflanmagan",
-      "issueRuns": "{{count}} marta sarflangan · {{transactions}} yozuv",
       "plannedMaterial": "Reja",
       "calculatedUsed": "Ishlab chiqarilgan bo'yicha",
       "issued": "Sarflangan"
@@ -2295,7 +2293,6 @@
   },
   "errors": {
     "insufficientMaterialStock": "Material zaxirasi yetarli emas",
-    "insufficientFinishedGoodsStock": "Tayyor mahsulot zaxirasi yetarli emas",
-    "quantityExceedsPlanned": "Miqdor mavjud rejalashtirilgan miqdordan oshib ketdi: {{amount}}"
+    "insufficientFinishedGoodsStock": "Tayyor mahsulot zaxirasi yetarli emas"
   }
 }

@@ -172,17 +172,12 @@ export interface ProductionBatch {
   shift: string;
   orderId: string | null;
   notes: string;
-  materialIssueRuns: number;
-  materialIssueCount: number;
+  /** Actual material consumed for this batch (approved out_production transactions), per material. */
   materialIssues: Array<{
     materialId: EntityId;
     materialName: string;
     unit: 'm' | 'kg' | 'pcs';
     quantity: number;
-    approvedQuantity: number;
-    pendingQuantity: number;
-    rejectedQuantity: number;
-    count: number;
   }>;
   api?: Record<string, unknown>;
 }

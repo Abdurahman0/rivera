@@ -79,21 +79,9 @@ const BACKEND_ERROR_TRANSLATIONS: Record<string, string> = {
   'insufficient finished goods stock': 'errors.insufficientFinishedGoodsStock',
 };
 
-// Some backend errors embed a dynamic value (e.g. "...: 100") — match by prefix and
-// interpolate the trailing value instead of requiring an exact string match.
-const BACKEND_ERROR_PREFIX_TRANSLATIONS: Array<{ prefix: string; key: string }> = [
-  { prefix: 'quantity exceeds available planned amount:', key: 'errors.quantityExceedsPlanned' },
-];
-
 export function translateBackendMessage(t: Translator, message: string) {
-  const normalized = message.trim().toLowerCase();
-  const exactKey = BACKEND_ERROR_TRANSLATIONS[normalized];
+  const exactKey = BACKEND_ERROR_TRANSLATIONS[message.trim().toLowerCase()];
   if (exactKey) return t(exactKey, { defaultValue: message });
-  const prefixMatch = BACKEND_ERROR_PREFIX_TRANSLATIONS.find(entry => normalized.startsWith(entry.prefix));
-  if (prefixMatch) {
-    const amount = message.slice(prefixMatch.prefix.length).trim();
-    return t(prefixMatch.key, { amount, defaultValue: message });
-  }
   return message;
 }
 

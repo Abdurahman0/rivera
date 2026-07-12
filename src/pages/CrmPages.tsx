@@ -2363,18 +2363,6 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
                       <FiChevronRight className={['h-4 w-4 transition-transform', materialsOpen ? 'rotate-90' : ''].join(' ')} />
                       {t('production.batch.materials')}
                     </span>
-                    <span className={[
-                      'rounded-lg px-2.5 py-1 text-[11px] font-extrabold ring-1',
-                      batch.materialIssueRuns > 1
-                        ? 'bg-warning-bg text-warning ring-warning/15'
-                        : batch.materialIssueRuns === 1
-                          ? 'bg-success-bg text-success ring-success/15'
-                          : 'bg-surface-subtle text-text-muted ring-border-soft/40',
-                    ].join(' ')}>
-                      {batch.materialIssueRuns > 0
-                        ? t('production.batch.issueRuns', { count: batch.materialIssueRuns, transactions: batch.materialIssueCount })
-                        : t('production.batch.notIssued')}
-                    </span>
                   </button>
                   {materialsOpen ? (
                     <div className="p-5">
@@ -2398,7 +2386,6 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
                                 </p>
                                 <p className={['mt-1 text-[11px] font-semibold', item.issued && item.issued.quantity > item.plannedUsed ? 'text-warning' : 'text-text-muted'].join(' ')}>
                                   {t('production.batch.issued')}: <span className="font-extrabold">{(item.issued?.quantity ?? 0).toLocaleString()} {unitLabel(item.unit, t)}</span>
-                                  {item.issued ? <span className="ml-1 opacity-70">({item.issued.count}x)</span> : null}
                                 </p>
                               </div>
                             </div>

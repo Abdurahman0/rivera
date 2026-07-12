@@ -610,8 +610,6 @@
       "noNotes": "Без примечаний",
       "deliver": "Доставить",
       "detail": "Подробнее",
-      "notIssued": "Материалы не списаны",
-      "issueRuns": "Списано {{count}} раз · {{transactions}} записей",
       "plannedMaterial": "План",
       "calculatedUsed": "По произведенному",
       "issued": "Списано"
@@ -2290,7 +2288,6 @@
   },
   "errors": {
     "insufficientMaterialStock": "Недостаточно материалов на складе",
-    "insufficientFinishedGoodsStock": "Недостаточно готовой продукции на складе",
-    "quantityExceedsPlanned": "Количество превышает доступный запланированный объём: {{amount}}"
+    "insufficientFinishedGoodsStock": "Недостаточно готовой продукции на складе"
   }
 }
