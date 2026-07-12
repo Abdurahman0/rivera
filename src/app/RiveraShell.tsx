@@ -512,6 +512,23 @@ function App() {
     if (target.kind === 'stockMovement' && !cleanPayload.related_production_batch) cleanPayload.related_production_batch = null;
     if (target.mode === 'edit' && target.item) {
       await api.update(entityResource[target.kind], target.item.id, cleanPayload);
+    } else if (target.kind === 'order') {
+      // The create form picks the first order line (product + qty) inline; the item is
+      // created right after the order so the backend computes the total from it.
+      const productId = String(cleanPayload.product ?? '');
+      const quantity = Number(cleanPayload.quantity ?? 0);
+      delete cleanPayload.product;
+      delete cleanPayload.quantity;
+      const createdOrder = await api.create<{ id: string }>(entityResource.order, cleanPayload);
+      if (productId && quantity > 0) {
+        const product = products.find(row => String(row.id) === productId);
+        await api.create(resources.clientOrderItems, {
+          order: createdOrder.id,
+          product: productId,
+          quantity,
+          unit_price: String(product?.price ?? 0),
+        });
+      }
     } else {
       await api.create(entityResource[target.kind], cleanPayload);
     }
@@ -1198,6 +1215,36 @@ function EntityModal({ modal, onClose, formatMoney, categories, clients, product
   );
 }
 
+/** First order line inside the order create form: pick product + qty, the total previews
+ *  live from the product's stored per-piece price. Isolated in its own component so typing
+ *  here doesn't re-render (and reset) the surrounding uncontrolled form fields. */
+function OrderFirstItemFields({ products, inputClass }: { products: Product[]; inputClass: string }) {
+  const { t } = useTranslation();
+  const [productId, setProductId] = useState('');
+  const [qty, setQty] = useState('');
+  const price = products.find(row => String(row.id) === productId)?.price ?? 0;
+  const total = price * (Number(qty) || 0);
+  return (
+    <>
+      <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+        {t('admin.fields.product')}
+        <Dropdown name="product" required value={productId} onChange={setProductId} options={products.map(row => ({ value: String(row.id), label: row.name }))} />
+      </label>
+      <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+        {t('admin.fields.quantity')}
+        <input className={inputClass} name="quantity" type="number" min="1" required value={qty} onChange={event => setQty(event.target.value)} />
+      </label>
+      {productId ? (
+        <div className="rounded-xl bg-primary/6 px-4 py-3 text-sm font-semibold text-text-secondary ring-1 ring-primary/15 sm:col-span-2">
+          {t('admin.fields.unitPrice')}: <span className="font-extrabold text-text-primary">{price.toLocaleString()} so'm</span>
+          <span className="mx-2 opacity-50">·</span>
+          {t('admin.fields.totalAmount')}: <span className="font-extrabold text-primary">{total.toLocaleString()} so'm</span>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 /** Color chooser matching the client-status modal: a live round swatch next to a dropdown of named palette colors. */
 function CategoryColorField({ name, label, defaultValue }: { name: string; label: string; defaultValue: string }) {
   const { t } = useTranslation();
@@ -1306,10 +1353,10 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
           {modal.kind === 'order' ? <>
             <SelectInput name="client" label={f('client')} required fallback={(modal.item as Order | undefined)?.clientId} options={clients.map(row => ({ value: String(row.id), label: row.name }))} />
             <FieldInput name="order_number" label={f('orderNumber')} required fallback={(modal.item as Order | undefined)?.orderId} />
+            {modal.mode === 'create' ? <OrderFirstItemFields products={products} inputClass={inputClass} /> : null}
             <FieldInput name="order_date" label={f('orderDate')} type="date" required fallback={today} />
             <FieldInput name="due_date" label={f('dueDate')} type="date" />
             <SelectInput name="status" label={f('status')} required fallback="draft" options={['draft', 'confirmed', 'completed', 'cancelled'].map(value => ({ value, label: optionLabel(t, 'orderStatus', value) }))} />
-            <FieldInput name="total_amount" label={f('totalAmount')} type="number" step="0.01" fallback="0" />
             <SelectInput name="currency" label={f('currency')} required fallback="UZS" selectedValue={orderCurrency} onChange={setOrderCurrency} options={[{ value: 'UZS', label: 'UZS' }, { value: 'USD', label: 'USD' }]} />
             {orderCurrency === 'USD' ? <FieldInput name="exchange_rate" label={f('exchangeRate')} type="number" step="0.0001" /> : null}
             <TextArea name="note" label={f('note')} />
