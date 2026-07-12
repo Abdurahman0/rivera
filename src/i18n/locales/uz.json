@@ -610,7 +610,8 @@
       "detail": "Batafsil",
       "plannedMaterial": "Reja",
       "calculatedUsed": "Ishlab chiqarilgan bo'yicha",
-      "issued": "Sarflangan"
+      "issued": "Sarflangan",
+      "consumedFor": "{{count}} dona uchun"
     },
     "stock": {
       "title": "Tayyor mahsulot zaxirasi",

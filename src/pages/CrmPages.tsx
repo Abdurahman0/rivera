@@ -1298,16 +1298,36 @@ function OrderDetailModal({ order, canManage, formatMoney, onOpenClient, onClose
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'items' | 'deliveries' | 'payments' | 'returns'>('items');
   const orderScope = useMemo(() => ({ order: String(order.id) }), [order.id]);
-  const fixedValues = useMemo(
-    () => (order.clientId ? { order: String(order.id), client: String(order.clientId) } : { order: String(order.id) }),
-    [order.id, order.clientId],
+
+  // Deliveries and returns can only concern the products this order actually contains — so
+  // the product field is constrained to the order's items: hidden and auto-filled when there
+  // is a single product, or a dropdown of just this order's products when there are several.
+  const orderProducts = useMemo(
+    () => order.items.filter(item => item.productId).map(item => ({ value: item.productId, label: item.productName })),
+    [order.items],
   );
+  const singleProductId = orderProducts.length === 1 ? orderProducts[0].value : null;
+  const scopeProduct = useCallback((config: ResourceConfig): ResourceConfig => {
+    if (orderProducts.length === 0) return config;
+    if (orderProducts.length === 1) return scopedFieldConfig(config, canManage, 'product');
+    return {
+      ...config,
+      fields: config.fields.map(field => (field.name === 'product' ? { name: 'product', label: field.label, type: 'select', required: true, table: true, options: orderProducts } : field)),
+    };
+  }, [orderProducts, canManage]);
+
   const configs = useMemo(() => ({
     items: { ...operationsConfigs.orderItems, readOnly: !canManage },
-    deliveries: scopedFieldConfig(scopedClientConfig(operationsConfigs.deliveries, canManage), canManage, 'order'),
+    deliveries: scopeProduct(scopedFieldConfig(scopedClientConfig(operationsConfigs.deliveries, canManage), canManage, 'order')),
     payments: scopedFieldConfig(scopedClientConfig(operationsConfigs.payments, canManage), canManage, 'order'),
-    returns: scopedFieldConfig(scopedClientConfig(operationsConfigs.returns, canManage), canManage, 'order'),
-  }), [canManage]);
+    returns: scopeProduct(scopedFieldConfig(scopedClientConfig(operationsConfigs.returns, canManage), canManage, 'order')),
+  }), [canManage, scopeProduct]);
+
+  const fixedByTab = useMemo(() => {
+    const base: Record<string, unknown> = order.clientId ? { order: String(order.id), client: String(order.clientId) } : { order: String(order.id) };
+    const withProduct = singleProductId ? { ...base, product: singleProductId } : base;
+    return { items: orderScope, deliveries: withProduct, payments: base, returns: withProduct } as Record<typeof activeTab, Record<string, unknown>>;
+  }, [order.id, order.clientId, singleProductId, orderScope]);
   const remaining = order.totalAmount - order.paidTotal;
 
   return (
@@ -1353,7 +1373,7 @@ function OrderDetailModal({ order, canManage, formatMoney, onOpenClient, onClose
             onChange={id => setActiveTab(id as typeof activeTab)}
           />
           <div className="mt-4">
-            <ApiResourceManager key={`${activeTab}-${order.id}`} config={configs[activeTab]} extraParams={orderScope} fixedValues={activeTab === 'items' ? orderScope : fixedValues} />
+            <ApiResourceManager key={`${activeTab}-${order.id}`} config={configs[activeTab]} extraParams={orderScope} fixedValues={fixedByTab[activeTab]} />
           </div>
         </div>
       </section>
@@ -1373,6 +1393,7 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
   const recipe = product.recipe ?? [];
   const totalQty = recipe.reduce((sum, r) => sum + r.qtyPerUnit * product.sold, 0);
   const availableMaterials = materials.filter(m => !recipe.some(r => r.materialId === String(m.id)));
+  const newMaterialUnit = newMaterial ? materials.find(m => String(m.id) === newMaterial)?.unit : undefined;
 
   async function addNorm() {
     if (!newMaterial || !newQty || Number(newQty) <= 0) {
@@ -1535,9 +1556,12 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
       ) : null}
       {canManage ? (
         adding ? (
-          <div className="grid gap-3 border-t border-border-soft/20 bg-surface-subtle/40 p-5 sm:grid-cols-[1fr_140px_auto_auto]">
-            <Dropdown value={newMaterial} onChange={setNewMaterial} options={availableMaterials.map(m => ({ value: String(m.id), label: m.name }))} placeholder={t('admin.ui.selectPlaceholder')} />
-            <input type="number" step="0.000001" min="0" value={newQty} onChange={event => setNewQty(event.target.value)} placeholder={t('admin.fields.normPerUnit')} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50" />
+          <div className="grid gap-3 border-t border-border-soft/20 bg-surface-subtle/40 p-5 sm:grid-cols-[1fr_160px_auto_auto]">
+            <Dropdown value={newMaterial} onChange={setNewMaterial} options={availableMaterials.map(m => ({ value: String(m.id), label: `${m.name} (${unitLabel(m.unit, t)})` }))} placeholder={t('admin.ui.selectPlaceholder')} />
+            <div className="relative">
+              <input type="number" step="0.000001" min="0" value={newQty} onChange={event => setNewQty(event.target.value)} placeholder={t('products.bom.perUnit')} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 pr-16 text-sm text-text-primary outline-none focus:border-primary/50" />
+              {newMaterialUnit ? <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-text-muted">{unitLabel(newMaterialUnit, t)}/{unitLabel(product.unit, t)}</span> : null}
+            </div>
             <button disabled={saving} className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50" onClick={() => void addNorm()}>
               {saving ? t('common.loading') : t('common.save')}
             </button>
@@ -2636,12 +2660,17 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
           {batches.map(batch => {
             const product = products.find(p => p.id === batch.productId);
             const recipe = product?.recipe ?? [];
-            const materialRows = recipe.map(item => ({
-              ...item,
-              totalUsed: item.qtyPerUnit * batch.producedQty,
-              plannedUsed: item.qtyPerUnit * batch.plannedQty,
-              issued: batch.materialIssues.find(issue => String(issue.materialId) === String(item.materialId)),
-            }));
+            const materialRows = recipe.map(item => {
+              // Actual consumption follows what was delivered, not the plan: the backend
+              // auto-issues norm×delivered on each approved delivery, so prefer the recorded
+              // out_production quantity and fall back to norm×delivered when none exists yet.
+              const issued = batch.materialIssues.find(issue => String(issue.materialId) === String(item.materialId));
+              return {
+                ...item,
+                consumed: issued ? issued.quantity : item.qtyPerUnit * batch.producedQty,
+                plannedUsed: item.qtyPerUnit * batch.plannedQty,
+              };
+            });
             const materialsOpen = Boolean(openBatchMaterials[String(batch.id)]);
 
             return (
@@ -2693,17 +2722,15 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
                               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-text-muted">
                                 <FiLayers className="h-3.5 w-3.5" />
                               </span>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <p className="truncate text-xs font-semibold text-text-primary">{item.materialName}</p>
-                                <p className="mt-0.5 text-[11px] text-text-muted">
-                                  {t('production.batch.plannedMaterial')}: <span className="font-bold text-text-primary">{item.plannedUsed.toLocaleString()} {unitLabel(item.unit, t)}</span>
+                                <p className="mt-1 text-[11px] text-text-muted">
+                                  {t('production.batch.issued')}: <span className="text-sm font-extrabold text-primary">{item.consumed.toLocaleString()} {unitLabel(item.unit, t)}</span>
+                                  <span className="ml-1 opacity-70">({t('production.batch.consumedFor', { count: batch.producedQty })})</span>
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-text-muted/80">
+                                  {t('production.batch.plannedMaterial')}: {item.plannedUsed.toLocaleString()} {unitLabel(item.unit, t)}
                                   <span className="ml-1 opacity-60">({item.qtyPerUnit} × {batch.plannedQty.toLocaleString()})</span>
-                                </p>
-                                <p className="mt-0.5 text-[11px] text-text-muted">
-                                  {t('production.batch.calculatedUsed')}: <span className="font-bold text-text-primary">{item.totalUsed.toLocaleString()} {unitLabel(item.unit, t)}</span>
-                                </p>
-                                <p className={['mt-1 text-[11px] font-semibold', item.issued && item.issued.quantity > item.plannedUsed ? 'text-warning' : 'text-text-muted'].join(' ')}>
-                                  {t('production.batch.issued')}: <span className="font-extrabold">{(item.issued?.quantity ?? 0).toLocaleString()} {unitLabel(item.unit, t)}</span>
                                 </p>
                               </div>
                             </div>

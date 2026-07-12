@@ -610,7 +610,8 @@
       "detail": "Подробнее",
       "plannedMaterial": "План",
       "calculatedUsed": "По произведенному",
-      "issued": "Списано"
+      "issued": "Списано",
+      "consumedFor": "на {{count}} шт"
     },
     "stock": {
       "title": "Запас готовой продукции",

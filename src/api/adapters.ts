@@ -193,6 +193,7 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     const ordered = orderedByOrder.get(String(row.id)) ?? new Map<string, number>();
     const delivered = deliveredByOrder.get(String(row.id)) ?? new Map<string, number>();
     const items = [...new Set([...ordered.keys(), ...delivered.keys()])].map(productId => ({
+      productId: String(productId),
       productName: productNames.get(productId) || '—',
       ordered: ordered.get(productId) || 0,
       delivered: delivered.get(productId) || 0,

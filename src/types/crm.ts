@@ -127,7 +127,7 @@ export interface Order {
   /** Pieces delivered against this order (approved deliveries linked to it). */
   deliveredQty: number;
   /** Per-product breakdown of ordered vs delivered pieces for this order. */
-  items: Array<{ productName: string; ordered: number; delivered: number }>;
+  items: Array<{ productId: string; productName: string; ordered: number; delivered: number }>;
   /** UZS the client has paid against this order (payments linked to it). */
   paidTotal: number;
   api?: Record<string, unknown>;
