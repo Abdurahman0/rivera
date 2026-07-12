@@ -43,6 +43,10 @@ export interface Client {
   value: number;
   lastContact: string;
   fabric: string;
+  /** Sum of the client's order totals (what they asked for), in UZS. */
+  orderedTotal: number;
+  /** Sum of approved delivery totals (what they actually received), in UZS. */
+  deliveredTotal: number;
   api?: Record<string, unknown>;
 }
 

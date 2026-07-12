@@ -252,7 +252,10 @@
       "manager": "Menejer",
       "value": "Qiymat",
       "lastContact": "Oxirgi aloqa",
-      "fabric": "Mato talabi"
+      "fabric": "Mato talabi",
+      "ordered": "Buyurtma",
+      "delivered": "Yetkazilgan",
+      "orderedDelivered": "Buyurtma / Yetkazilgan"
     },
     "filters": {
       "status": "Status",
@@ -1847,10 +1850,6 @@
         "title": "Mijoz qaytarishlari",
         "description": "Tayyor mahsulotni omborga qaytaruvchi tasdiqlash talab qiluvchi amallar."
       },
-      "debts": {
-        "title": "Qarz tuzatishlari",
-        "description": "Mijoz balansiga qo'lda kiritiladigan, tasdiqlash talab qiluvchi tuzatishlar."
-      },
       "productNorms": {
         "title": "Mahsulot material normalari",
         "description": "Har bir tayyor birlik uchun material sarfi."
@@ -2110,6 +2109,12 @@
         "material_transaction": "Material harakati",
         "defective_material_transaction": "Nikoh materiali",
         "finished_goods_transaction": "Tayyor mahsulot harakati"
+      },
+      "payrollStatus": {
+        "draft": "Qoralama",
+        "approved": "Tasdiqlangan",
+        "paid": "To'langan",
+        "unlocked": "Qulfdan ochilgan"
       }
     },
     "ui": {

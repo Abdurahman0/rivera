@@ -459,14 +459,13 @@ function scopedClientConfig(base: ResourceConfig, canManage: boolean): ResourceC
 
 function ClientDetailModal({ client, onClose, canManage }: { client: Client; onClose: () => void; canManage: boolean }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'deliveries' | 'payments' | 'returns' | 'debts'>('deliveries');
+  const [activeTab, setActiveTab] = useState<'deliveries' | 'payments' | 'returns'>('deliveries');
   const extraParams = useMemo(() => ({ client: String(client.id) }), [client.id]);
   const fixedValues = useMemo(() => ({ client: String(client.id) }), [client.id]);
   const configs = useMemo(() => ({
     deliveries: scopedClientConfig(operationsConfigs.deliveries, canManage),
     payments: scopedClientConfig(operationsConfigs.payments, canManage),
     returns: scopedClientConfig(operationsConfigs.returns, canManage),
-    debts: scopedClientConfig(operationsConfigs.debts, canManage),
   }), [canManage]);
 
   return (
@@ -478,6 +477,8 @@ function ClientDetailModal({ client, onClose, canManage }: { client: Client; onC
             <h3 className="mt-1 truncate font-display text-xl font-extrabold text-text-primary">{client.name}</h3>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>
+              <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{t('clients.columns.ordered')}: {client.orderedTotal.toLocaleString()}</span>
+              <span className="rounded-pill bg-success/10 px-2.5 py-0.5 text-[11px] font-bold text-success ring-1 ring-success/20">{t('clients.columns.delivered')}: {client.deliveredTotal.toLocaleString()}</span>
               <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{t('clients.columns.value')}: {client.value.toLocaleString()}</span>
             </div>
           </div>
@@ -491,7 +492,6 @@ function ClientDetailModal({ client, onClose, canManage }: { client: Client; onC
               { id: 'deliveries', label: t('admin.resources.deliveries.title'), icon: <FiPackage className="h-4 w-4" /> },
               { id: 'payments', label: t('admin.resources.payments.title'), icon: <FiDollarSign className="h-4 w-4" /> },
               { id: 'returns', label: t('admin.resources.returns.title'), icon: <FiArchive className="h-4 w-4" /> },
-              { id: 'debts', label: t('admin.resources.debts.title'), icon: <FiAlertTriangle className="h-4 w-4" /> },
             ]}
             activeTab={activeTab}
             onChange={id => setActiveTab(id as typeof activeTab)}
@@ -623,11 +623,14 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
             sourceOptions={sourceOptions}
           />
           <DataTable
-            columns={[t('clients.columns.client'), t('clients.columns.source'), t('clients.columns.status'), t('clients.columns.fabric'), t('clients.columns.value'), t('common.actions')]}
+            columns={[t('clients.columns.client'), t('clients.columns.status'), t('clients.columns.orderedDelivered'), t('clients.columns.fabric'), t('clients.columns.value'), t('common.actions')]}
             rows={filteredClients.map(client => [
               <PrimaryCell title={client.name} subtitle={client.phone} />,
-              client.source,
               <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>,
+              <span className="block min-w-[150px]">
+                <span className="block text-xs text-text-muted">{t('clients.columns.ordered')}: <span className="font-bold text-text-primary">{formatMoney(client.orderedTotal)}</span></span>
+                <span className="mt-0.5 block text-xs text-text-muted">{t('clients.columns.delivered')}: <span className={['font-bold', client.deliveredTotal >= client.orderedTotal ? 'text-success' : 'text-warning'].join(' ')}>{formatMoney(client.deliveredTotal)}</span></span>
+              </span>,
               client.fabric,
               formatMoney(client.value),
               <RowActions onView={() => setViewingClient(client)} onEdit={canManage ? () => openModal({ kind: 'client', mode: 'edit', item: client }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'client', mode: 'view', item: client }) : undefined} />,

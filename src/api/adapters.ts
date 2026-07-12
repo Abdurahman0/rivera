@@ -152,6 +152,15 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     };
   });
 
+  const orderedByClient = new Map<string, number>();
+  data.clientOrders.forEach(row => {
+    orderedByClient.set(row.client, (orderedByClient.get(row.client) || 0) + number(row.total_amount_uzs));
+  });
+  const deliveredByClient = new Map<string, number>();
+  data.deliveries.filter(row => row.status === 'approved').forEach(row => {
+    deliveredByClient.set(row.client, (deliveredByClient.get(row.client) || 0) + number(row.total_amount_uzs));
+  });
+
   const clients: Client[] = data.clients.map(row => ({
     id: row.id,
     name: row.full_name,
@@ -163,6 +172,8 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     value: number(row.balance),
     lastContact: row.updated_at.slice(0, 10),
     fabric: row.note || '—',
+    orderedTotal: orderedByClient.get(String(row.id)) || 0,
+    deliveredTotal: deliveredByClient.get(String(row.id)) || 0,
     api: row as unknown as Record<string, unknown>,
   }));
 

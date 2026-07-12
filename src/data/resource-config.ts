@@ -44,17 +44,8 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'product', label: f('product'), lookup: { resource: resources.products, label: 'name', secondary: 'code' }, required: true, table: true },
       { name: 'size', label: f('size') }, { name: 'color', label: f('color') }, { name: 'quantity', label: f('quantity'), type: 'number', required: true, table: true },
       { name: 'unit_price', label: f('unitPrice'), type: 'number', step: '0.01', required: true }, { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
-      { name: 'exchange_rate', label: f('exchangeRate'), type: 'number', step: '0.0001', nullable: true }, { name: 'return_date', label: f('returnDate'), type: 'date', required: true, table: true },
+      { name: 'return_date', label: f('returnDate'), type: 'date', required: true, table: true },
       { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
-    ],
-  },
-  debts: {
-    resource: resources.clientDebtAdjustments, title: title('debts'), description: description('debts'), allowEdit: false, allowArchive: false,
-    fields: [
-      { name: 'client', label: f('client'), lookup: { resource: resources.clients, label: 'full_name' }, required: true, table: true },
-      { name: 'amount', label: f('amount'), type: 'number', step: '0.01', required: true, table: true }, { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
-      { name: 'exchange_rate', label: f('exchangeRate'), type: 'number', step: '0.0001', nullable: true }, { name: 'reason', label: f('reason'), type: 'textarea', required: true, table: true },
-      { name: 'date', label: f('date'), type: 'date', required: true, table: true }, { ...statusField },
     ],
   },
   orderItems: {
@@ -134,7 +125,12 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
   },
   payrolls: {
     resource: resources.monthlyPayrolls, title: title('payrolls'), description: description('payrolls'), readOnly: true,
-    fields: [{ name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name' }, table: true }, { name: 'month', label: f('month'), table: true }, { name: 'salary_type', label: f('salaryType'), table: true }, { name: 'final_amount', label: f('finalAmount'), table: true }, { name: 'status', label: f('status'), table: true }],
+    fields: [
+      { name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name' }, table: true }, { name: 'month', label: f('month'), table: true },
+      { name: 'salary_type', label: f('salaryType'), table: true, options: options([['piece_rate', 'admin.options.salaryType.piece_rate'], ['fixed_daily', 'admin.options.salaryType.fixed_daily']]) },
+      { name: 'final_amount', label: f('finalAmount'), table: true },
+      { name: 'status', label: f('status'), table: true, options: options([['draft', 'admin.options.payrollStatus.draft'], ['approved', 'admin.options.payrollStatus.approved'], ['paid', 'admin.options.payrollStatus.paid'], ['unlocked', 'admin.options.payrollStatus.unlocked']]) },
+    ],
   },
   cashAccounts: {
     resource: resources.cashAccounts, title: title('cashAccounts'), description: description('cashAccounts'),

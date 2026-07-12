@@ -91,7 +91,7 @@ const PAGE_OPERATIONAL_KEYS: Record<PageId, OperationalKey[]> = {
   dashboard: [
     'clients', 'clientOrders', 'materials', 'suppliers', 'materialStocks', 'categories', 'products', 'deliveries', 'finishedStocks', 'employees', 'attendance',
   ],
-  clients: ['clients'],
+  clients: ['clients', 'clientOrders', 'deliveries'],
   orders: ['clients', 'clientOrders', 'batches', 'employees', 'operationTypes', 'workEntries'],
   production: [
     'products', 'categories', 'norms', 'materials', 'suppliers', 'materialStocks', 'materialTransactions', 'deliveries', 'finishedStocks', 'batches', 'employees', 'operationTypes', 'workEntries',
