@@ -162,17 +162,33 @@ function matchingDashboardPreset(value: DashboardDateRange | null): DashboardRan
  *  calendar range picker below; picking here doesn't open or affect that one. */
 function DashboardPresetDropdown({ value, onChange }: { value: DashboardDateRange | null; onChange: (range: DashboardDateRange | null) => void }) {
   const { t } = useTranslation();
-  const activePreset = matchingDashboardPreset(value);
+  // Remember the explicitly picked preset rather than re-deriving it from the range every
+  // render: some presets yield identical ranges on some days (e.g. "this week" == "today"
+  // on a Monday), and matchingDashboardPreset would otherwise snap the label to the first
+  // colliding preset. We only re-derive when the range changes to one the remembered preset
+  // no longer produces (e.g. a custom range picked from the calendar alongside this control).
+  const [preset, setPreset] = useState<DashboardRangePreset | 'allTime' | null>(() => (value ? matchingDashboardPreset(value) : 'allTime'));
+
+  useEffect(() => {
+    setPreset(prev => {
+      if (prev && prev !== 'allTime' && value && sameDashboardRange(dashboardRangePreset(prev), value)) return prev;
+      return value ? matchingDashboardPreset(value) : 'allTime';
+    });
+  }, [value]);
+
   const options = [
     { value: 'allTime', label: t('dashboard.filters.allTime') },
-    ...DASHBOARD_RANGE_PRESETS.map(preset => ({ value: preset, label: t(`dashboard.filters.${preset}`) })),
+    ...DASHBOARD_RANGE_PRESETS.map(item => ({ value: item, label: t(`dashboard.filters.${item}`) })),
   ];
 
   return (
     <div className="w-[168px]">
       <Dropdown
-        value={activePreset ?? 'allTime'}
-        onChange={selected => onChange(selected === 'allTime' ? null : dashboardRangePreset(selected as DashboardRangePreset))}
+        value={preset ?? 'allTime'}
+        onChange={selected => {
+          setPreset(selected as DashboardRangePreset | 'allTime');
+          onChange(selected === 'allTime' ? null : dashboardRangePreset(selected as DashboardRangePreset));
+        }}
         options={options}
       />
     </div>
