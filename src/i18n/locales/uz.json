@@ -503,11 +503,8 @@
       "product": "Mahsulot",
       "type": "Turi",
       "quantity": "Qoldiq",
-      "value": "Qiymat",
-      "lowStock": "Kam zaxira"
+      "value": "Qiymat"
     },
-    "lowStockYes": "Ogohlantirish",
-    "lowStockNo": "Yetarli",
     "searchPlaceholder": "Mahsulot, xodim, mijoz yoki manba bo'yicha qidirish...",
     "movementIn": "+ Kirim",
     "movementOut": "− Chiqim"
@@ -2011,10 +2008,6 @@
       "materialPurchases": {
         "title": "Material xaridlari",
         "description": "Yetkazib beruvchilardan xarid qilingan materiallar."
-      },
-      "warehouseLocations": {
-        "title": "Ombor joylari",
-        "description": "Ombordagi joy/stellaj belgilari."
       },
       "departments": {
         "title": "Bo'limlar",

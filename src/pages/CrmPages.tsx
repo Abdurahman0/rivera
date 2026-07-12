@@ -2057,11 +2057,11 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('inventory', 'manage');
-  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'locations' | 'defective' | 'defectiveStock' | 'finishedStock' | 'finishedTransactions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'defective' | 'defectiveStock' | 'finishedStock' | 'finishedTransactions'>('overview');
   const inventoryValue = products.reduce((sum, p) => sum + p.stock * p.price, 0);
   const allMovements = [...stockIn, ...stockOut].sort((a, b) => b.id - a.id);
   const exportResourceMap = {
-    overview: resources.finishedGoodsStocks, history: resources.finishedGoodsTransactions, locations: resources.warehouseLocations, defective: resources.defectiveMaterialTransactions,
+    overview: resources.finishedGoodsStocks, history: resources.finishedGoodsTransactions, defective: resources.defectiveMaterialTransactions,
     defectiveStock: resources.defectiveMaterialStocks, finishedStock: resources.finishedGoodsStocks, finishedTransactions: resources.finishedGoodsTransactions,
   } as const;
 
@@ -2090,7 +2090,6 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
         tabs={[
           { id: 'overview', label: t('warehouse.tabs.overview'), icon: <FiArchive className="h-4 w-4" /> },
           { id: 'history', label: t('warehouse.tabs.history'), icon: <FiClock className="h-4 w-4" /> },
-          { id: 'locations', label: t('admin.resources.warehouseLocations.title'), icon: <FiBriefcase className="h-4 w-4" /> },
           { id: 'defective', label: t('admin.resources.defectiveTransactions.title'), icon: <FiAlertTriangle className="h-4 w-4" /> },
           { id: 'defectiveStock', label: t('admin.resources.defectiveStocks.title'), icon: <FiAlertTriangle className="h-4 w-4" /> },
           { id: 'finishedStock', label: t('admin.resources.finishedStocks.title'), icon: <FiPackage className="h-4 w-4" /> },
@@ -2099,9 +2098,7 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
         activeTab={activeTab}
         onChange={id => setActiveTab(id as typeof activeTab)}
       />
-      {activeTab === 'locations' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.warehouseLocations, readOnly: !canManage }} />
-      ) : activeTab === 'defective' ? (
+      {activeTab === 'defective' ? (
         <ApiResourceManager config={{ ...operationsConfigs.defectiveTransactions, readOnly: !canManage }} />
       ) : activeTab === 'defectiveStock' ? (
         <ApiResourceManager config={operationsConfigs.defectiveStocks} />
@@ -2111,7 +2108,7 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
         <ApiResourceManager config={{ ...operationsConfigs.finishedTransactions, readOnly: !canManage }} />
       ) : activeTab === 'overview' ? (
         <DataTable
-          columns={[t('warehouse.columns.product'), t('warehouse.columns.quantity'), t('warehouse.columns.value'), t('warehouse.columns.lowStock')]}
+          columns={[t('warehouse.columns.product'), t('warehouse.columns.quantity'), t('warehouse.columns.value')]}
           rows={products.map(product => [
             <span className="block min-w-0">
               <span className="block max-w-[220px] truncate text-sm font-bold text-text-primary">{product.name}</span>
@@ -2124,9 +2121,6 @@ export function WarehousePage({ products, stockIn, stockOut, movementHistory, to
               </div>
             </span>,
             formatMoney(product.stock * product.price),
-            product.stock <= product.minStock
-              ? <StatusBadge tone="warning">{t('warehouse.lowStockYes')}</StatusBadge>
-              : <StatusBadge tone="success">{t('warehouse.lowStockNo')}</StatusBadge>,
           ])}
         />
       ) : (

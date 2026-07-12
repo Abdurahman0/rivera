@@ -503,11 +503,8 @@
       "product": "Продукт",
       "type": "Тип",
       "quantity": "Остаток",
-      "value": "Стоимость",
-      "lowStock": "Низкий запас"
+      "value": "Стоимость"
     },
-    "lowStockYes": "Предупреждение",
-    "lowStockNo": "Достаточно",
     "searchPlaceholder": "Поиск по продукту, сотруднику, клиенту или источнику...",
     "movementIn": "+ Приход",
     "movementOut": "− Расход"
@@ -2006,10 +2003,6 @@
       "materialPurchases": {
         "title": "Закупки материалов",
         "description": "Материалы, закупленные у поставщиков."
-      },
-      "warehouseLocations": {
-        "title": "Места склада",
-        "description": "Обозначения мест/стеллажей на складе."
       },
       "departments": {
         "title": "Отделы",

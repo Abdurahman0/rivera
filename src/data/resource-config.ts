@@ -82,10 +82,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'purchase_date', label: f('purchaseDate'), type: 'date', required: true, table: true }, { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
-  warehouseLocations: {
-    resource: resources.warehouseLocations, title: title('warehouseLocations'), description: description('warehouseLocations'),
-    fields: [{ name: 'name', label: f('name'), required: true, table: true }, { name: 'code', label: f('code'), table: true }, { name: 'note', label: f('note'), type: 'textarea' }],
-  },
   materialStocks: {
     resource: resources.materialStocks, title: title('materialStocks'), description: description('materialStocks'), readOnly: true,
     fields: [{ name: 'material', label: f('material'), lookup: { resource: resources.materials, label: 'name', secondary: 'code' }, table: true }, { name: 'quantity', label: f('quantity'), table: true }, { name: 'total_value', label: f('totalValue'), table: true }],
