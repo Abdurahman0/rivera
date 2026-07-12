@@ -4,6 +4,12 @@
  *  server-side. Categories with no color at all fall back to a palette color by position. */
 export const CATEGORY_COLOR_PALETTE = ['#6366f1', '#14b8a6', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6', '#ef4444', '#22c55e'] as const;
 
+/** Palette entries paired with a locale key under `products.categoryColors.*` for the picker dropdown. */
+export const CATEGORY_COLOR_OPTIONS: Array<{ value: string; nameKey: string }> = [
+  { value: '#6366f1', nameKey: 'indigo' }, { value: '#14b8a6', nameKey: 'teal' }, { value: '#f59e0b', nameKey: 'amber' }, { value: '#ec4899', nameKey: 'pink' },
+  { value: '#0ea5e9', nameKey: 'sky' }, { value: '#8b5cf6', nameKey: 'violet' }, { value: '#ef4444', nameKey: 'red' }, { value: '#22c55e', nameKey: 'green' },
+];
+
 const STORAGE_KEY = 'rivera-category-colors';
 
 export function loadCategoryColors(): Record<string, string> {

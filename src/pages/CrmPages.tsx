@@ -7,7 +7,6 @@ import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, Ent
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
 import { BUILT_IN_CLIENT_STATUSES, hasStoredCustomClientStatuses, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
-import { CATEGORY_COLOR_PALETTE } from '../utils/categoryColors';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
 import { useDialog } from '../components/DialogProvider';
 import { useToast } from '../components/ToastProvider';
@@ -1477,20 +1476,6 @@ export function SkuCell({ sku }: { sku: string }) {
 
 export function CategoriesTable({ categories, products, openModal, openDelete }: { categories: ProductCategory[]; products: Product[]; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
-  const { toast } = useToast();
-  const [colorOverrides, setColorOverrides] = useState<Record<string, string>>({});
-
-  function setColor(categoryId: string, color: string) {
-    setColorOverrides(current => ({ ...current, [categoryId]: color }));
-    void api.update(resources.productCategories, categoryId, { color }).catch((error: unknown) => {
-      setColorOverrides(current => {
-        const next = { ...current };
-        delete next[categoryId];
-        return next;
-      });
-      toast(apiErrorMessage(error, t), 'danger');
-    });
-  }
 
   return (
     <DataTable
@@ -1498,7 +1483,7 @@ export function CategoriesTable({ categories, products, openModal, openDelete }:
         const count = products.filter(product => product.categoryId === category.id).length;
         return [
           <span className="flex items-center gap-2.5">
-            <CategoryColorPicker categoryId={String(category.id)} color={colorOverrides[String(category.id)] ?? category.color} onPick={setColor} />
+            <span className="h-4 w-4 shrink-0 rounded-full ring-2 ring-border-soft/40" style={{ backgroundColor: category.color }} aria-hidden="true" />
             <span className="font-semibold text-text-primary">{category.name}</span>
           </span>,
           <span className="font-bold text-text-primary">{count}</span>,
@@ -1512,48 +1497,6 @@ export function CategoriesTable({ categories, products, openModal, openDelete }:
       ]}
       onRowClick={(rowIndex) => openModal({ kind: 'category', mode: 'view', item: categories[rowIndex] })}
     />
-  );
-}
-
-function CategoryColorPicker({ categoryId, color, onPick }: { categoryId: string; color: string; onPick: (categoryId: string, color: string) => void }) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handlePointerDown(event: MouseEvent) {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handlePointerDown);
-    return () => document.removeEventListener('mousedown', handlePointerDown);
-  }, [open]);
-
-  return (
-    <span ref={ref} className="relative inline-flex" onClick={event => event.stopPropagation()}>
-      <button
-        type="button"
-        className="h-4 w-4 shrink-0 rounded-full ring-2 ring-border-soft/40 transition hover:scale-110"
-        style={{ backgroundColor: color }}
-        onClick={() => setOpen(current => !current)}
-        aria-label={t('products.categoryColumns.color')}
-        title={t('products.categoryColumns.color')}
-      />
-      {open ? (
-        <span className="absolute left-0 top-6 z-30 flex w-[132px] flex-wrap gap-1.5 rounded-xl bg-surface-card p-2.5 shadow-[0_18px_40px_-20px_rgba(15,23,42,0.5)] ring-1 ring-border-soft/50">
-          {CATEGORY_COLOR_PALETTE.map(swatch => (
-            <button
-              key={swatch}
-              type="button"
-              className={['h-6 w-6 rounded-full ring-2 transition hover:scale-110', swatch === color ? 'ring-text-primary' : 'ring-transparent hover:ring-border-soft/60'].join(' ')}
-              style={{ backgroundColor: swatch }}
-              onClick={() => { onPick(categoryId, swatch); setOpen(false); }}
-              aria-label={swatch}
-            />
-          ))}
-        </span>
-      ) : null}
-    </span>
   );
 }
 

@@ -116,6 +116,7 @@ import type { ApiCurrentUser } from '../api/types';
 import { PermissionsProvider } from '../components/PermissionsProvider';
 import { canViewNavPage } from '../lib/permissions';
 import { BUILT_IN_CLIENT_STATUSES, loadCustomClientStatuses } from '../utils/clientStatuses';
+import { CATEGORY_COLOR_OPTIONS, CATEGORY_COLOR_PALETTE } from '../utils/categoryColors';
 
 const DashboardPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.DashboardPage })));
 const ClientsPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.ClientsPage })));
@@ -1195,6 +1196,28 @@ function EntityModal({ modal, onClose, formatMoney, categories, clients, product
   );
 }
 
+/** Color chooser matching the client-status modal: a live round swatch next to a dropdown of named palette colors. */
+function CategoryColorField({ name, label, defaultValue }: { name: string; label: string; defaultValue: string }) {
+  const { t } = useTranslation();
+  const [color, setColor] = useState(defaultValue);
+  return (
+    <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+      {label}
+      <div className="flex items-center gap-3">
+        <span className="h-9 w-9 shrink-0 rounded-full ring-2 ring-border-soft/50" style={{ backgroundColor: color }} aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <Dropdown
+            name={name}
+            value={color}
+            onChange={setColor}
+            options={CATEGORY_COLOR_OPTIONS.map(option => ({ value: option.value, label: t(`products.categoryColors.${option.nameKey}`) }))}
+          />
+        </div>
+      </div>
+    </label>
+  );
+}
+
 const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categories: ProductCategory[]; clients: Client[]; products: Product[]; materials: Material[]; batches: ProductionBatch[] }>(
   function ApiEntityForm({ modal, categories, clients, products, materials, batches }, ref) {
     const { t } = useTranslation();
@@ -1251,6 +1274,7 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
           </> : null}
           {modal.kind === 'category' ? <>
             <FieldInput name="name" label={f('category')} fallback={(modal.item as ProductCategory | undefined)?.name} required />
+            <CategoryColorField name="color" label={t('products.categoryColumns.color')} defaultValue={(modal.item as ProductCategory | undefined)?.color || CATEGORY_COLOR_PALETTE[0]} />
           </> : null}
           {modal.kind === 'product' ? <>
             <FieldInput name="name" label={f('name')} fallback={(modal.item as Product | undefined)?.name} required />
@@ -1476,8 +1500,10 @@ function detailRows(modal: ModalState, formatMoney: (value: number) => string, t
 
   if (modal.kind === 'category') {
     const item = modal.item as ProductCategory;
+    const colorOption = CATEGORY_COLOR_OPTIONS.find(option => option.value === item.color);
     return [
       { label: t('products.categoryColumns.category'), value: item.name },
+      { label: t('products.categoryColumns.color'), value: colorOption ? t(`products.categoryColors.${colorOption.nameKey}`) : item.color },
     ];
   }
 

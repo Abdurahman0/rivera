@@ -475,6 +475,16 @@
       "galleryAction": "Demo rejimda galereya yuklash backendga ulanmagan.",
       "removeImageAction": "Demo rejimda rasmni o'chirish saqlanmaydi.",
       "imageHint": "Asosiy rasm va galereya Solar mahsulot tahrirlash oqimiga mos."
+    },
+    "categoryColors": {
+      "indigo": "Binafsha",
+      "teal": "Feruza",
+      "amber": "Sariq",
+      "pink": "Pushti",
+      "sky": "Moviy",
+      "violet": "Siyohrang",
+      "red": "Qizil",
+      "green": "Yashil"
     }
   },
   "warehouse": {
