@@ -7,6 +7,7 @@ import type {
   ApiClient,
   ApiClientDelivery,
   ApiClientOrder,
+  ApiClientOrderItem,
   ApiClientPayment,
   ApiDailyWorkEntry,
   ApiDashboardSummary,
@@ -44,6 +45,7 @@ export const EMPTY_DATA: AppData = {
 const EMPTY_OPERATIONAL_DATA: OperationalApiData = {
   clients: [],
   clientOrders: [],
+  orderItems: [],
   deliveries: [],
   payments: [],
   materials: [],
@@ -68,6 +70,7 @@ type OperationalKey = keyof OperationalApiData;
 const operationalLoaders = {
   clients: () => allowedList<ApiClient>(resources.clients),
   clientOrders: () => allowedList<ApiClientOrder>(resources.clientOrders),
+  orderItems: () => allowedList<ApiClientOrderItem>(resources.clientOrderItems),
   deliveries: () => allowedList<ApiClientDelivery>(resources.clientDeliveries),
   payments: () => allowedList<ApiClientPayment>(resources.clientPayments),
   materials: () => allowedList<ApiMaterial>(resources.materials),
@@ -91,7 +94,7 @@ const PAGE_OPERATIONAL_KEYS: Record<PageId, OperationalKey[]> = {
   dashboard: [
     'clients', 'clientOrders', 'materials', 'suppliers', 'materialStocks', 'categories', 'products', 'deliveries', 'finishedStocks', 'employees', 'attendance',
   ],
-  clients: ['clients', 'clientOrders', 'deliveries'],
+  clients: ['clients', 'clientOrders', 'orderItems', 'deliveries', 'products'],
   orders: ['clients', 'clientOrders', 'batches', 'employees', 'operationTypes', 'workEntries'],
   production: [
     'products', 'categories', 'norms', 'materials', 'suppliers', 'materialStocks', 'materialTransactions', 'deliveries', 'finishedStocks', 'batches', 'employees', 'operationTypes', 'workEntries',

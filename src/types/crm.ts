@@ -43,10 +43,12 @@ export interface Client {
   value: number;
   lastContact: string;
   fabric: string;
-  /** Sum of the client's order totals (what they asked for), in UZS. */
-  orderedTotal: number;
-  /** Sum of approved delivery totals (what they actually received), in UZS. */
-  deliveredTotal: number;
+  /** Total pieces the client ordered across all their orders. */
+  orderedQty: number;
+  /** Total pieces actually delivered (approved deliveries only). */
+  deliveredQty: number;
+  /** Per-product breakdown of ordered vs delivered pieces. */
+  orderedItems: Array<{ productName: string; ordered: number; delivered: number }>;
   api?: Record<string, unknown>;
 }
 

@@ -476,10 +476,19 @@ function ClientDetailModal({ client, onClose, canManage }: { client: Client; onC
             <h3 className="mt-1 truncate font-display text-xl font-extrabold text-text-primary">{client.name}</h3>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>
-              <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{t('clients.columns.ordered')}: {client.orderedTotal.toLocaleString()}</span>
-              <span className="rounded-pill bg-success/10 px-2.5 py-0.5 text-[11px] font-bold text-success ring-1 ring-success/20">{t('clients.columns.delivered')}: {client.deliveredTotal.toLocaleString()}</span>
+              <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{t('clients.columns.ordered')}: {client.orderedQty.toLocaleString()} {t('common.pcs')}</span>
+              <span className="rounded-pill bg-success/10 px-2.5 py-0.5 text-[11px] font-bold text-success ring-1 ring-success/20">{t('clients.columns.delivered')}: {client.deliveredQty.toLocaleString()} {t('common.pcs')}</span>
               <span className="rounded-pill bg-surface-subtle px-2.5 py-0.5 text-[11px] font-bold text-text-secondary ring-1 ring-border-soft/40">{t('clients.columns.value')}: {client.value.toLocaleString()}</span>
             </div>
+            {client.orderedItems.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {client.orderedItems.map(item => (
+                  <span key={item.productName} className={['rounded-md px-2 py-0.5 text-[11px] font-bold ring-1', item.delivered >= item.ordered ? 'bg-success/8 text-success ring-success/20' : 'bg-surface-subtle text-text-secondary ring-border-soft/40'].join(' ')}>
+                    {item.productName}: {item.delivered}/{item.ordered} {t('common.pcs')}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
           <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
             <FiX className="h-4 w-4" />
@@ -629,9 +638,12 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete }: { c
             rows={filteredClients.map(client => [
               <PrimaryCell title={client.name} subtitle={client.phone} />,
               <StatusBadge tone={statusTone(client.statusKey)}>{statusLabel(t, client.statusKey)}</StatusBadge>,
-              <span className="block min-w-[150px]">
-                <span className="block text-xs text-text-muted">{t('clients.columns.ordered')}: <span className="font-bold text-text-primary">{formatMoney(client.orderedTotal)}</span></span>
-                <span className="mt-0.5 block text-xs text-text-muted">{t('clients.columns.delivered')}: <span className={['font-bold', client.deliveredTotal >= client.orderedTotal ? 'text-success' : 'text-warning'].join(' ')}>{formatMoney(client.deliveredTotal)}</span></span>
+              <span className="block min-w-[150px]" title={client.orderedItems.map(item => `${item.productName}: ${item.delivered}/${item.ordered}`).join(' · ')}>
+                <span className="block text-xs text-text-muted">{t('clients.columns.ordered')}: <span className="font-bold text-text-primary">{client.orderedQty.toLocaleString()} {t('common.pcs')}</span></span>
+                <span className="mt-0.5 block text-xs text-text-muted">{t('clients.columns.delivered')}: <span className={['font-bold', client.deliveredQty >= client.orderedQty ? 'text-success' : 'text-warning'].join(' ')}>{client.deliveredQty.toLocaleString()} {t('common.pcs')}</span></span>
+                {client.orderedItems.length > 0 ? (
+                  <span className="mt-0.5 block max-w-[220px] truncate text-[11px] text-text-muted">{client.orderedItems.map(item => item.productName).join(', ')}</span>
+                ) : null}
               </span>,
               client.fabric,
               formatMoney(client.value),

@@ -3,6 +3,7 @@ import type {
   ApiClient,
   ApiClientDelivery,
   ApiClientOrder,
+  ApiClientOrderItem,
   ApiClientPayment,
   ApiDailyWorkEntry,
   ApiEmployee,
@@ -47,6 +48,7 @@ const productPlaceholder = (name: string) => {
 export interface OperationalApiData {
   clients: ApiClient[];
   clientOrders: ApiClientOrder[];
+  orderItems: ApiClientOrderItem[];
   deliveries: ApiClientDelivery[];
   payments: ApiClientPayment[];
   materials: ApiMaterial[];
@@ -154,30 +156,49 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     };
   });
 
-  const orderedByClient = new Map<string, number>();
-  data.clientOrders.forEach(row => {
-    orderedByClient.set(row.client, (orderedByClient.get(row.client) || 0) + number(row.total_amount_uzs));
+  // Per-client, per-product piece counts: what was ordered (order items) vs what
+  // actually went out (approved deliveries).
+  const orderClient = new Map(data.clientOrders.map(row => [row.id, row.client]));
+  const orderedByClient = new Map<string, Map<string, number>>();
+  data.orderItems.forEach(item => {
+    const clientId = orderClient.get(item.order);
+    if (!clientId) return;
+    const perProduct = orderedByClient.get(clientId) ?? new Map<string, number>();
+    perProduct.set(item.product, (perProduct.get(item.product) || 0) + number(item.quantity));
+    orderedByClient.set(clientId, perProduct);
   });
-  const deliveredByClient = new Map<string, number>();
+  const deliveredByClient = new Map<string, Map<string, number>>();
   data.deliveries.filter(row => row.status === 'approved').forEach(row => {
-    deliveredByClient.set(row.client, (deliveredByClient.get(row.client) || 0) + number(row.total_amount_uzs));
+    const perProduct = deliveredByClient.get(row.client) ?? new Map<string, number>();
+    perProduct.set(row.product, (perProduct.get(row.product) || 0) + number(row.quantity));
+    deliveredByClient.set(row.client, perProduct);
   });
 
-  const clients: Client[] = data.clients.map(row => ({
-    id: row.id,
-    name: row.full_name,
-    phone: row.phone,
-    source: row.address || '—',
-    status: row.status || 'active',
-    statusKey: row.status || 'active',
-    manager: '—',
-    value: number(row.balance),
-    lastContact: row.updated_at.slice(0, 10),
-    fabric: row.note || '—',
-    orderedTotal: orderedByClient.get(String(row.id)) || 0,
-    deliveredTotal: deliveredByClient.get(String(row.id)) || 0,
-    api: row as unknown as Record<string, unknown>,
-  }));
+  const clients: Client[] = data.clients.map(row => {
+    const ordered = orderedByClient.get(String(row.id)) ?? new Map<string, number>();
+    const delivered = deliveredByClient.get(String(row.id)) ?? new Map<string, number>();
+    const orderedItems = [...new Set([...ordered.keys(), ...delivered.keys()])].map(productId => ({
+      productName: productNames.get(productId) || '—',
+      ordered: ordered.get(productId) || 0,
+      delivered: delivered.get(productId) || 0,
+    })).sort((a, b) => b.ordered - a.ordered);
+    return {
+      id: row.id,
+      name: row.full_name,
+      phone: row.phone,
+      source: row.address || '—',
+      status: row.status || 'active',
+      statusKey: row.status || 'active',
+      manager: '—',
+      value: number(row.balance),
+      lastContact: row.updated_at.slice(0, 10),
+      fabric: row.note || '—',
+      orderedQty: orderedItems.reduce((sum, item) => sum + item.ordered, 0),
+      deliveredQty: orderedItems.reduce((sum, item) => sum + item.delivered, 0),
+      orderedItems,
+      api: row as unknown as Record<string, unknown>,
+    };
+  });
 
   const orders: Order[] = data.clientOrders.map(row => ({
     id: row.id,
