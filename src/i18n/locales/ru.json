@@ -406,16 +406,6 @@
       "addMaterial": "Добавить материал",
       "deleteConfirm": "Удалить материал {{material}} из рецептуры {{product}}?"
     },
-    "movementTitle": "История движений",
-    "stockColumns": {
-      "date": "Дата",
-      "product": "Продукт",
-      "quantity": "Количество",
-      "supplier": "Поставщик",
-      "source": "Источник",
-      "client": "Клиент",
-      "employee": "Сотрудник склада"
-    },
     "columns": {
       "product": "Продукт",
       "sku": "SKU",
@@ -514,37 +504,6 @@
     "title": "Управление заказами",
     "description": "Клиентские заказы, состояние производства, менеджер и сроки доставки.",
     "create": "Создать заказ",
-    "tabs": {
-      "orders": "Заказы",
-      "production": "Производство"
-    },
-    "production": {
-      "title": "Отслеживание производства",
-      "description": "Объём производства сотрудников и выпуск продукции по заказам.",
-      "metrics": {
-        "total": "Всего произведено",
-        "totalCaption": "Текущий период",
-        "workers": "Активные рабочие",
-        "workersCaption": "В производстве",
-        "inProduction": "Заказов в производстве",
-        "inProductionCaption": "В процессе"
-      },
-      "columns": {
-        "date": "Дата",
-        "employee": "Сотрудник",
-        "product": "Продукт",
-        "quantity": "Количество",
-        "orderId": "Заказ",
-        "shift": "Смена",
-        "notes": "Примечание"
-      },
-      "details": {
-        "operation": "Операция",
-        "amount": "Расчетная сумма",
-        "created": "Создано",
-        "updated": "Обновлено"
-      }
-    },
     "metrics": {
       "total": "Всего заказов",
       "totalCaption": "Активный pipeline",

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSearch, FiSettings, FiShoppingBag, FiTag, FiTool, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StatusTone, StockMovement } from '../types/crm';
+import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, StaffMember, StatusTone, StockMovement } from '../types/crm';
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
 import { BUILT_IN_CLIENT_STATUSES, hasStoredCustomClientStatuses, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
@@ -1060,11 +1060,10 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
   );
 }
 
-export function OrdersPage({ orders, productionRecords, formatMoney, openModal, openDelete }: { orders: Order[]; productionRecords: ProductionRecord[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
+export function OrdersPage({ orders, formatMoney, openModal, openDelete }: { orders: Order[]; formatMoney: (value: number) => string; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('clients', 'manage');
-  const [activeTab, setActiveTab] = useState<'orders' | 'production'>('orders');
   const [viewingItemsFor, setViewingItemsFor] = useState<Order | null>(null);
   const pending = orders.filter(o => o.statusKey === 'draft').length;
   const inProd = orders.filter(o => o.statusKey === 'confirmed').length;
@@ -1072,7 +1071,7 @@ export function OrdersPage({ orders, productionRecords, formatMoney, openModal, 
 
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('orders.eyebrow')} title={t('orders.title')} description={t('orders.description')} createLabel={activeTab === 'orders' && canManage ? t('orders.create') : undefined} onCreate={activeTab === 'orders' && canManage ? () => openModal({ kind: 'order', mode: 'create' }) : undefined} onExport={() => exportResource(activeTab === 'orders' ? resources.clientOrders : resources.dailyWorkEntries)} />
+      <PageHeader eyebrow={t('orders.eyebrow')} title={t('orders.title')} description={t('orders.description')} createLabel={canManage ? t('orders.create') : undefined} onCreate={canManage ? () => openModal({ kind: 'order', mode: 'create' }) : undefined} onExport={() => exportResource(resources.clientOrders)} />
       <div className="flex flex-wrap gap-3">
         {([
           { label: t('orders.metrics.total'), value: orders.length, tone: 'text-text-primary bg-surface-subtle' },
@@ -1086,33 +1085,21 @@ export function OrdersPage({ orders, productionRecords, formatMoney, openModal, 
           </div>
         ))}
       </div>
-      <SegmentTabs
-        tabs={[
-          { id: 'orders', label: t('orders.tabs.orders'), icon: <FiShoppingBag className="h-4 w-4" /> },
-          { id: 'production', label: t('orders.tabs.production'), icon: <FiTool className="h-4 w-4" /> },
-        ]}
-        activeTab={activeTab}
-        onChange={setActiveTab}
+      <DataTable
+        columns={[t('orders.columns.orderId'), t('orders.columns.client'), t('orders.columns.total'), t('orders.columns.dueDate'), t('orders.columns.status'), t('common.actions')]}
+        rows={orders.map(order => [
+          <PrimaryCell title={order.orderId} subtitle={formatDisplayDate(order.orderDate, t)} />,
+          order.client,
+          formatMoney(order.totalAmount),
+          formatDisplayDate(order.dueDate, t),
+          <StatusBadge tone={orderStatusTone(order.statusKey)}>{statusLabel(t, order.statusKey)}</StatusBadge>,
+          <div className="flex items-center gap-2">
+            <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={event => { event.stopPropagation(); setViewingItemsFor(order); }}>{t('orders.items')}</button>
+            <RowActions onView={() => openModal({ kind: 'order', mode: 'view', item: order })} onEdit={canManage ? () => openModal({ kind: 'order', mode: 'edit', item: order }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'order', mode: 'view', item: order }) : undefined} />
+          </div>,
+        ])}
+        onRowClick={(rowIndex) => openModal({ kind: 'order', mode: 'view', item: orders[rowIndex] })}
       />
-      {activeTab === 'orders' ? (
-        <DataTable
-          columns={[t('orders.columns.orderId'), t('orders.columns.client'), t('orders.columns.total'), t('orders.columns.dueDate'), t('orders.columns.status'), t('common.actions')]}
-          rows={orders.map(order => [
-            <PrimaryCell title={order.orderId} subtitle={formatDisplayDate(order.orderDate, t)} />,
-            order.client,
-            formatMoney(order.totalAmount),
-            formatDisplayDate(order.dueDate, t),
-            <StatusBadge tone={orderStatusTone(order.statusKey)}>{statusLabel(t, order.statusKey)}</StatusBadge>,
-            <div className="flex items-center gap-2">
-              <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={event => { event.stopPropagation(); setViewingItemsFor(order); }}>{t('orders.items')}</button>
-              <RowActions onView={() => openModal({ kind: 'order', mode: 'view', item: order })} onEdit={canManage ? () => openModal({ kind: 'order', mode: 'edit', item: order }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'order', mode: 'view', item: order }) : undefined} />
-            </div>,
-          ])}
-          onRowClick={(rowIndex) => openModal({ kind: 'order', mode: 'view', item: orders[rowIndex] })}
-        />
-      ) : (
-        <ProductionTab records={productionRecords} orders={orders} formatMoney={formatMoney} />
-      )}
       {viewingItemsFor ? (
         <ScopedResourceModal
           title={viewingItemsFor.orderId}
@@ -1900,155 +1887,10 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
   );
 }
 
-function formatProductionQuantity(record: ProductionRecord, t: (key: string) => string) {
-  return `${record.quantity.toLocaleString()} ${unitLabel(record.unit, t)}`;
-}
-
-function ProductionRecordModal({ record, formatMoney, onClose }: { record: ProductionRecord; formatMoney: (value: number) => string; onClose: () => void }) {
-  const { t } = useTranslation();
-  const detailRows = [
-    { label: t('orders.production.columns.date'), value: formatDisplayDate(record.date, t) },
-    { label: t('orders.production.columns.employee'), value: record.employee },
-    { label: t('orders.production.details.operation'), value: record.operation },
-    { label: t('orders.production.columns.product'), value: record.product },
-    { label: t('orders.production.columns.quantity'), value: formatProductionQuantity(record, t) },
-    { label: t('orders.production.details.amount'), value: formatMoney(record.amount) },
-    { label: t('orders.production.columns.orderId'), value: record.orderId || '—' },
-    { label: t('orders.production.columns.shift'), value: record.shift || '—' },
-    { label: t('orders.production.columns.notes'), value: record.notes || '—' },
-    { label: t('orders.production.details.created'), value: record.api?.created_at ? formatDisplayDateTime(String(record.api.created_at), t) : '—' },
-    { label: t('orders.production.details.updated'), value: record.api?.updated_at ? formatDisplayDateTime(String(record.api.updated_at), t) : '—' },
-  ];
-
-  return (
-    <div
-      className="client-drawer-overlay--nova fixed inset-0 z-[150] flex justify-end bg-background-overlay/72 backdrop-blur-[3px]"
-      role="presentation"
-      onMouseDown={event => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <aside
-        className="client-drawer-panel--nova h-full w-full max-w-[760px] overflow-y-auto bg-background-subtle p-4 shadow-xl ring-1 ring-border-soft/50 min-[641px]:p-5"
-        role="dialog"
-        aria-modal="true"
-      >
-        <header className="mb-4 rounded-xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="m-0 text-[11px] font-extrabold uppercase tracking-[0.14em] text-primary">{t('orders.production.title')}</p>
-              <h3 className="mt-1 truncate font-display text-xl font-extrabold text-text-primary">{record.product}</h3>
-              <p className="mt-1 text-sm font-semibold text-text-muted">{record.employee} · {formatProductionQuantity(record, t)}</p>
-            </div>
-            <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
-              <FiX className="h-4 w-4" />
-            </button>
-          </div>
-        </header>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {detailRows.map(row => (
-            <div key={row.label} className="min-w-0 rounded-xl bg-surface-card p-4 shadow-sm ring-1 ring-border-soft/40">
-              <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">{row.label}</p>
-              <p className="mt-1 text-sm font-semibold text-text-primary [overflow-wrap:anywhere]">{row.value}</p>
-            </div>
-          ))}
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-function ProductionTab({ records, orders, formatMoney }: { records: ProductionRecord[]; orders: Order[]; formatMoney: (value: number) => string }) {
-  const { t } = useTranslation();
-  const [detailRecord, setDetailRecord] = useState<ProductionRecord | null>(null);
-  const uniqueWorkers = new Set(records.map(r => r.employee)).size;
-  const inProductionOrders = orders.filter(o => o.statusKey === 'confirmed').length;
-
-  return (
-    <div className="grid gap-5">
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard icon={<FiTool />} label={t('orders.production.metrics.total')} value={records.length.toString()} caption={t('orders.production.metrics.totalCaption')} tone="info" />
-        <MetricCard icon={<FiUsers />} label={t('orders.production.metrics.workers')} value={uniqueWorkers.toString()} caption={t('orders.production.metrics.workersCaption')} tone="success" />
-        <MetricCard icon={<FiSettings />} label={t('orders.production.metrics.inProduction')} value={inProductionOrders.toString()} caption={t('orders.production.metrics.inProductionCaption')} tone="warning" />
-      </div>
-      <DataTable
-        columns={[
-          t('orders.production.columns.date'),
-          t('orders.production.columns.employee'),
-          t('orders.production.columns.product'),
-          t('orders.production.columns.quantity'),
-          t('orders.production.columns.orderId'),
-          t('orders.production.columns.shift'),
-          t('orders.production.columns.notes'),
-          t('common.actions'),
-        ]}
-        rows={records.map(record => [
-          formatDisplayDate(record.date, t),
-          <PrimaryCell title={record.employee} subtitle={record.operation} />,
-          record.product,
-          <span className="font-bold text-text-primary">{formatProductionQuantity(record, t)}</span>,
-          record.orderId
-            ? <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-text-accent">{record.orderId}</span>
-            : <span className="text-text-muted">—</span>,
-          record.shift || '—',
-          record.notes || '—',
-          <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-surface-card text-text-secondary ring-1 ring-border-soft/50 transition hover:bg-primary/10 hover:text-text-primary" onClick={(event) => { event.stopPropagation(); setDetailRecord(record); }} aria-label={t('common.view')}>
-            <FiEye className="h-4 w-4" />
-          </button>,
-        ])}
-        onRowClick={(rowIndex) => setDetailRecord(records[rowIndex])}
-      />
-      {detailRecord ? <ProductionRecordModal record={detailRecord} formatMoney={formatMoney} onClose={() => setDetailRecord(null)} /> : null}
-    </div>
-  );
-}
-
-export function StockTable({ rows, direction }: { rows: StockMovement[]; direction: 'in' | 'out' }) {
-  const { t } = useTranslation();
-  return (
-    <DataTable
-      columns={[
-        t('products.stockColumns.date'),
-        t('products.stockColumns.product'),
-        t('products.stockColumns.quantity'),
-        direction === 'in' ? t('products.stockColumns.source') : t('products.stockColumns.client'),
-        t('products.stockColumns.employee'),
-      ]}
-      rows={rows.map(row => [
-        formatDisplayDate(row.date, t),
-        <PrimaryCell title={row.product} subtitle={translateMovementLabel(t, row.note)} />,
-        <span className={direction === 'in' ? 'font-bold text-success' : 'font-bold text-warning'}>{row.quantity}</span>,
-        translateMovementLabel(t, direction === 'in' ? row.supplier : row.client),
-        translateMovementLabel(t, row.employee),
-      ])}
-    />
-  );
-}
-
-export function MovementTimeline({ rows }: { rows: StockMovement[] }) {
-  const { t } = useTranslation();
-  return (
-    <Panel title={t('products.movementTitle')} action={t('common.report')}>
-      <div className="grid gap-3">
-        {rows.map(row => (
-          <div key={row.id} className="flex gap-3 rounded-2xl bg-surface-subtle p-4 ring-1 ring-border-soft/45">
-            <span className={['mt-1 h-3 w-3 shrink-0 rounded-full ring-4', row.type === 'in' ? 'bg-success ring-success/15' : 'bg-warning ring-warning/15'].join(' ')} />
-            <div className="min-w-0">
-              <p className="text-sm font-extrabold text-text-primary">{translateMovementLabel(t, row.note)}</p>
-              <p className="mt-1 text-xs font-semibold text-text-muted">{formatDisplayDate(row.date, t)} · {translateMovementLabel(t, row.employee)} · {row.quantity}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-export function WarehousePage({ products, stockIn, stockOut, movementHistory, totalStock, lowStockCount, formatMoney, onCreate }: {
+export function WarehousePage({ products, stockIn, stockOut, totalStock, lowStockCount, formatMoney, onCreate }: {
   products: Product[];
   stockIn: StockMovement[];
   stockOut: StockMovement[];
-  movementHistory: StockMovement[];
   totalStock: number;
   lowStockCount: number;
   formatMoney: (value: number) => string;

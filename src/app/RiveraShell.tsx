@@ -81,7 +81,6 @@ import type {
   Product,
   ProductCategory,
   ProductionBatch,
-  ProductionRecord,
   StaffMember,
   StatusTone,
   StockMovement,
@@ -308,7 +307,7 @@ function App() {
   // that's already dead on first load redirects to login silently instead of
   // announcing a "session expired" the user never experienced.
   const hadActiveSessionRef = useRef(false);
-  const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, movementHistory, revenueEntries, expenseEntries, productionRecords, materials: rawMaterials, pieceworkRecords, productionBatches, attendanceLog, approvals, operationTypeOptions } = appData;
+  const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, revenueEntries, expenseEntries, materials: rawMaterials, pieceworkRecords, productionBatches, attendanceLog, approvals, operationTypeOptions } = appData;
 
   const refreshData = useCallback(async (page: PageId = activePage) => {
     if (!isAuthenticated) return;
@@ -712,7 +711,7 @@ function App() {
               <ClientsPage clients={clients} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
             )}
             {activePage === 'orders' && (
-              <OrdersPage orders={orders} productionRecords={productionRecords} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
+              <OrdersPage orders={orders} formatMoney={formatMoney} openModal={setModal} openDelete={setPendingDelete} />
             )}
             {activePage === 'production' && (
               <ProductionPage
@@ -767,7 +766,7 @@ function App() {
                 products={products}
                 stockIn={stockIn}
                 stockOut={stockOut}
-                movementHistory={movementHistory}
+               
                 totalStock={totalStock}
                 lowStockCount={lowStockCount}
                 formatMoney={formatMoney}

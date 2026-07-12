@@ -406,16 +406,6 @@
       "addMaterial": "Material qo'shish",
       "deleteConfirm": "{{product}} reseptidan {{material}} materialini olib tashlaysizmi?"
     },
-    "movementTitle": "Harakat tarixi",
-    "stockColumns": {
-      "date": "Sana",
-      "product": "Mahsulot",
-      "quantity": "Miqdor",
-      "supplier": "Ta'minotchi",
-      "source": "Manba",
-      "client": "Mijoz",
-      "employee": "Sklad xodimi"
-    },
     "columns": {
       "product": "Mahsulot",
       "sku": "SKU",
@@ -514,37 +504,6 @@
     "title": "Buyurtmalar boshqaruvi",
     "description": "Mijoz buyurtmalari, ishlab chiqarish holati, menejer va yetkazib berish muddatlari.",
     "create": "Buyurtma yaratish",
-    "tabs": {
-      "orders": "Buyurtmalar",
-      "production": "Ishlab chiqarish"
-    },
-    "production": {
-      "title": "Ishlab chiqarish kuzatuvi",
-      "description": "Xodimlar tomonidan bajarilgan ishlab chiqarish hajmi va buyurtmaga bog'liq chiqish.",
-      "metrics": {
-        "total": "Jami chiqarildi",
-        "totalCaption": "Hozirgi davr",
-        "workers": "Faol ishchilar",
-        "workersCaption": "Ishlab chiqarishda",
-        "inProduction": "Ishlab chiqarishdagi buyurtmalar",
-        "inProductionCaption": "Jarayonda"
-      },
-      "columns": {
-        "date": "Sana",
-        "employee": "Xodim",
-        "product": "Mahsulot",
-        "quantity": "Miqdor",
-        "orderId": "Buyurtma",
-        "shift": "Smena",
-        "notes": "Izoh"
-      },
-      "details": {
-        "operation": "Operatsiya",
-        "amount": "Hisoblangan summa",
-        "created": "Yaratilgan",
-        "updated": "Yangilangan"
-      }
-    },
     "metrics": {
       "total": "Jami buyurtmalar",
       "totalCaption": "Faol pipeline",

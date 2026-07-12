@@ -145,22 +145,6 @@ export interface FinanceEntry {
   amount: number;
 }
 
-export interface ProductionRecord {
-  id: number;
-  date: string;
-  employee: string;
-  role: string;
-  product: string;
-  operation: string;
-  quantity: number;
-  unit: 'm' | 'kg' | 'pcs';
-  amount: number;
-  orderId: string | null;
-  shift: string;
-  notes: string;
-  api?: Record<string, unknown>;
-}
-
 export interface ProductionBatch {
   id: EntityId;
   dateLabel: string;

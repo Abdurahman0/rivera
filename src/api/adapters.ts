@@ -31,7 +31,6 @@ import type {
   Product,
   ProductCategory,
   ProductionBatch,
-  ProductionRecord,
   StaffMember,
   StockMovement,
 } from '../types/crm';
@@ -75,10 +74,8 @@ export interface FrontendData {
   materials: Material[];
   stockIn: StockMovement[];
   stockOut: StockMovement[];
-  movementHistory: StockMovement[];
   revenueEntries: FinanceEntry[];
   expenseEntries: FinanceEntry[];
-  productionRecords: ProductionRecord[];
   pieceworkRecords: PieceworkRecord[];
   productionBatches: ProductionBatch[];
   categoryAnalytics: CategoryDatum[];
@@ -232,21 +229,6 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     week: row.date,
   }));
 
-  const productionRecords: ProductionRecord[] = data.workEntries.map((row, index) => ({
-    id: index + 1,
-    date: row.date,
-    employee: employeeNames.get(row.employee) || row.employee,
-    role: '',
-    product: row.related_batch ? productNames.get(batchById.get(row.related_batch)?.product || '') || batchNames.get(row.related_batch) || row.related_batch : '—',
-    operation: operationNames.get(row.operation_type) || row.operation_type,
-    quantity: row.quantity_done,
-    unit: 'pcs',
-    amount: number(row.amount),
-    orderId: row.related_batch ? batchNames.get(row.related_batch) || null : null,
-    shift: '',
-    notes: row.note,
-    api: row as unknown as Record<string, unknown>,
-  }));
 
   // Actual material consumed per batch: approved out_production transactions only
   // (materials auto-consume when a warehouse delivery is approved).
@@ -346,5 +328,5 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
 
   const operationTypeOptions = data.operationTypes.map(row => ({ id: row.id, name: row.name }));
 
-  return { clients, staff, products, categories, orders, materials, stockIn: movementHistory.filter(row => row.type === 'in'), stockOut: movementHistory.filter(row => row.type === 'out'), movementHistory, revenueEntries, expenseEntries, productionRecords, pieceworkRecords, productionBatches, categoryAnalytics, attendanceLog, operationTypeOptions };
+  return { clients, staff, products, categories, orders, materials, stockIn: movementHistory.filter(row => row.type === 'in'), stockOut: movementHistory.filter(row => row.type === 'out'), revenueEntries, expenseEntries, pieceworkRecords, productionBatches, categoryAnalytics, attendanceLog, operationTypeOptions };
 }
