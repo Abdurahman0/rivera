@@ -6,6 +6,7 @@ export function translateOption(t: TFunction, domain: string, value: string) {
 }
 
 const SENTINEL_PATTERNS: Array<[RegExp, (t: TFunction, match: string) => string]> = [
+  [/^__deleted__$/, t => t('admin.options.movementNote.deleted')],
   [/^__incoming__$/, t => t('admin.options.movementNote.incoming')],
   [/^__production__$/, t => t('admin.options.movementNote.production')],
   [/^__client__$/, t => t('admin.options.movementNote.client')],

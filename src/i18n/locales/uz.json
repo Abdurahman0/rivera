@@ -499,7 +499,8 @@
       "product": "Mahsulot",
       "type": "Turi",
       "quantity": "Qoldiq",
-      "value": "Qiymat"
+      "value": "Qiymat",
+      "amount": "Miqdor"
     },
     "searchPlaceholder": "Mahsulot, xodim, mijoz yoki manba bo'yicha qidirish...",
     "movementIn": "+ Kirim",
@@ -1870,14 +1871,6 @@
         "title": "Brak material operatsiyalari",
         "description": "Brak qoldiqqa o'tkazishni tasdiqlash talab qiluvchi amallar."
       },
-      "finishedStocks": {
-        "title": "Tayyor mahsulot qoldig'i",
-        "description": "O'lcham va rang bo'yicha hisoblangan mahsulot qoldig'i."
-      },
-      "finishedTransactions": {
-        "title": "Tayyor mahsulot operatsiyalari",
-        "description": "Ishlab chiqarish, sotish, brak va mijoz qaytarish harakatlari."
-      },
       "batchItems": {
         "title": "Ishlab chiqarish partiya tarkibi",
         "description": "Partiya ichidagi o'lcham/rang taqsimoti."
@@ -2077,7 +2070,8 @@
         "incoming": "Kirim",
         "production": "Ishlab chiqarish",
         "client": "Mijoz",
-        "materials": "Materiallar"
+        "materials": "Materiallar",
+        "deleted": "O'chirilgan yozuv"
       },
       "eventType": {
         "check_in": "Kirish",

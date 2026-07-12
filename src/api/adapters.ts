@@ -25,6 +25,7 @@ import type {
   CategoryDatum,
   Client,
   FinanceEntry,
+  FinishedVariant,
   Material,
   Order,
   PieceworkRecord,
@@ -81,6 +82,7 @@ export interface FrontendData {
   categoryAnalytics: CategoryDatum[];
   attendanceLog: AttendanceLogEntry[];
   operationTypeOptions: Array<{ id: string; name: string }>;
+  finishedVariants: FinishedVariant[];
 }
 
 export function adaptOperationalData(data: OperationalApiData): FrontendData {
@@ -274,26 +276,39 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
   const materialMovements: StockMovement[] = data.materialTransactions.map((row, index) => ({
     id: index + 1,
     date: row.date,
-    product: materialById.get(row.material)?.name || row.material,
+    product: materialById.get(row.material)?.name || '__deleted__',
     quantity: `${row.quantity} ${materialById.has(row.material) ? materialUnit(materialById.get(row.material)!.unit) : ''}`,
     supplier: row.transaction_type === 'in' ? row.note || '__incoming__' : undefined,
     client: row.transaction_type !== 'in' ? row.note || `__type__${row.transaction_type}` : undefined,
     employee: `__status__${row.status}`,
     type: row.transaction_type === 'in' ? 'in' : 'out',
     note: row.note || `__type__${row.transaction_type}`,
+    sourceKind: 'material' as const,
+    txType: row.transaction_type,
+    status: row.status,
   }));
   const finishedMovements: StockMovement[] = data.finishedTransactions.map((row, index) => ({
     id: materialMovements.length + index + 1,
     date: row.date,
-    product: productNames.get(row.product) || row.product,
+    product: productNames.get(row.product) || '__deleted__',
     quantity: `${row.quantity} pcs`,
     supplier: row.transaction_type === 'in_production' || row.transaction_type === 'return_client' ? row.note || '__production__' : undefined,
     client: row.transaction_type === 'out_client' ? row.note || '__client__' : undefined,
     employee: `__status__${row.status}`,
     type: row.transaction_type === 'in_production' || row.transaction_type === 'return_client' ? 'in' : 'out',
     note: row.note || `__ftype__${row.transaction_type}`,
+    sourceKind: 'finished' as const,
+    txType: row.transaction_type,
+    status: row.status,
   }));
   const movementHistory = [...materialMovements, ...finishedMovements].sort((a, b) => b.date.localeCompare(a.date));
+
+  const finishedVariants: FinishedVariant[] = data.finishedStocks.map(row => ({
+    productId: row.product,
+    size: row.size,
+    color: row.color,
+    quantity: row.quantity,
+  }));
 
   const revenueEntries: FinanceEntry[] = data.payments.map((row, index) => ({
     id: index + 1,
@@ -328,5 +343,5 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
 
   const operationTypeOptions = data.operationTypes.map(row => ({ id: row.id, name: row.name }));
 
-  return { clients, staff, products, categories, orders, materials, stockIn: movementHistory.filter(row => row.type === 'in'), stockOut: movementHistory.filter(row => row.type === 'out'), revenueEntries, expenseEntries, pieceworkRecords, productionBatches, categoryAnalytics, attendanceLog, operationTypeOptions };
+  return { clients, staff, products, categories, orders, materials, stockIn: movementHistory.filter(row => row.type === 'in'), stockOut: movementHistory.filter(row => row.type === 'out'), revenueEntries, expenseEntries, pieceworkRecords, productionBatches, categoryAnalytics, attendanceLog, operationTypeOptions, finishedVariants };
 }

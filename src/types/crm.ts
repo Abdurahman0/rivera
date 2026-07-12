@@ -133,6 +133,20 @@ export interface StockMovement {
   employee: string;
   type: 'in' | 'out';
   note: string;
+  /** Whether this row came from material or finished-goods transactions — picks the tx-type label domain. */
+  sourceKind: 'material' | 'finished';
+  /** Raw backend transaction_type (e.g. 'in', 'out_production', 'out_client', 'out_defect'). */
+  txType: string;
+  /** Raw backend approval status ('pending_approval' | 'approved' | 'rejected' | 'draft'). */
+  status: string;
+}
+
+/** One finished-goods stock record (product broken down by size/color variant). */
+export interface FinishedVariant {
+  productId: EntityId;
+  size: string;
+  color: string;
+  quantity: number;
 }
 
 export interface FinanceEntry {

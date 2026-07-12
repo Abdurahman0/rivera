@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSearch, FiSettings, FiShoppingBag, FiTag, FiTool, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, StaffMember, StatusTone, StockMovement } from '../types/crm';
+import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, FinishedVariant, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, StaffMember, StatusTone, StockMovement } from '../types/crm';
 import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
 import { BUILT_IN_CLIENT_STATUSES, hasStoredCustomClientStatuses, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
@@ -2006,10 +2006,11 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
   );
 }
 
-export function WarehousePage({ products, stockIn, stockOut, totalStock, lowStockCount, formatMoney, onCreate }: {
+export function WarehousePage({ products, stockIn, stockOut, finishedVariants, totalStock, lowStockCount, formatMoney, onCreate }: {
   products: Product[];
   stockIn: StockMovement[];
   stockOut: StockMovement[];
+  finishedVariants: FinishedVariant[];
   totalStock: number;
   lowStockCount: number;
   formatMoney: (value: number) => string;
@@ -2018,13 +2019,25 @@ export function WarehousePage({ products, stockIn, stockOut, totalStock, lowStoc
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('inventory', 'manage');
-  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'defective' | 'defectiveStock' | 'finishedStock' | 'finishedTransactions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'defective' | 'defectiveStock'>('overview');
   const inventoryValue = products.reduce((sum, p) => sum + p.stock * p.price, 0);
   const allMovements = [...stockIn, ...stockOut].sort((a, b) => b.id - a.id);
   const exportResourceMap = {
     overview: resources.finishedGoodsStocks, history: resources.finishedGoodsTransactions, defective: resources.defectiveMaterialTransactions,
-    defectiveStock: resources.defectiveMaterialStocks, finishedStock: resources.finishedGoodsStocks, finishedTransactions: resources.finishedGoodsTransactions,
+    defectiveStock: resources.defectiveMaterialStocks,
   } as const;
+  const variantsByProduct = new Map<string, FinishedVariant[]>();
+  finishedVariants.forEach(variant => {
+    if (!variant.size && !variant.color) return;
+    const key = String(variant.productId);
+    variantsByProduct.set(key, [...(variantsByProduct.get(key) ?? []), variant]);
+  });
+  const txStatusTone = (status: string): StatusTone => status === 'approved' ? 'success' : status === 'rejected' ? 'danger' : 'warning';
+  const txTypeLabel = (row: StockMovement) => {
+    const key = row.sourceKind === 'material' ? `admin.options.materialTxType.${row.txType}` : `admin.options.finishedTxType.${row.txType}`;
+    const label = t(key);
+    return label === key ? row.txType.replaceAll('_', ' ') : label;
+  };
 
   return (
     <div className="grid gap-5">
@@ -2053,8 +2066,6 @@ export function WarehousePage({ products, stockIn, stockOut, totalStock, lowStoc
           { id: 'history', label: t('warehouse.tabs.history'), icon: <FiClock className="h-4 w-4" /> },
           { id: 'defective', label: t('admin.resources.defectiveTransactions.title'), icon: <FiAlertTriangle className="h-4 w-4" /> },
           { id: 'defectiveStock', label: t('admin.resources.defectiveStocks.title'), icon: <FiAlertTriangle className="h-4 w-4" /> },
-          { id: 'finishedStock', label: t('admin.resources.finishedStocks.title'), icon: <FiPackage className="h-4 w-4" /> },
-          { id: 'finishedTransactions', label: t('admin.resources.finishedTransactions.title'), icon: <FiPackage className="h-4 w-4" /> },
         ]}
         activeTab={activeTab}
         onChange={id => setActiveTab(id as typeof activeTab)}
@@ -2063,36 +2074,47 @@ export function WarehousePage({ products, stockIn, stockOut, totalStock, lowStoc
         <ApiResourceManager config={{ ...operationsConfigs.defectiveTransactions, readOnly: !canManage }} />
       ) : activeTab === 'defectiveStock' ? (
         <ApiResourceManager config={operationsConfigs.defectiveStocks} />
-      ) : activeTab === 'finishedStock' ? (
-        <ApiResourceManager config={operationsConfigs.finishedStocks} />
-      ) : activeTab === 'finishedTransactions' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.finishedTransactions, readOnly: !canManage }} />
       ) : activeTab === 'overview' ? (
         <DataTable
           columns={[t('warehouse.columns.product'), t('warehouse.columns.quantity'), t('warehouse.columns.value')]}
-          rows={products.map(product => [
-            <span className="block min-w-0">
-              <span className="block max-w-[220px] truncate text-sm font-bold text-text-primary">{product.name}</span>
-              <span className="text-xs text-text-muted">{product.category}</span>
-            </span>,
-            <span className="block min-w-[120px]">
-              <span className={['block text-sm font-bold', product.stock <= product.minStock ? 'text-warning' : 'text-text-primary'].join(' ')}>{product.stock.toLocaleString()} {unitLabel(product.unit, t)}</span>
-              <div className="mt-1 h-1.5 w-full max-w-[90px] overflow-hidden rounded-pill bg-surface-muted">
-                <div className={['h-full rounded-pill', product.stock <= product.minStock ? 'bg-warning' : 'bg-success'].join(' ')} style={{ width: `${Math.min(100, Math.round(product.stock / Math.max(product.minStock, 1) * 100))}%` }} />
-              </div>
-            </span>,
-            formatMoney(product.stock * product.price),
-          ])}
+          rows={products.map(product => {
+            const variants = variantsByProduct.get(String(product.id)) ?? [];
+            return [
+              <span className="block min-w-0">
+                <span className="block max-w-[220px] truncate text-sm font-bold text-text-primary">{product.name}</span>
+                <span className="text-xs text-text-muted">{product.category}</span>
+              </span>,
+              <span className="block min-w-[120px]">
+                <span className={['block text-sm font-bold', product.stock <= product.minStock ? 'text-warning' : 'text-text-primary'].join(' ')}>{product.stock.toLocaleString()} {unitLabel(product.unit, t)}</span>
+                <div className="mt-1 h-1.5 w-full max-w-[90px] overflow-hidden rounded-pill bg-surface-muted">
+                  <div className={['h-full rounded-pill', product.stock <= product.minStock ? 'bg-warning' : 'bg-success'].join(' ')} style={{ width: `${Math.min(100, Math.round(product.stock / Math.max(product.minStock, 1) * 100))}%` }} />
+                </div>
+                {variants.length > 0 ? (
+                  <span className="mt-1.5 flex max-w-[320px] flex-wrap gap-1">
+                    {variants.map((variant, idx) => (
+                      <span key={idx} className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[10px] font-bold text-text-secondary">
+                        {[variant.size, variant.color].filter(Boolean).join('/')}: {variant.quantity.toLocaleString()}
+                      </span>
+                    ))}
+                  </span>
+                ) : null}
+              </span>,
+              formatMoney(product.stock * product.price),
+            ];
+          })}
         />
       ) : (
         <DataTable
-          columns={[t('warehouse.columns.date'), t('warehouse.columns.product'), t('warehouse.columns.type'), t('warehouse.columns.quantity'), t('staff.columns.staff')]}
+          columns={[t('warehouse.columns.date'), t('warehouse.columns.product'), t('warehouse.columns.type'), t('warehouse.columns.amount'), t('admin.fields.status')]}
           rows={allMovements.map(row => [
             formatDisplayDate(row.date, t),
-            <span className="block min-w-0 max-w-[220px] truncate text-sm font-semibold text-text-primary" title={row.product}>{row.product}</span>,
-            <StatusBadge tone={row.type === 'in' ? 'success' : 'warning'}>{row.type === 'in' ? t('warehouse.movementIn') : t('warehouse.movementOut')}</StatusBadge>,
+            <span className="block min-w-0 max-w-[220px] truncate text-sm font-semibold text-text-primary" title={translateMovementLabel(t, row.product)}>{translateMovementLabel(t, row.product)}</span>,
+            <span className="inline-flex items-center gap-1.5">
+              <StatusBadge tone={row.type === 'in' ? 'success' : 'warning'}>{row.type === 'in' ? t('warehouse.movementIn') : t('warehouse.movementOut')}</StatusBadge>
+              <span className="text-xs font-semibold text-text-muted">{txTypeLabel(row)}</span>
+            </span>,
             <span className={['font-bold', row.type === 'in' ? 'text-success' : 'text-warning'].join(' ')}>{row.quantity}</span>,
-            <span className="block min-w-0 max-w-[180px] truncate text-sm font-semibold text-text-primary" title={translateMovementLabel(t, row.employee)}>{translateMovementLabel(t, row.employee)}</span>,
+            <StatusBadge tone={txStatusTone(row.status)}>{optionLabel(t, 'transactionStatus', row.status)}</StatusBadge>,
           ])}
         />
       )}

@@ -308,7 +308,7 @@ function App() {
   // that's already dead on first load redirects to login silently instead of
   // announcing a "session expired" the user never experienced.
   const hadActiveSessionRef = useRef(false);
-  const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, revenueEntries, expenseEntries, materials: rawMaterials, pieceworkRecords, productionBatches, attendanceLog, approvals, operationTypeOptions } = appData;
+  const { clients, staff, orders, categories: productCategories, products, categoryAnalytics, stockIn, stockOut, revenueEntries, expenseEntries, materials: rawMaterials, pieceworkRecords, productionBatches, attendanceLog, approvals, operationTypeOptions, finishedVariants } = appData;
 
   const refreshData = useCallback(async (page: PageId = activePage) => {
     if (!isAuthenticated) return;
@@ -767,7 +767,7 @@ function App() {
                 products={products}
                 stockIn={stockIn}
                 stockOut={stockOut}
-               
+                finishedVariants={finishedVariants}
                 totalStock={totalStock}
                 lowStockCount={lowStockCount}
                 formatMoney={formatMoney}

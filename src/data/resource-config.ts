@@ -3,7 +3,13 @@ import type { ResourceConfig, ResourceOption } from '../components/ApiResourceMa
 
 const options = (values: Array<[string, string]>): ResourceOption[] => values.map(([value, label]) => ({ value, label }));
 const currency = options([['UZS', 'UZS'], ['USD', 'USD']]);
-const statusField = { name: 'status', label: 'admin.fields.status', readOnly: true, table: true } as const;
+const statusField = {
+  name: 'status' as const, label: 'admin.fields.status' as const, readOnly: true as const, table: true as const,
+  options: options([
+    ['draft', 'admin.options.transactionStatus.draft'], ['pending_approval', 'admin.options.transactionStatus.pending_approval'],
+    ['approved', 'admin.options.transactionStatus.approved'], ['rejected', 'admin.options.transactionStatus.rejected'],
+  ]),
+};
 const f = (key: string) => `admin.fields.${key}`;
 const r = (key: 'title' | 'description') => (resourceKey: string) => `admin.resources.${resourceKey}.${key}`;
 const title = r('title');
@@ -96,20 +102,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'material', label: f('material'), lookup: { resource: resources.materials, label: 'name' }, required: true, table: true }, { name: 'quantity', label: f('quantity'), type: 'number', step: '0.0001', required: true, table: true },
       { name: 'date', label: f('date'), type: 'date', required: true, table: true }, { name: 'source_transaction', label: f('sourceTransaction'), lookup: { resource: resources.materialTransactions, label: 'date', secondary: 'transaction_type' }, nullable: true },
       { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
-    ],
-  },
-  finishedStocks: {
-    resource: resources.finishedGoodsStocks, title: title('finishedStocks'), description: description('finishedStocks'), readOnly: true,
-    fields: [{ name: 'product', label: f('product'), lookup: { resource: resources.products, label: 'name', secondary: 'code' }, table: true }, { name: 'size', label: f('size'), table: true }, { name: 'color', label: f('color'), table: true }, { name: 'quantity', label: f('quantity'), table: true }],
-  },
-  finishedTransactions: {
-    resource: resources.finishedGoodsTransactions, title: title('finishedTransactions'), description: description('finishedTransactions'), allowEdit: false, allowArchive: false,
-    fields: [
-      { name: 'product', label: f('product'), lookup: { resource: resources.products, label: 'name' }, required: true, table: true }, { name: 'size', label: f('size') }, { name: 'color', label: f('color') },
-      { name: 'transaction_type', label: f('type'), type: 'select', required: true, table: true, options: options([['in_production', 'admin.options.finishedTxType.in_production'], ['out_client', 'admin.options.finishedTxType.out_client'], ['out_defect', 'admin.options.finishedTxType.out_defect'], ['return_client', 'admin.options.finishedTxType.return_client']]) },
-      { name: 'quantity', label: f('quantity'), type: 'number', required: true, table: true }, { name: 'date', label: f('date'), type: 'date', required: true, table: true },
-      { name: 'related_batch', label: f('batch'), lookup: { resource: resources.productionBatches, label: 'batch_number' }, nullable: true },
-      { name: 'related_client_delivery', label: f('delivered'), lookup: { resource: resources.clientDeliveries, label: 'delivery_date', secondary: 'quantity' }, nullable: true }, { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
   batchItems: {

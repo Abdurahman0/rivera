@@ -38,6 +38,7 @@ export const EMPTY_DATA: AppData = {
   approvals: [],
   topClientIds: [],
   operationTypeOptions: [],
+  finishedVariants: [],
 };
 
 const EMPTY_OPERATIONAL_DATA: OperationalApiData = {
