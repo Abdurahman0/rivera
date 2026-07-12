@@ -230,7 +230,11 @@
       "summary": "Тип сырья, поставщик, текущий запас и минимальный порог.",
       "nextStep": "Следующий шаг: отправить заказ поставщику."
     },
-    "purchases": "Закупки"
+    "purchases": "Закупки",
+    "addStock": "Приход",
+    "addStockTitle": "Приход материала",
+    "addStockCurrent": "Текущий остаток: {{stock}} {{unit}}",
+    "addStockPending": "Заявка на приход отправлена (ожидает подтверждения)"
   },
   "clients": {
     "eyebrow": "CRM pipeline",

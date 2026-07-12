@@ -230,7 +230,11 @@
       "summary": "Xom ashyo turi, ta'minotchi, joriy zaxira va minimal chegara.",
       "nextStep": "Keyingi qadam: ta'minotchiga buyurtma yuborish."
     },
-    "purchases": "Xaridlar"
+    "purchases": "Xaridlar",
+    "addStock": "Kirim",
+    "addStockTitle": "Material kirimi",
+    "addStockCurrent": "Hozirgi qoldiq: {{stock}} {{unit}}",
+    "addStockPending": "Kirim so'rovi yuborildi (tasdiqlash kutilmoqda)"
   },
   "clients": {
     "eyebrow": "CRM pipeline",

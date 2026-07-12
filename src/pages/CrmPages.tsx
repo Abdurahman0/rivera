@@ -1597,6 +1597,81 @@ function ScopedResourceModal({ title, subtitle, config, extraParams, fixedValues
   );
 }
 
+/** Quick stock-in for a material: "800 bor edi, 200 keldi" — enter 200, an incoming
+ *  MaterialTransaction is created and lands in Tasdiqlar; stock updates once approved. */
+function AddMaterialStockModal({ material, formatMoney, onClose }: { material: Material; formatMoney: (value: number) => string; onClose: () => void }) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [quantity, setQuantity] = useState('');
+  const [unitPrice, setUnitPrice] = useState(String(material.price || ''));
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!quantity || Number(quantity) <= 0 || !date) {
+      toast(t('admin.ui.requiredFieldsMissing'), 'danger');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.create(resources.materialTransactions, {
+        material: material.id, transaction_type: 'in', quantity, unit_price: unitPrice || '0', date,
+      });
+      toast(t('materials.addStockPending'), 'success');
+      onClose();
+    } catch (error) {
+      toast(apiErrorMessage(error, t), 'danger');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <section role="dialog" aria-modal="true" className="w-full max-w-[420px] rounded-[28px] bg-surface-card p-5 shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="m-0 truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">{material.name}</p>
+            <h3 className="mt-1 font-display text-xl font-extrabold text-text-primary">{t('materials.addStockTitle')}</h3>
+            <p className="mt-1 text-sm text-text-muted">{t('materials.addStockCurrent', { stock: material.stock.toLocaleString(), unit: unitLabel(material.unit, t) })}</p>
+          </div>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-5 grid gap-3">
+          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+            {t('admin.fields.quantity')} ({unitLabel(material.unit, t)})
+            <input type="number" min="0.0001" step="any" autoFocus value={quantity} onChange={event => setQuantity(event.target.value)} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50" />
+          </label>
+          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+            {t('admin.fields.unitPrice')}
+            <input type="number" min="0" step="0.01" value={unitPrice} onChange={event => setUnitPrice(event.target.value)} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50" />
+          </label>
+          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+            {t('admin.fields.date')}
+            <DatePicker value={date} onChange={setDate} />
+          </label>
+          {quantity && Number(quantity) > 0 ? (
+            <p className="rounded-xl bg-primary/5 p-3 text-sm font-semibold text-text-secondary ring-1 ring-primary/15">
+              {material.stock.toLocaleString()} + {Number(quantity).toLocaleString()} = <span className="font-extrabold text-primary">{(material.stock + Number(quantity)).toLocaleString()} {unitLabel(material.unit, t)}</span>
+              {unitPrice && Number(unitPrice) > 0 ? <span className="ml-2 text-xs text-text-muted">({formatMoney(Number(quantity) * Number(unitPrice))})</span> : null}
+            </p>
+          ) : null}
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-surface-subtle px-4 text-sm font-semibold text-text-secondary transition hover:bg-surface-muted hover:text-text-primary" onClick={onClose}>
+            {t('common.cancel')}
+          </button>
+          <button disabled={saving} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50" onClick={() => void handleSave()}>
+            {saving ? t('common.loading') : t('common.save')}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function MaterialsPage({ materials, formatMoney, onCreate, openModal, openDelete }: { materials: Material[]; formatMoney: (value: number) => string; onCreate: () => void; openModal: (modal: ModalState) => void; openDelete: (modal: ModalState) => void }) {
   const { t } = useTranslation();
   const exportResource = useResourceExport();
@@ -1604,6 +1679,7 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'materials' | 'suppliers' | 'stock'>('materials');
   const [viewingPurchasesFor, setViewingPurchasesFor] = useState<Material | null>(null);
+  const [addingStockFor, setAddingStockFor] = useState<Material | null>(null);
   const lowStockCount = materials.filter(m => m.stock <= m.minStock).length;
   const totalValue = materials.reduce((sum, m) => sum + m.stock * m.price, 0);
   const filtered = materials.filter(m =>
@@ -1674,6 +1750,7 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
             <span className="font-semibold text-text-primary">{formatMoney(mat.price)}<span className="ml-1 text-xs text-text-muted">/{unitLabel(mat.unit, t)}</span></span>,
             <StatusBadge tone={materialStatusTone(mat.statusKey)}>{statusLabel(t, mat.statusKey)}</StatusBadge>,
             <div className="flex items-center gap-2">
+              {canManage ? <button className="rounded-lg bg-success-bg px-2.5 py-1.5 text-xs font-bold text-success transition hover:bg-success/15" onClick={() => setAddingStockFor(mat)}>+ {t('materials.addStock')}</button> : null}
               <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => setViewingPurchasesFor(mat)}>{t('materials.purchases')}</button>
               <RowActions onView={() => openModal({ kind: 'material', mode: 'view', item: mat })} onEdit={canManage ? () => openModal({ kind: 'material', mode: 'edit', item: mat }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'material', mode: 'view', item: mat }) : undefined} />
             </div>,
@@ -1692,6 +1769,7 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
           onClose={() => setViewingPurchasesFor(null)}
         />
       ) : null}
+      {addingStockFor ? <AddMaterialStockModal material={addingStockFor} formatMoney={formatMoney} onClose={() => setAddingStockFor(null)} /> : null}
     </div>
   );
 }

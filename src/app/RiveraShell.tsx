@@ -1214,12 +1214,17 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
       });
     }, [modal.kind, modal.item?.id, t]);
     const inputClass = 'h-11 w-full rounded-xl border border-border-soft/60 bg-surface-card px-3 text-sm font-medium text-text-primary outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20';
-    const FieldInput = ({ name, label, type = 'text', required = false, fallback = '', step }: { name: string; label: string; type?: string; required?: boolean; fallback?: string; step?: string }) => (
-      <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
-        {label}
-        {type === 'date' ? <DatePicker name={name} required={required} defaultValue={value(name, fallback)} /> : <input className={inputClass} name={name} type={type} required={required} defaultValue={value(name, fallback)} step={step} />}
-      </label>
-    );
+    const FieldInput = ({ name, label, type = 'text', required = false, fallback = '', step }: { name: string; label: string; type?: string; required?: boolean; fallback?: string; step?: string }) => {
+      // Backend decimals come as "70000.00" — trim pointless trailing zeros in number inputs.
+      const raw = value(name, fallback);
+      const defaultValue = type === 'number' && /^-?\d+\.\d+$/.test(raw) ? raw.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '') : raw;
+      return (
+        <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+          {label}
+          {type === 'date' ? <DatePicker name={name} required={required} defaultValue={defaultValue} /> : <input className={inputClass} name={name} type={type} required={required} defaultValue={defaultValue} step={step} />}
+        </label>
+      );
+    };
     const SelectInput = ({ name, label, options, required = false, fallback = '', selectedValue, onChange }: { name: string; label: string; options: Array<{ value: string; label: string }>; required?: boolean; fallback?: string; selectedValue?: string; onChange?: (value: string) => void }) => (
       <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
         {label}

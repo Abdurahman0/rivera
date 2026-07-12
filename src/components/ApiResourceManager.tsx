@@ -87,11 +87,18 @@ function errorMessage(t: TFunction, error: unknown) {
   return translateBackendMessage(t, error.message || t('admin.ui.requestFailed'));
 }
 
+/** Backend decimals arrive as strings like "70000.00" / "15.5000" — strip the pointless
+ *  trailing zeros. Only touches strings with a decimal point, so codes like "0005" survive. */
+function trimTrailingZeros(value: string) {
+  if (!/^-?\d+\.\d+$/.test(value)) return value;
+  return value.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+}
+
 function rawDisplayValue(t: TFunction, value: unknown) {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'boolean') return value ? t('admin.ui.yes') : t('admin.ui.no');
   if (typeof value === 'object') return JSON.stringify(value);
-  return String(value).replaceAll('_', ' ');
+  return trimTrailingZeros(String(value)).replaceAll('_', ' ');
 }
 
 function cellValue(t: TFunction, row: ResourceRow, field: ResourceField, lookups: Record<string, Map<string, string>>) {
@@ -109,6 +116,7 @@ function fieldValue(row: ResourceRow | null, field: ResourceField) {
   if (field.type === 'checkbox') return Boolean(value);
   if (field.type === 'json') return value ? JSON.stringify(value, null, 2) : '{}';
   if (field.type === 'datetime-local' && typeof value === 'string') return value.slice(0, 16);
+  if (field.type === 'number' && typeof value === 'string') return trimTrailingZeros(value);
   return value === null || value === undefined ? '' : String(value);
 }
 
