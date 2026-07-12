@@ -153,7 +153,7 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
     fields: [
       { name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name' }, required: true, table: true }, { name: 'operation_type', label: f('operation'), lookup: { resource: resources.operationTypes, label: 'name' }, required: true, table: true },
       { name: 'date', label: f('date'), type: 'date', required: true, table: true }, { name: 'quantity_done', label: f('quantity'), type: 'number', required: true, table: true }, { name: 'amount', label: f('amount'), readOnly: true, table: true },
-      { name: 'related_batch', label: f('batch'), lookup: { resource: resources.productionBatches, label: 'batch_number' }, nullable: true }, { name: 'note', label: f('note'), type: 'textarea' },
+      { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
   workHourBreakdowns: {

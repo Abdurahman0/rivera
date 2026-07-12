@@ -169,7 +169,6 @@ export interface ProductionBatch {
   plannedQty: number;
   producedQty: number;
   unit: 'm' | 'kg' | 'pcs';
-  employees: string[];
   shift: string;
   orderId: string | null;
   notes: string;
@@ -192,10 +191,10 @@ export interface PieceworkRecord {
   id: number;
   employeeName: string;
   operationName: string;
-  product: string;
   quantity: number;
   ratePerPiece: number;
   unit: 'm' | 'kg' | 'pcs';
+  /** ISO work date of the entry (kept as `week` for historical naming). */
   week: string;
 }
 

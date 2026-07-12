@@ -114,14 +114,19 @@ function parseIsoDate(value: string) {
   return new Date(year, month - 1, day);
 }
 
-type DashboardRangePreset = 'today' | 'last30Days' | 'thisMonth' | 'lastMonth';
+type DashboardRangePreset = 'today' | 'thisWeek' | 'last30Days' | 'thisMonth' | 'lastMonth';
 
-const DASHBOARD_RANGE_PRESETS: DashboardRangePreset[] = ['today', 'last30Days', 'thisMonth', 'lastMonth'];
+const DASHBOARD_RANGE_PRESETS: DashboardRangePreset[] = ['today', 'thisWeek', 'last30Days', 'thisMonth', 'lastMonth'];
 
 function dashboardRangePreset(preset: DashboardRangePreset, endDateValue?: string): DashboardDateRange {
   const today = endDateValue ? new Date(`${endDateValue}T00:00:00`) : new Date();
   const safeToday = Number.isNaN(today.getTime()) ? new Date() : today;
   if (preset === 'today') return { startDate: isoDate(safeToday), endDate: isoDate(safeToday) };
+  if (preset === 'thisWeek') {
+    const start = new Date(safeToday);
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    return { startDate: isoDate(start), endDate: isoDate(safeToday) };
+  }
   if (preset === 'last30Days') {
     const start = new Date(safeToday);
     start.setDate(start.getDate() - 29);
@@ -894,7 +899,6 @@ function StaffDetailModal({ member, records, attendanceLog, formatMoney, onClose
                       <FiTool className="h-3 w-3 shrink-0 text-primary" />
                       <span className="text-sm font-semibold text-text-primary">{r.operationName}</span>
                     </div>
-                    <p className="text-xs text-text-muted">{r.product}</p>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-text-muted">{r.quantity.toLocaleString()} × {formatMoney(r.ratePerPiece)}</span>
                       <span className="font-extrabold text-success">{formatMoney(r.quantity * r.ratePerPiece)}</span>
@@ -911,7 +915,6 @@ function StaffDetailModal({ member, records, attendanceLog, formatMoney, onClose
                   <thead>
                     <tr className="border-b border-border-soft/20 bg-surface-subtle">
                       <th className="py-2.5 pl-4 pr-3 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.operation')}</th>
-                      <th className="px-3 py-2.5 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.product')}</th>
                       <th className="px-3 py-2.5 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.quantity')}</th>
                       <th className="px-3 py-2.5 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.rate')}</th>
                       <th className="py-2.5 pl-3 pr-4 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.detail.total')}</th>
@@ -926,7 +929,6 @@ function StaffDetailModal({ member, records, attendanceLog, formatMoney, onClose
                             <span className="font-semibold text-text-primary">{r.operationName}</span>
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-xs text-text-muted">{r.product}</td>
                         <td className="px-3 py-3 text-right font-bold text-text-primary">{r.quantity.toLocaleString()}</td>
                         <td className="px-3 py-3 text-right text-xs text-text-muted">{formatMoney(r.ratePerPiece)}</td>
                         <td className="py-3 pl-3 pr-4 text-right font-extrabold text-success">{formatMoney(r.quantity * r.ratePerPiece)}</td>
@@ -935,7 +937,7 @@ function StaffDetailModal({ member, records, attendanceLog, formatMoney, onClose
                   </tbody>
                   <tfoot>
                     <tr className="bg-success/5">
-                      <td colSpan={4} className="py-3 pl-4 pr-3 text-sm font-extrabold text-text-primary">{t('staff.piecework.earned')}</td>
+                      <td colSpan={3} className="py-3 pl-4 pr-3 text-sm font-extrabold text-text-primary">{t('staff.piecework.earned')}</td>
                       <td className="py-3 pl-3 pr-4 text-right text-base font-extrabold text-success">{formatMoney(totalEarned)}</td>
                     </tr>
                   </tfoot>
@@ -1741,10 +1743,17 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
   const { t } = useTranslation();
   const canManage = useHasPermission('payroll', 'manage');
   const [subTab, setSubTab] = useState<'summary' | 'operationTypes' | 'adjustments' | 'payroll' | 'workEntries' | 'workHourBreakdowns'>('summary');
+  // Daily / weekly / monthly view of piecework — defaults to the current month,
+  // since the monthly total is what the salary derives from.
+  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
+
+  const recordsInRange = useMemo(() => pieceworkRecords
+    .filter(record => !dateRange || (record.week >= dateRange.startDate && record.week <= dateRange.endDate)),
+  [pieceworkRecords, dateRange]);
 
   const byEmployee = staff
     .map(member => {
-      const records = pieceworkRecords.filter(r => r.employeeName === member.name);
+      const records = recordsInRange.filter(r => r.employeeName === member.name);
       const totalEarned = records.reduce((sum, r) => sum + r.quantity * r.ratePerPiece, 0);
       const totalPieces = records.reduce((sum, r) => sum + r.quantity, 0);
       return { member, records, totalEarned, totalPieces };
@@ -1755,6 +1764,12 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
   const grandTotal = byEmployee.reduce((sum, e) => sum + e.totalEarned, 0);
   const grandPieces = byEmployee.reduce((sum, e) => sum + e.totalPieces, 0);
   const topWorker = byEmployee[0];
+  const activePreset = matchingDashboardPreset(dateRange);
+  const rangeLabel = activePreset
+    ? t(`dashboard.filters.${activePreset}`)
+    : dateRange
+      ? `${formatDisplayDate(dateRange.startDate, t)} – ${formatDisplayDate(dateRange.endDate, t)}`
+      : t('dashboard.filters.allTime');
 
   return (
     <div className="grid gap-5">
@@ -1782,9 +1797,13 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
         <ApiResourceManager config={{ ...operationsConfigs.workHourBreakdowns, readOnly: !canManage }} />
       ) : (
       <>
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
+        <DashboardPresetDropdown value={dateRange} onChange={setDateRange} />
+        <DashboardCustomRangePicker value={dateRange} onChange={setDateRange} />
+      </div>
       <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard icon={<FiDollarSign />} label={t('staff.piecework.metrics.totalPayout')} value={formatMoney(grandTotal)} caption={t('staff.piecework.metrics.totalPayoutCaption')} tone="success" />
-        <MetricCard icon={<FiPackage />} label={t('staff.piecework.metrics.totalPieces')} value={grandPieces.toLocaleString()} caption={t('staff.piecework.metrics.totalPiecesCaption')} tone="info" />
+        <MetricCard icon={<FiDollarSign />} label={t('staff.piecework.metrics.totalPayout')} value={formatMoney(grandTotal)} caption={rangeLabel} tone="success" />
+        <MetricCard icon={<FiPackage />} label={t('staff.piecework.metrics.totalPieces')} value={grandPieces.toLocaleString()} caption={rangeLabel} tone="info" />
         <MetricCard icon={<FiUsers />} label={t('staff.piecework.metrics.topWorker')} value={topWorker?.member.name.split(' ')[0] ?? '—'} caption={formatMoney(topWorker?.totalEarned ?? 0)} tone="warning" />
       </div>
 
@@ -1813,7 +1832,6 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
                     <div className="flex items-center gap-2.5">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><FiTool className="h-3 w-3" /></span>
                       <span className="min-w-0 truncate font-semibold text-text-primary">{record.operationName}</span>
-                      <span className="ml-auto rounded-pill bg-surface-muted px-2.5 py-1 text-xs font-semibold text-text-secondary">{record.product}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-text-muted">{record.quantity.toLocaleString()} {t('common.pcs')} × {formatMoney(record.ratePerPiece)}/{t('common.pcs')}</span>
@@ -1835,7 +1853,6 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
                 <thead>
                   <tr className="border-b border-border-soft/20">
                     <th className="py-3 pl-5 pr-3 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.operation')}</th>
-                    <th className="px-3 py-3 text-left text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.product')}</th>
                     <th className="px-3 py-3 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.quantity')}</th>
                     <th className="px-3 py-3 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.rate')}</th>
                     <th className="py-3 pl-3 pr-5 text-right text-xs font-extrabold uppercase tracking-wide text-text-muted">{t('staff.piecework.columns.earned')}</th>
@@ -1853,9 +1870,6 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
                             <span className="font-semibold text-text-primary">{record.operationName}</span>
                           </div>
                         </td>
-                        <td className="px-3 py-3.5">
-                          <span className="rounded-pill bg-surface-muted px-2.5 py-1 text-xs font-semibold text-text-secondary">{record.product}</span>
-                        </td>
                         <td className="px-3 py-3.5 text-right font-bold text-text-primary">{record.quantity.toLocaleString()} {t('common.pcs')}</td>
                         <td className="px-3 py-3.5 text-right text-xs font-semibold text-text-muted">{formatMoney(record.ratePerPiece)}/{t('common.pcs')}</td>
                         <td className="py-3.5 pl-3 pr-5">
@@ -1870,7 +1884,7 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
                     );
                   })}
                   <tr className="bg-success/5">
-                    <td colSpan={4} className="py-3 pl-5 pr-3 text-sm font-extrabold text-text-primary">{t('staff.detail.total')}</td>
+                    <td colSpan={3} className="py-3 pl-5 pr-3 text-sm font-extrabold text-text-primary">{t('staff.detail.total')}</td>
                     <td className="py-3 pl-3 pr-5 text-right text-base font-extrabold text-success">{formatMoney(totalEarned)}</td>
                   </tr>
                 </tbody>
@@ -1882,48 +1896,6 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
 
       </>
       )}
-    </div>
-  );
-}
-
-function SalaryTab({ staff, formatMoney }: { staff: StaffMember[]; formatMoney: (value: number) => string }) {
-  const { t } = useTranslation();
-  const totalPayroll = staff.reduce((sum, m) => sum + m.salary, 0);
-  const totalNet = staff.reduce((sum, m) => sum + Math.round(m.salary * m.attendance / 100), 0);
-  const avgAttendance = staff.length > 0 ? (staff.reduce((sum, m) => sum + m.attendance, 0) / staff.length).toFixed(1) : '0';
-
-  return (
-    <div className="grid gap-5">
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard icon={<FiDollarSign />} label={t('staff.salary.metrics.totalPayroll')} value={formatMoney(totalPayroll)} caption={t('staff.salary.metrics.totalPayrollCaption')} tone="info" />
-        <MetricCard icon={<FiCheckCircle />} label={t('staff.salary.metrics.totalNet')} value={formatMoney(totalNet)} caption={t('staff.salary.metrics.totalNetCaption')} tone="success" />
-        <MetricCard icon={<FiUsers />} label={t('staff.salary.metrics.avgAttendance')} value={`${avgAttendance}%`} caption={t('staff.salary.metrics.avgAttendanceCaption')} tone="warning" />
-      </div>
-      <DataTable
-        columns={[
-          t('staff.salary.columns.employee'),
-          t('staff.salary.columns.baseSalary'),
-          t('staff.salary.columns.attendance'),
-          t('staff.salary.columns.workedDays'),
-          t('staff.salary.columns.netSalary'),
-          t('staff.salary.columns.deduction'),
-        ]}
-        rows={staff.map(member => {
-          const attendedDays = Math.round(WORKING_DAYS * member.attendance / 100);
-          const netSalary = Math.round(member.salary * member.attendance / 100);
-          const deduction = member.salary - netSalary;
-          return [
-            <PrimaryCell title={member.name} subtitle={optionLabel(t, 'employeePosition', member.role)} />,
-            formatMoney(member.salary),
-            <span className={member.attendance >= 95 ? 'font-bold text-success' : member.attendance >= 85 ? 'font-bold text-warning' : 'font-bold text-danger'}>{member.attendance}%</span>,
-            <span className="font-semibold text-text-primary">{attendedDays}/{WORKING_DAYS}</span>,
-            <span className="font-bold text-success">{formatMoney(netSalary)}</span>,
-            deduction > 0
-              ? <span className="font-bold text-danger">-{formatMoney(deduction)}</span>
-              : <span className="font-bold text-success">{formatMoney(0)}</span>,
-          ];
-        })}
-      />
     </div>
   );
 }
@@ -2234,84 +2206,6 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
   );
 }
 
-function AddWorkEntryModal({ batch, staff, operationTypes, onClose, onSaved }: {
-  batch: ProductionBatch;
-  staff: StaffMember[];
-  operationTypes: Array<{ id: string; name: string }>;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const [employee, setEmployee] = useState('');
-  const [operationType, setOperationType] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [quantity, setQuantity] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  async function handleSave() {
-    if (!employee || !operationType || !date || !quantity || Number(quantity) <= 0) {
-      toast(t('admin.ui.requiredFieldsMissing'), 'danger');
-      return;
-    }
-    setSaving(true);
-    try {
-      await api.create(resources.dailyWorkEntries, {
-        employee, operation_type: operationType, date, quantity_done: Number(quantity), related_batch: batch.id,
-      });
-      toast(t('production.batch.workEntrySaved'), 'success');
-      onSaved();
-      onClose();
-    } catch (error) {
-      toast(apiErrorMessage(error, t), 'danger');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <section role="dialog" aria-modal="true" className="w-full max-w-[440px] rounded-[28px] bg-surface-card p-5 shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">{batch.orderId || batch.product}</p>
-            <h3 className="mt-1 font-display text-xl font-extrabold text-text-primary">{t('production.batch.addEmployee')}</h3>
-          </div>
-          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition duration-fast hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
-            <FiX className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="mt-5 grid gap-3">
-          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
-            {t('admin.fields.employee')}
-            <Dropdown value={employee} onChange={setEmployee} options={staff.map(member => ({ value: String(member.id), label: member.name }))} placeholder={t('admin.ui.selectPlaceholder')} />
-          </label>
-          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
-            {t('admin.fields.operation')}
-            <Dropdown value={operationType} onChange={setOperationType} options={operationTypes.map(op => ({ value: op.id, label: op.name }))} placeholder={t('admin.ui.selectPlaceholder')} />
-          </label>
-          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
-            {t('admin.fields.date')}
-            <DatePicker value={date} onChange={setDate} />
-          </label>
-          <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
-            {t('admin.fields.quantity')}
-            <input type="number" min="1" value={quantity} onChange={event => setQuantity(event.target.value)} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50" />
-          </label>
-        </div>
-        <div className="mt-5 flex gap-2">
-          <button className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-surface-subtle px-4 text-sm font-semibold text-text-secondary transition hover:bg-surface-muted hover:text-text-primary" onClick={onClose}>
-            {t('common.cancel')}
-          </button>
-          <button disabled={saving} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50" onClick={() => void handleSave()}>
-            {saving ? t('common.loading') : t('common.save')}
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 function BatchDetailModal({ batch, canManage, onClose }: { batch: ProductionBatch; canManage: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'batchItems' | 'materialUsages'>('batchItems');
@@ -2352,25 +2246,20 @@ function BatchDetailModal({ batch, canManage, onClose }: { batch: ProductionBatc
   );
 }
 
-export function ProductionPage({ batches, products, materials, staff, operationTypes, formatMoney, onCreate, openModal, openDelete, onDeliver, onWorkEntrySaved }: {
+export function ProductionPage({ batches, products, materials, formatMoney, onCreate, openModal, openDelete, onDeliver }: {
   batches: ProductionBatch[];
   products: Product[];
   materials: Material[];
-  staff: StaffMember[];
-  operationTypes: Array<{ id: string; name: string }>;
   formatMoney: (v: number) => string;
   onCreate: () => void;
   openModal: (modal: ModalState) => void;
   openDelete: (modal: ModalState) => void;
   onDeliver: (id: string | number) => Promise<void>;
-  onWorkEntrySaved: () => void;
 }) {
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('production', 'manage');
-  const canManageWorkEntries = useHasPermission('payroll', 'manage');
   const [activeTab, setActiveTab] = useState<'batches' | 'stock' | 'consumption'>('batches');
-  const [addingEmployeeToBatch, setAddingEmployeeToBatch] = useState<ProductionBatch | null>(null);
   const [viewingBatchDetail, setViewingBatchDetail] = useState<ProductionBatch | null>(null);
   const [openBatchMaterials, setOpenBatchMaterials] = useState<Record<string, boolean>>({});
 
@@ -2435,13 +2324,7 @@ export function ProductionPage({ batches, products, materials, staff, operationT
               plannedUsed: item.qtyPerUnit * batch.plannedQty,
               issued: batch.materialIssues.find(issue => String(issue.materialId) === String(item.materialId)),
             }));
-            const visibleEmployees = batch.employees.slice(0, 3);
-            const extraEmployees = batch.employees.length - 3;
             const materialsOpen = Boolean(openBatchMaterials[String(batch.id)]);
-            const isCompleted = batch.shift === 'completed';
-            const remainingQty = Math.max(batch.plannedQty - batch.producedQty, 0);
-            const canDeliver = !isCompleted && remainingQty > 0;
-            const deliverDisabledReason = isCompleted ? t('production.batch.deliverDisabledCompleted') : remainingQty <= 0 ? t('production.batch.deliverDisabledNoRemaining') : undefined;
 
             return (
               <article key={batch.id} className="app-card--nova overflow-hidden">
@@ -2526,30 +2409,15 @@ export function ProductionPage({ batches, products, materials, staff, operationT
                   ) : null}
                 </div>
 
-                {/* Footer: employees + shift */}
+                {/* Footer: status + actions */}
                 <div className="flex flex-wrap items-center gap-4 border-t border-border-soft/20 bg-surface-subtle/40 px-5 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <FiUsers className="h-3.5 w-3.5 shrink-0 text-text-muted" />
-                    <span className="whitespace-nowrap text-xs text-text-muted">{t('production.batch.employees')}:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {visibleEmployees.map(name => (
-                        <span key={name} className="whitespace-nowrap rounded-md bg-surface-card px-2 py-0.5 text-[11px] font-semibold text-text-secondary ring-1 ring-border-soft/40">{name.split(' ')[0]}</span>
-                      ))}
-                      {extraEmployees > 0 && <span className="whitespace-nowrap rounded-md bg-surface-card px-2 py-0.5 text-[11px] font-semibold text-text-muted ring-1 ring-border-soft/40">+{extraEmployees}</span>}
-                    </div>
-                    {canManageWorkEntries ? (
-                      <button className="whitespace-nowrap rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-text-accent transition hover:bg-primary/20" onClick={() => setAddingEmployeeToBatch(batch)}>
-                        + {t('production.batch.addEmployee')}
-                      </button>
-                    ) : null}
-                  </div>
                   <div className="flex items-center gap-1.5 text-xs text-text-muted">
                     <FiClock className="h-3.5 w-3.5 shrink-0" />
                     {optionLabel(t, 'productionStatus', batch.shift)}
                   </div>
                   <div className="ml-auto flex flex-wrap items-center gap-2">
                     <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => setViewingBatchDetail(batch)}>{t('production.batch.detail')}</button>
-                    {canManage ? <button disabled={!canDeliver} title={deliverDisabledReason} className="rounded-lg bg-success-bg px-2.5 py-1.5 text-xs font-bold text-success transition disabled:cursor-not-allowed disabled:opacity-40" onClick={() => void onDeliver(batch.id)}>{t('production.batch.deliver')}</button> : null}
+                    {canManage ? <button className="rounded-lg bg-success-bg px-2.5 py-1.5 text-xs font-bold text-success transition hover:bg-success/15" onClick={() => void onDeliver(batch.id)}>{t('production.batch.deliver')}</button> : null}
                     <RowActions onView={() => openModal({ kind: 'batch', mode: 'view', item: batch })} onEdit={canManage ? () => openModal({ kind: 'batch', mode: 'edit', item: batch }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'batch', mode: 'view', item: batch }) : undefined} />
                   </div>
                 </div>
@@ -2638,15 +2506,6 @@ export function ProductionPage({ batches, products, materials, staff, operationT
           </div>
         </div>
       )}
-      {addingEmployeeToBatch ? (
-        <AddWorkEntryModal
-          batch={addingEmployeeToBatch}
-          staff={staff}
-          operationTypes={operationTypes}
-          onClose={() => setAddingEmployeeToBatch(null)}
-          onSaved={onWorkEntrySaved}
-        />
-      ) : null}
       {viewingBatchDetail ? (
         <BatchDetailModal batch={viewingBatchDetail} canManage={canManage} onClose={() => setViewingBatchDetail(null)} />
       ) : null}

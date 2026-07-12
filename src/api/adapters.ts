@@ -226,7 +226,6 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     id: index + 1,
     employeeName: employeeNames.get(row.employee) || row.employee,
     operationName: operationNames.get(row.operation_type) || row.operation_type,
-    product: row.related_batch ? batchNames.get(row.related_batch) || row.related_batch : '—',
     quantity: row.quantity_done,
     ratePerPiece: row.quantity_done ? number(row.amount) / row.quantity_done : 0,
     unit: 'pcs',
@@ -248,15 +247,6 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     notes: row.note,
     api: row as unknown as Record<string, unknown>,
   }));
-
-  const employeesByBatch = new Map<string, Set<string>>();
-  data.workEntries.forEach(row => {
-    if (!row.related_batch) return;
-    const key = String(row.related_batch);
-    const name = employeeNames.get(row.employee) || row.employee;
-    if (!employeesByBatch.has(key)) employeesByBatch.set(key, new Set());
-    employeesByBatch.get(key)!.add(name);
-  });
 
   const materialIssuesByBatch = new Map<string, Map<string, {
     materialId: string;
@@ -303,7 +293,6 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     plannedQty: row.planned_quantity,
     producedQty: row.delivered_to_warehouse,
     unit: 'pcs',
-    employees: [...(employeesByBatch.get(String(row.id)) || [])],
     shift: row.status,
     orderId: row.batch_number,
     notes: row.note,

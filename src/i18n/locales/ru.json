@@ -172,6 +172,7 @@
       "lastMonth": "Прошлый месяц",
       "last30Days": "Последние 30 дней",
       "today": "Сегодня",
+      "thisWeek": "Эта неделя",
       "allTime": "Всё время",
       "customRange": "Выбрать даты"
     },
@@ -317,7 +318,6 @@
     "tabs": {
       "employees": "Сотрудники",
       "attendance": "Посещаемость",
-      "salary": "Зарплата",
       "piecework": "Сдельная оплата"
     },
     "attendance": {
@@ -339,7 +339,6 @@
       },
       "columns": {
         "operation": "Операция",
-        "product": "Продукт",
         "quantity": "Количество",
         "rate": "Цена/шт",
         "earned": "Начислено",
@@ -350,27 +349,6 @@
       "tabs": {
         "summary": "Общее"
       }
-    },
-    "salary": {
-      "title": "Расчёт заработной платы",
-      "description": "Начисленная зарплата на основе процента посещаемости.",
-      "metrics": {
-        "totalPayroll": "Общий фонд зарплат",
-        "totalPayrollCaption": "Базовые оклады",
-        "totalNet": "Начисленная зарплата",
-        "totalNetCaption": "С учётом посещаемости",
-        "avgAttendance": "Средняя посещаемость",
-        "avgAttendanceCaption": "По всем сотрудникам"
-      },
-      "columns": {
-        "employee": "Сотрудник",
-        "baseSalary": "Базовый оклад",
-        "attendance": "Посещаемость",
-        "workedDays": "Рабочие дни",
-        "netSalary": "Начисленная зарплата",
-        "deduction": "Удержание"
-      },
-      "workingDays": "Рабочих дней"
     },
     "modal": {
       "viewTitle": "Профиль сотрудника",
@@ -626,23 +604,17 @@
     "batch": {
       "produced": "произведено",
       "materials": "Расход материалов",
-      "employees": "Сотрудники",
       "shift": "Смена",
       "order": "Заказ",
       "noRecipe": "Рецептура не задана — расход не рассчитывается",
       "noNotes": "Без примечаний",
       "deliver": "Доставить",
-      "noEmployees": "Сотрудники не привязаны",
-      "addEmployee": "Добавить сотрудника",
-      "workEntrySaved": "Запись работы сохранена",
       "detail": "Подробнее",
       "notIssued": "Материалы не списаны",
       "issueRuns": "Списано {{count}} раз · {{transactions}} записей",
       "plannedMaterial": "План",
       "calculatedUsed": "По произведенному",
-      "issued": "Списано",
-      "deliverDisabledCompleted": "Партия завершена, доставка недоступна",
-      "deliverDisabledNoRemaining": "Нет оставшегося количества для доставки"
+      "issued": "Списано"
     },
     "stock": {
       "title": "Запас готовой продукции",

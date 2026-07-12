@@ -172,6 +172,7 @@
       "lastMonth": "O'tgan oy",
       "last30Days": "So'nggi 30 kun",
       "today": "Bugun",
+      "thisWeek": "Bu hafta",
       "allTime": "Barcha vaqt",
       "customRange": "Sana tanlash"
     },
@@ -317,7 +318,6 @@
     "tabs": {
       "employees": "Xodimlar",
       "attendance": "Davomat",
-      "salary": "Ish haqi",
       "piecework": "Akkord (dona hisobi)"
     },
     "attendance": {
@@ -339,7 +339,6 @@
       },
       "columns": {
         "operation": "Operatsiya",
-        "product": "Mahsulot",
         "quantity": "Miqdor",
         "rate": "Narx/dona",
         "earned": "Hisoblangan",
@@ -350,27 +349,6 @@
       "tabs": {
         "summary": "Umumiy"
       }
-    },
-    "salary": {
-      "title": "Ish haqi hisob-kitobi",
-      "description": "Davomat foiziga asoslanib hisoblangan oylik ish haqi.",
-      "metrics": {
-        "totalPayroll": "Jami oylik fond",
-        "totalPayrollCaption": "Asosiy ish haqi summasi",
-        "totalNet": "Hisoblangan ish haqi",
-        "totalNetCaption": "Davomatga qarab",
-        "avgAttendance": "O'rtacha davomat",
-        "avgAttendanceCaption": "Barcha xodimlar bo'yicha"
-      },
-      "columns": {
-        "employee": "Xodim",
-        "baseSalary": "Asosiy oylik",
-        "attendance": "Davomat",
-        "workedDays": "Ish kunlari",
-        "netSalary": "Hisoblangan oylik",
-        "deduction": "Ushlanma"
-      },
-      "workingDays": "Ish kunlari"
     },
     "modal": {
       "viewTitle": "Xodim profili",
@@ -626,23 +604,17 @@
     "batch": {
       "produced": "ishlab chiqarildi",
       "materials": "Material sarfi",
-      "employees": "Xodimlar",
       "shift": "Smena",
       "order": "Buyurtma",
       "noRecipe": "Bu mahsulot uchun resept yo'q — material sarfi hisoblanmaydi",
       "noNotes": "Izoh yo'q",
       "deliver": "Yetkazish",
-      "noEmployees": "Xodim biriktirilmagan",
-      "addEmployee": "Xodim qo'shish",
-      "workEntrySaved": "Ish yozuvi saqlandi",
       "detail": "Batafsil",
       "notIssued": "Material sarflanmagan",
       "issueRuns": "{{count}} marta sarflangan · {{transactions}} yozuv",
       "plannedMaterial": "Reja",
       "calculatedUsed": "Ishlab chiqarilgan bo'yicha",
-      "issued": "Sarflangan",
-      "deliverDisabledCompleted": "Partiya yakunlangan, yetkazish mumkin emas",
-      "deliverDisabledNoRemaining": "Yetkazish uchun qolgan miqdor yo'q"
+      "issued": "Sarflangan"
     },
     "stock": {
       "title": "Tayyor mahsulot zaxirasi",

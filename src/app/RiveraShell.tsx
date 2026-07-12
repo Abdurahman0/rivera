@@ -719,13 +719,10 @@ function App() {
                 batches={productionBatches}
                 products={products}
                 materials={rawMaterials}
-                staff={staff}
-                operationTypes={operationTypeOptions}
                 formatMoney={formatMoney}
                 onCreate={() => setModal({ kind: 'batch', mode: 'create' })}
                 openModal={setModal}
                 openDelete={setPendingDelete}
-                onWorkEntrySaved={() => void refreshData()}
                 onDeliver={async id => {
                   try {
                     const quantityText = await prompt({ title: t('dialog.deliverQuantityTitle'), message: t('dialog.deliverQuantityMessage'), placeholder: t('dialog.deliverQuantityPlaceholder'), inputType: 'number', min: 1, required: true });
@@ -1511,7 +1508,6 @@ function detailRows(modal: ModalState, formatMoney: (value: number) => string, t
       { label: t('admin.fields.product'), value: item.product },
       { label: t('production.stock.currentStock'), value: `${item.producedQty.toLocaleString()} ${unitLabel(item.unit, t)}` },
       { label: t('admin.fields.status'), value: optionLabel(t, 'productionStatus', item.shift) },
-      { label: t('production.batch.employees'), value: item.employees.length ? item.employees.join(', ') : t('production.batch.noEmployees') },
       { label: t('admin.fields.note'), value: item.notes },
     ];
   }
