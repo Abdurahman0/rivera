@@ -113,14 +113,19 @@ function parseIsoDate(value: string) {
   return new Date(year, month - 1, day);
 }
 
-type DashboardRangePreset = 'today' | 'thisWeek' | 'last30Days' | 'thisMonth' | 'lastMonth';
+type DashboardRangePreset = 'today' | 'yesterday' | 'thisWeek' | 'last30Days' | 'thisMonth' | 'lastMonth';
 
-const DASHBOARD_RANGE_PRESETS: DashboardRangePreset[] = ['today', 'thisWeek', 'last30Days', 'thisMonth', 'lastMonth'];
+const DASHBOARD_RANGE_PRESETS: DashboardRangePreset[] = ['today', 'yesterday', 'thisWeek', 'last30Days', 'thisMonth', 'lastMonth'];
 
 function dashboardRangePreset(preset: DashboardRangePreset, endDateValue?: string): DashboardDateRange {
   const today = endDateValue ? new Date(`${endDateValue}T00:00:00`) : new Date();
   const safeToday = Number.isNaN(today.getTime()) ? new Date() : today;
   if (preset === 'today') return { startDate: isoDate(safeToday), endDate: isoDate(safeToday) };
+  if (preset === 'yesterday') {
+    const start = new Date(safeToday);
+    start.setDate(start.getDate() - 1);
+    return { startDate: isoDate(start), endDate: isoDate(start) };
+  }
   if (preset === 'thisWeek') {
     const start = new Date(safeToday);
     start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
@@ -965,29 +970,61 @@ function formatWorkedHours(t: TFunction, minutes: number) {
   return t('staff.attendance.hoursMinutes', { hours, minutes: mins });
 }
 
+function timeOfDay(iso: string | null) {
+  if (!iso) return '—';
+  const parsed = new Date(iso);
+  return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+// Manual weekday names: browsers without uz locale data fall back to English otherwise.
+const WEEKDAYS: Record<'uz' | 'ru', string[]> = {
+  uz: ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'],
+  ru: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
+};
+
 function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMember[]; attendanceLog: AttendanceLogEntry[]; canManage: boolean }) {
   const { t } = useTranslation();
   const [enrolling, setEnrolling] = useState(false);
-  // Empty string = all employees (the dropdown's placeholder state, no explicit "all" option).
-  const [employeeFilter, setEmployeeFilter] = useState('');
   // Defaults to the current month so "how many hours this month" is visible
   // immediately — no filter clicks needed. Still fully adjustable via the dropdowns below.
   const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
+  const [detailEmployeeId, setDetailEmployeeId] = useState<string | null>(null);
   const employeeNames = useMemo(() => new Map(staff.map(member => [String(member.id), member.name])), [staff]);
 
-  const rows = useMemo(() => attendanceLog
+  const rangeRows = useMemo(() => attendanceLog
     .filter(entry => !dateRange || (entry.workDate >= dateRange.startDate && entry.workDate <= dateRange.endDate))
-    .filter(entry => !employeeFilter || String(entry.employeeId) === employeeFilter)
     .sort((a, b) => b.workDate.localeCompare(a.workDate) || (employeeNames.get(String(a.employeeId)) ?? '').localeCompare(employeeNames.get(String(b.employeeId)) ?? '')),
-  [attendanceLog, dateRange, employeeFilter, employeeNames]);
+  [attendanceLog, dateRange, employeeNames]);
 
-  const activePreset = matchingDashboardPreset(dateRange);
-  const rangeLabel = activePreset
-    ? t(`dashboard.filters.${activePreset}`)
-    : dateRange
-      ? `${formatDisplayDate(dateRange.startDate, t)} – ${formatDisplayDate(dateRange.endDate, t)}`
-      : t('dashboard.filters.allTime');
-  const selectedTotalMinutes = employeeFilter ? rows.reduce((sum, entry) => sum + entry.workedMinutes, 0) : null;
+  const isSingleDay = Boolean(dateRange && dateRange.startDate === dateRange.endDate);
+
+  // Multi-day mode: one row per employee with aggregated presence.
+  const aggregated = useMemo(() => {
+    const byEmployee = new Map<string, { days: number; minutes: number }>();
+    rangeRows.forEach(entry => {
+      const key = String(entry.employeeId);
+      const current = byEmployee.get(key) ?? { days: 0, minutes: 0 };
+      current.days += 1;
+      current.minutes += entry.workedMinutes;
+      byEmployee.set(key, current);
+    });
+    return staff
+      .map(member => ({ member, stats: byEmployee.get(String(member.id)) ?? { days: 0, minutes: 0 } }))
+      .sort((a, b) => b.stats.minutes - a.stats.minutes);
+  }, [rangeRows, staff]);
+
+  const detailMember = detailEmployeeId ? staff.find(member => String(member.id) === detailEmployeeId) ?? null : null;
+  if (detailMember) {
+    return (
+      <EmployeeAttendanceDetail
+        member={detailMember}
+        attendanceLog={attendanceLog}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        onBack={() => setDetailEmployeeId(null)}
+      />
+    );
+  }
 
   return (
     <div className="grid gap-4">
@@ -996,36 +1033,172 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
           <button className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => setEnrolling(true)}>{t('faceEnroll.buttonLabel')}</button>
         ) : <span />}
         <div className="flex flex-wrap items-center gap-2.5">
-          {selectedTotalMinutes !== null ? (
-            <span className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary/10 px-3 text-xs font-bold text-primary">
-              {t('staff.attendance.totalsHeading', { range: rangeLabel })}: {formatWorkedHours(t, selectedTotalMinutes)}
-            </span>
-          ) : null}
-          <div className="w-[200px]">
-            <Dropdown
-              value={employeeFilter}
-              onChange={setEmployeeFilter}
-              placeholder={t('staff.attendance.allEmployees')}
-              options={staff.map(member => ({ value: String(member.id), label: member.name }))}
-            />
-          </div>
           <DashboardPresetDropdown value={dateRange} onChange={setDateRange} />
           <DashboardCustomRangePicker value={dateRange} onChange={setDateRange} />
         </div>
       </div>
+      <p className="m-0 text-xs font-semibold text-text-muted">{t('staff.attendance.rowHint')}</p>
 
-      <DataTable
-        columns={[t('staff.columns.staff'), t('admin.fields.workDate'), t('admin.fields.firstCheckIn'), t('admin.fields.lastCheckOut'), t('staff.attendance.hoursColumn')]}
-        rows={rows.map(entry => [
-          employeeNames.get(String(entry.employeeId)) ?? t('staff.attendance.unknownEmployee'),
-          formatDisplayDate(entry.workDate, t),
-          formatDisplayDateTime(entry.checkIn, t),
-          formatDisplayDateTime(entry.checkOut, t),
-          formatWorkedHours(t, entry.workedMinutes),
-        ])}
-      />
-      {rows.length === 0 ? <p className="py-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p> : null}
+      {isSingleDay ? (
+        <DataTable
+          columns={[t('staff.columns.staff'), t('admin.fields.firstCheckIn'), t('admin.fields.lastCheckOut'), t('staff.attendance.hoursColumn')]}
+          rows={rangeRows.map(entry => [
+            <span className="font-bold text-text-primary">{employeeNames.get(String(entry.employeeId)) ?? t('staff.attendance.unknownEmployee')}</span>,
+            <span className="font-bold text-success">{timeOfDay(entry.checkIn)}</span>,
+            <span className="font-bold text-warning">{timeOfDay(entry.checkOut)}</span>,
+            formatWorkedHours(t, entry.workedMinutes),
+          ])}
+          onRowClick={rowIndex => setDetailEmployeeId(String(rangeRows[rowIndex].employeeId))}
+        />
+      ) : (
+        <DataTable
+          columns={[t('staff.columns.staff'), t('staff.attendance.daysPresent'), t('staff.attendance.hoursColumn')]}
+          rows={aggregated.map(({ member, stats }) => [
+            <span className="font-bold text-text-primary">{member.name}</span>,
+            <span className={stats.days > 0 ? 'font-bold text-text-primary' : 'font-bold text-text-muted'}>{stats.days}</span>,
+            formatWorkedHours(t, stats.minutes),
+          ])}
+          onRowClick={rowIndex => setDetailEmployeeId(String(aggregated[rowIndex].member.id))}
+        />
+      )}
+      {(isSingleDay ? rangeRows.length : aggregated.length) === 0 ? <p className="py-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p> : null}
       {enrolling ? <FaceEnrollDrawer onClose={() => setEnrolling(false)} onEnrolled={() => setEnrolling(false)} /> : null}
+    </div>
+  );
+}
+
+/** Per-employee attendance view: a daily card for each day in the selected range showing
+ *  arrival, leaving and worked time; past working days without a record show as absent. */
+function EmployeeAttendanceDetail({ member, attendanceLog, dateRange, onDateRangeChange, onBack }: {
+  member: StaffMember;
+  attendanceLog: AttendanceLogEntry[];
+  dateRange: DashboardDateRange | null;
+  onDateRangeChange: (range: DashboardDateRange | null) => void;
+  onBack: () => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language.startsWith('ru') ? 'ru-RU' : 'uz-UZ';
+
+  const entriesByDate = useMemo(() => {
+    const map = new Map<string, AttendanceLogEntry>();
+    attendanceLog.filter(entry => String(entry.employeeId) === String(member.id)).forEach(entry => map.set(entry.workDate, entry));
+    return map;
+  }, [attendanceLog, member.id]);
+
+  const todayIso = isoDate(new Date());
+  const days = useMemo(() => {
+    const list: Array<{ date: string; entry: AttendanceLogEntry | null }> = [];
+    if (dateRange) {
+      const end = dateRange.endDate < todayIso ? dateRange.endDate : todayIso;
+      const cursor = new Date(`${dateRange.startDate}T00:00:00`);
+      const endDate = new Date(`${end}T00:00:00`);
+      let guard = 0;
+      while (cursor <= endDate && guard < 190) {
+        const iso = isoDate(cursor);
+        list.push({ date: iso, entry: entriesByDate.get(iso) ?? null });
+        cursor.setDate(cursor.getDate() + 1);
+        guard += 1;
+      }
+      return list.reverse();
+    }
+    return [...entriesByDate.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([date, entry]) => ({ date, entry }));
+  }, [dateRange, entriesByDate, todayIso]);
+
+  const presentDays = days.filter(day => day.entry);
+  const totalMinutes = presentDays.reduce((sum, day) => sum + (day.entry?.workedMinutes ?? 0), 0);
+  const avgMinutesOf = (pick: (entry: AttendanceLogEntry) => string | null) => {
+    const stamps = presentDays.map(day => pick(day.entry!)).filter((iso): iso is string => Boolean(iso)).map(iso => new Date(iso)).filter(date => !Number.isNaN(date.getTime()));
+    if (!stamps.length) return null;
+    const avg = stamps.reduce((sum, date) => sum + date.getHours() * 60 + date.getMinutes(), 0) / stamps.length;
+    return `${String(Math.floor(avg / 60)).padStart(2, '0')}:${String(Math.round(avg % 60)).padStart(2, '0')}`;
+  };
+  const avgIn = avgMinutesOf(entry => entry.checkIn);
+  const avgOut = avgMinutesOf(entry => entry.checkOut);
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex min-w-0 items-center gap-3">
+          <button type="button" className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-surface-subtle px-3 text-xs font-bold text-text-secondary transition hover:bg-surface-muted hover:text-text-primary" onClick={onBack}>
+            <FiChevronRight className="h-4 w-4 rotate-180" /> {t('staff.attendance.back')}
+          </button>
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-extrabold text-primary">
+            {member.name.split(' ').map(word => word[0]).slice(0, 2).join('')}
+          </span>
+          <div className="min-w-0">
+            <p className="m-0 truncate text-base font-extrabold text-text-primary">{member.name}</p>
+            <p className="m-0 text-xs text-text-muted">{optionLabel(t, 'employeePosition', member.role)}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <DashboardPresetDropdown value={dateRange} onChange={onDateRangeChange} />
+          <DashboardCustomRangePicker value={dateRange} onChange={onDateRangeChange} />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <div className="flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 ring-1 ring-border-soft/30">
+          <span className="text-lg font-extrabold text-text-primary">{presentDays.length}</span>
+          <span className="text-xs font-semibold text-text-muted">{t('staff.attendance.daysPresent')}</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl bg-primary/8 px-4 py-2.5 ring-1 ring-primary/20">
+          <span className="text-lg font-extrabold text-primary">{formatWorkedHours(t, totalMinutes)}</span>
+          <span className="text-xs font-semibold text-primary/70">{t('staff.attendance.hoursColumn')}</span>
+        </div>
+        {avgIn ? (
+          <div className="flex items-center gap-2 rounded-xl bg-success/8 px-4 py-2.5 ring-1 ring-success/20">
+            <span className="text-lg font-extrabold text-success">{avgIn}</span>
+            <span className="text-xs font-semibold text-success/70">{t('staff.attendance.avgArrival')}</span>
+          </div>
+        ) : null}
+        {avgOut ? (
+          <div className="flex items-center gap-2 rounded-xl bg-warning/8 px-4 py-2.5 ring-1 ring-warning/20">
+            <span className="text-lg font-extrabold text-warning">{avgOut}</span>
+            <span className="text-xs font-semibold text-warning/70">{t('staff.attendance.avgLeaving')}</span>
+          </div>
+        ) : null}
+      </div>
+
+      {days.length === 0 ? (
+        <p className="rounded-xl bg-surface-subtle p-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {days.map(({ date, entry }) => {
+            const weekday = WEEKDAYS[lang.startsWith('ru') ? 'ru' : 'uz'][new Date(`${date}T00:00:00`).getDay()];
+            return entry ? (
+              <div key={date} className="app-card--nova grid gap-3 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="m-0 text-sm font-extrabold text-text-primary">{formatDisplayDate(date, t)}</p>
+                    <p className="m-0 text-[11px] capitalize text-text-muted">{weekday}</p>
+                  </div>
+                  <span className="rounded-pill bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary">{formatWorkedHours(t, entry.workedMinutes)}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-success/8 p-2.5 text-center ring-1 ring-success/15">
+                    <p className="m-0 text-[10px] font-bold uppercase tracking-wide text-success/70">{t('staff.attendance.cameAt')}</p>
+                    <p className="m-0 mt-0.5 text-lg font-extrabold text-success">{timeOfDay(entry.checkIn)}</p>
+                  </div>
+                  <div className="rounded-xl bg-warning/8 p-2.5 text-center ring-1 ring-warning/15">
+                    <p className="m-0 text-[10px] font-bold uppercase tracking-wide text-warning/70">{t('staff.attendance.leftAt')}</p>
+                    <p className="m-0 mt-0.5 text-lg font-extrabold text-warning">{timeOfDay(entry.checkOut)}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div key={date} className="grid gap-1 rounded-2xl border border-dashed border-border-soft/60 bg-surface-subtle/40 p-4 opacity-75">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="m-0 text-sm font-bold text-text-secondary">{formatDisplayDate(date, t)}</p>
+                    <p className="m-0 text-[11px] capitalize text-text-muted">{weekday}</p>
+                  </div>
+                  <span className="rounded-pill bg-surface-muted px-2.5 py-1 text-[11px] font-bold text-text-muted">{t('staff.attendance.absent')}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

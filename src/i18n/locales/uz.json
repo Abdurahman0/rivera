@@ -174,7 +174,8 @@
       "today": "Bugun",
       "thisWeek": "Bu hafta",
       "allTime": "Barcha vaqt",
-      "customRange": "Sana tanlash"
+      "customRange": "Sana tanlash",
+      "yesterday": "Kecha"
     },
     "metrics": {
       "pipeline": "Buyurtmalar qiymati",
@@ -338,7 +339,15 @@
       "unknownEmployee": "Noma'lum xodim",
       "hoursMinutes": "{{hours}} soat {{minutes}} daqiqa",
       "totalsHeading": "Jami ishlagan soat — {{range}}",
-      "hoursColumn": "Ishlagan vaqt"
+      "hoursColumn": "Ishlagan vaqt",
+      "back": "Orqaga",
+      "daysPresent": "Kelgan kunlar",
+      "absent": "Kelmagan",
+      "avgArrival": "O'rtacha kelish",
+      "avgLeaving": "O'rtacha ketish",
+      "cameAt": "Keldi",
+      "leftAt": "Ketdi",
+      "rowHint": "Xodim ustiga bosib, uning kunlik keldi-ketti kartochkalarini ko'ring. Kelish/ketish vaqtlari bir kunlik davr (Bugun, Kecha yoki kalendar) tanlanganda ko'rinadi."
     },
     "piecework": {
       "title": "Akkord ish haqi",
