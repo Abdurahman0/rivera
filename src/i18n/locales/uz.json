@@ -391,6 +391,13 @@
       "noPieceworkData": "Bu xodim uchun akkord ma'lumotlari yo'q",
       "total": "Jami",
       "pieceworkBadge": "akkord"
+    },
+    "payroll": {
+      "breakdown": "Tarkibi",
+      "piecework": "Akkord",
+      "fixed": "Belgilangan",
+      "days": "{{count}} kun",
+      "totalPayout": "Jami to'lov"
     }
   },
   "products": {
@@ -2207,7 +2214,7 @@
       "calculateMonth": "Oyni hisoblash",
       "openKiosk": "Davomat kioskini ochish",
       "runBackupNow": "Zaxira nusxa olish",
-      "promptMonth": "Ish haqi oyi (YYYY-MM)"
+      "promptMonth": "Qaysi oy uchun hisoblansin?"
     }
   },
   "approvals": {
@@ -2260,6 +2267,16 @@
   },
   "errors": {
     "insufficientMaterialStock": "Material zaxirasi yetarli emas",
-    "insufficientFinishedGoodsStock": "Tayyor mahsulot zaxirasi yetarli emas"
+    "insufficientFinishedGoodsStock": "Tayyor mahsulot zaxirasi yetarli emas",
+    "payrollUnlockOnlyApproved": "Faqat tasdiqlangan oylik hisob-kitobni qulfdan ochish mumkin",
+    "payrollPayOnlyApproved": "Faqat tasdiqlangan oylik hisob-kitobni to'langan deb belgilash mumkin",
+    "payrollApproveOnlyDraft": "Faqat qoralama yoki qulfdan ochilgan oylik hisob-kitobni tasdiqlash mumkin",
+    "monthRequired": "Oy tanlanishi shart",
+    "approvalAlreadyReviewed": "Bu so'rov allaqachon ko'rib chiqilgan",
+    "quantityDateRequired": "Miqdor va sana kiritilishi shart",
+    "reasonRequired": "Sabab kiritilishi shart",
+    "invalidDevice": "Qurilma noto'g'ri yoki ro'yxatdan o'tmagan",
+    "invalidRefreshToken": "Sessiya muddati tugagan — qaytadan kiring",
+    "directChangeNotAllowed": "To'g'ridan-to'g'ri o'zgartirish mumkin emas — maxsus amaldan foydalaning"
   }
 }

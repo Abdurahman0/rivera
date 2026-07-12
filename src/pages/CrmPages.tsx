@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSearch, FiSettings, FiShoppingBag, FiTag, FiTool, FiUsers, FiSliders, FiX } from 'react-icons/fi';
@@ -12,9 +12,9 @@ import { useDialog } from '../components/DialogProvider';
 import { useToast } from '../components/ToastProvider';
 import { useHasPermission } from '../components/PermissionsProvider';
 import { Dropdown, DatePicker } from '../components/FormControls';
-import { ApiResourceManager, type ResourceAction, type ResourceConfig } from '../components/ApiResourceManager';
+import { ApiResourceManager, type ResourceConfig } from '../components/ApiResourceManager';
 import { actions, api, resources } from '../api/client';
-import type { ApiApproval, ApiRecord } from '../api/types';
+import type { ApiApproval, ApiMonthlyPayroll, ApiRecord } from '../api/types';
 import { APPROVAL_ACTION_TARGETS, buildApprovalObjectLabel } from '../lib/approvalTargets';
 import { operationsConfigs } from '../data/resource-config';
 import { FaceEnrollDrawer } from '../components/FaceEnrollDrawer';
@@ -227,7 +227,7 @@ function DashboardCustomRangePicker({ value, onChange }: { value: DashboardDateR
     return cells;
   }, [viewDate]);
 
-  const monthLabel = viewDate.toLocaleDateString(lang, { month: 'long', year: 'numeric' });
+  const monthLabel = `${t(`common.months.${viewDate.getMonth()}`)} ${viewDate.getFullYear()}`;
   const weekdayLabels = lang === 'ru-RU' ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] : ['Du', 'Se', 'Cho', 'Pay', 'Ju', 'Sha', 'Ya'];
   // Only reflect the value here when it's a genuine custom pick (not a preset), so this
   // control's trigger doesn't fight with the preset dropdown over the same range.
@@ -2027,38 +2027,144 @@ function MaterialStockGrid({ materials, formatMoney }: { materials: Material[]; 
 
 const WORKING_DAYS = 26;
 
-function PayrollTab() {
+function payrollStatusTone(status: string): StatusTone {
+  if (status === 'paid') return 'success';
+  if (status === 'approved') return 'info';
+  if (status === 'unlocked') return 'warning';
+  return 'neutral';
+}
+
+function PayrollTab({ staff, formatMoney }: { staff: StaffMember[]; formatMoney: (value: number) => string }) {
   const { t } = useTranslation();
   const { prompt } = useDialog();
+  const { toast } = useToast();
   const canManage = useHasPermission('payroll', 'manage');
-  const [reloadKey, setReloadKey] = useState(0);
+  const [rows, setRows] = useState<ApiMonthlyPayroll[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const employeeNames = useMemo(() => new Map(staff.map(member => [String(member.id), member.name])), [staff]);
 
-  const rowActions = useMemo<ResourceAction[]>(() => {
-    if (!canManage) return [];
-    return [
-      { label: 'admin.page.approve', tone: 'success', show: row => row.status === 'draft' || row.status === 'unlocked', run: row => actions.approvePayroll(String(row.id)) },
-      { label: 'admin.page.markPaid', tone: 'primary', show: row => row.status === 'approved', run: row => actions.markPayrollPaid(String(row.id)) },
-      { label: 'admin.page.unlock', tone: 'warning', show: row => row.status === 'approved' || row.status === 'paid', run: row => actions.unlockPayroll(String(row.id)) },
-    ];
-  }, [canManage]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setRows(await api.list<ApiMonthlyPayroll>(resources.monthlyPayrolls));
+    } catch (error) {
+      toast(apiErrorMessage(error, t), 'danger');
+    } finally {
+      setLoading(false);
+    }
+  }, [t, toast]);
 
-  const headerActions = useMemo(() => {
-    if (!canManage) return undefined;
-    return [{ label: 'admin.page.calculateMonth', run: async () => {
-      const month = await prompt({ title: t('dialog.monthTitle'), message: t('admin.page.promptMonth'), defaultValue: new Date().toISOString().slice(0, 7), inputType: 'month', required: true });
-      if (!month) return;
+  useEffect(() => { void load(); }, [load]);
+
+  async function runAction(id: string, run: () => Promise<unknown>) {
+    setBusyId(id);
+    try {
+      await run();
+      await load();
+    } catch (error) {
+      toast(apiErrorMessage(error, t), 'danger');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function calculateMonth() {
+    const month = await prompt({ title: t('dialog.monthTitle'), message: t('admin.page.promptMonth'), defaultValue: new Date().toISOString().slice(0, 7), inputType: 'month', required: true });
+    if (!month) return;
+    setLoading(true);
+    try {
       await actions.calculatePayroll(month);
-      setReloadKey(value => value + 1);
-    } }];
-  }, [canManage, prompt, t]);
+      await load();
+      toast(t('admin.ui.savedOk'), 'success');
+    } catch (error) {
+      toast(apiErrorMessage(error, t), 'danger');
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  return <ApiResourceManager key={reloadKey} config={{ ...operationsConfigs.payrolls, readOnly: !canManage }} actions={rowActions} headerActions={headerActions} />;
+  const monthLabel = (iso: string) => {
+    const [year, month] = iso.split('-').map(Number);
+    return year && month ? `${t(`common.months.${month - 1}`)} ${year}` : iso;
+  };
+
+  const sorted = useMemo(
+    () => [...rows].sort((a, b) => b.month.localeCompare(a.month) || (employeeNames.get(String(a.employee)) ?? '').localeCompare(employeeNames.get(String(b.employee)) ?? '')),
+    [rows, employeeNames],
+  );
+  const grandTotal = sorted.reduce((sum, row) => sum + Number(row.final_amount || 0), 0);
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-2 rounded-xl bg-surface-subtle px-4 py-2.5 ring-1 ring-border-soft/30">
+            <span className="text-lg font-extrabold text-text-primary">{sorted.length}</span>
+            <span className="text-xs font-semibold text-text-muted">{t('admin.resources.payrolls.title')}</span>
+          </span>
+          {grandTotal > 0 ? (
+            <span className="inline-flex items-center gap-2 rounded-xl bg-success/8 px-4 py-2.5 ring-1 ring-success/20">
+              <span className="text-lg font-extrabold text-success">{formatMoney(grandTotal)}</span>
+              <span className="text-xs font-semibold text-success/80">{t('staff.payroll.totalPayout')}</span>
+            </span>
+          ) : null}
+        </div>
+        {canManage ? (
+          <button className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-60" disabled={loading} onClick={() => void calculateMonth()}>
+            <FiCalendar className="h-4 w-4" /> {t('admin.page.calculateMonth')}
+          </button>
+        ) : null}
+      </div>
+
+      <DataTable
+        columns={[t('staff.columns.staff'), t('admin.fields.month'), t('staff.payroll.breakdown'), t('admin.fields.finalAmount'), t('admin.fields.status'), t('common.actions')]}
+        rows={sorted.map(row => {
+          const isPiece = row.salary_type === 'piece_rate';
+          const base = isPiece ? Number(row.piece_rate_total || 0) : Number(row.fixed_rate_total || 0);
+          const bonus = Number(row.bonus_total || 0);
+          const penalty = Number(row.penalty_total || 0);
+          return [
+            <span className="block min-w-0">
+              <span className="block truncate text-sm font-bold text-text-primary">{employeeNames.get(String(row.employee)) ?? t('staff.attendance.unknownEmployee')}</span>
+              <span className="block text-xs text-text-muted">{optionLabel(t, 'salaryType', row.salary_type)}</span>
+            </span>,
+            <span className="text-sm font-semibold text-text-primary">{monthLabel(row.month)}</span>,
+            <span className="block min-w-[190px] text-xs">
+              <span className="block text-text-muted">
+                {isPiece ? t('staff.payroll.piecework') : t('staff.payroll.fixed')}: <span className="font-bold text-text-primary">{formatMoney(base)}</span>
+                <span className="ml-1 opacity-70">· {t('staff.payroll.days', { count: Number(row.worked_days || 0) })}</span>
+              </span>
+              {bonus > 0 || penalty > 0 ? (
+                <span className="mt-0.5 block">
+                  {bonus > 0 ? <span className="mr-2 font-bold text-success">+{formatMoney(bonus)}</span> : null}
+                  {penalty > 0 ? <span className="font-bold text-danger">−{formatMoney(penalty)}</span> : null}
+                </span>
+              ) : null}
+            </span>,
+            <span className="text-sm font-extrabold text-text-primary">{formatMoney(Number(row.final_amount || 0))}</span>,
+            <StatusBadge tone={payrollStatusTone(row.status)}>{optionLabel(t, 'payrollStatus', row.status)}</StatusBadge>,
+            canManage ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {row.status === 'draft' || row.status === 'unlocked' ? <button disabled={busyId === row.id} className="rounded-lg bg-success-bg px-2.5 py-1.5 text-xs font-bold text-success transition hover:bg-success/15 disabled:opacity-50" onClick={() => void runAction(row.id, () => actions.approvePayroll(row.id))}>{t('admin.page.approve')}</button> : null}
+                {row.status === 'approved' ? <button disabled={busyId === row.id} className="rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-primary transition hover:bg-primary/15 disabled:opacity-50" onClick={() => void runAction(row.id, () => actions.markPayrollPaid(row.id))}>{t('admin.page.markPaid')}</button> : null}
+                {/* Backend only allows unlocking approved payrolls (paid ones stay locked). */}
+                {row.status === 'approved' ? <button disabled={busyId === row.id} className="rounded-lg bg-warning/10 px-2.5 py-1.5 text-xs font-bold text-warning transition hover:bg-warning/20 disabled:opacity-50" onClick={() => void runAction(row.id, () => actions.unlockPayroll(row.id))}>{t('admin.page.unlock')}</button> : null}
+                {row.status === 'paid' ? <span className="text-xs text-text-muted">—</span> : null}
+              </div>
+            ) : <span className="text-xs text-text-muted">—</span>,
+          ];
+        })}
+      />
+      {!loading && sorted.length === 0 ? <p className="py-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p> : null}
+    </div>
+  );
 }
 
 function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMember[]; pieceworkRecords: PieceworkRecord[]; formatMoney: (value: number) => string }) {
   const { t } = useTranslation();
   const canManage = useHasPermission('payroll', 'manage');
-  const [subTab, setSubTab] = useState<'summary' | 'operationTypes' | 'adjustments' | 'payroll' | 'workEntries' | 'workHourBreakdowns'>('summary');
+  const [subTab, setSubTab] = useState<'summary' | 'operationTypes' | 'payroll' | 'workEntries'>('summary');
   // Daily / weekly / monthly view of piecework — defaults to the current month,
   // since the monthly total is what the salary derives from.
   const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
@@ -2102,7 +2208,7 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
       {subTab === 'operationTypes' ? (
         <ApiResourceManager config={{ ...operationsConfigs.operationTypes, readOnly: !canManage }} />
       ) : subTab === 'payroll' ? (
-        <PayrollTab />
+        <PayrollTab staff={staff} formatMoney={formatMoney} />
       ) : subTab === 'workEntries' ? (
         <ApiResourceManager config={{ ...operationsConfigs.workEntries, readOnly: !canManage }} />
       ) : (

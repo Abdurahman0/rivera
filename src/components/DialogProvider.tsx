@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FiAlertTriangle, FiHelpCircle, FiInfo } from 'react-icons/fi';
+import { Dropdown } from './FormControls';
 
 type AlertOptions = { title?: string; message: string; okLabel?: string };
 type ConfirmOptions = { title?: string; message: string; confirmLabel?: string; cancelLabel?: string; danger?: boolean };
@@ -64,6 +65,24 @@ export function DialogProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** Localized month + year picker producing a `YYYY-MM` value, used for the payroll
+ *  "calculate month" prompt in place of a native (locale-dependent) month input. */
+function MonthPickerField({ value, onChange, t }: { value: string; onChange: (value: string) => void; t: ReturnType<typeof useTranslation>['t'] }) {
+  const now = new Date();
+  const [yearPart, monthPart] = value.split('-');
+  const year = Number(yearPart) || now.getFullYear();
+  const month = monthPart && Number(monthPart) >= 1 && Number(monthPart) <= 12 ? monthPart.padStart(2, '0') : String(now.getMonth() + 1).padStart(2, '0');
+  const centerYear = Math.max(year, now.getFullYear());
+  const yearOptions = Array.from({ length: 6 }, (_, i) => centerYear - 4 + i).map(y => ({ value: String(y), label: String(y) }));
+  const monthOptions = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1).padStart(2, '0'), label: t(`common.months.${i}`) }));
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      <Dropdown value={month} onChange={next => onChange(`${year}-${next}`)} options={monthOptions} />
+      <Dropdown value={String(year)} onChange={next => onChange(`${next}-${month}`)} options={yearOptions} />
+    </div>
+  );
+}
+
 function DialogHost({ request, onClose, t }: { request: DialogRequest; onClose: () => void; t: ReturnType<typeof useTranslation>['t'] }) {
   const [value, setValue] = useState(request.kind === 'prompt' ? (request.defaultValue ?? '') : '');
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -117,22 +136,29 @@ function DialogHost({ request, onClose, t }: { request: DialogRequest; onClose: 
               <p className={['text-sm leading-6 text-text-secondary', request.title ? 'mt-2' : 'mt-1'].join(' ')}>{request.message}</p>
             ) : null}
             {request.kind === 'prompt' ? (
-              <input
-                ref={inputRef}
-                autoFocus
-                type={request.inputType ?? 'text'}
-                min={request.min}
-                value={value}
-                placeholder={request.placeholder}
-                onChange={event => setValue(event.target.value)}
-                onKeyDown={event => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    handleConfirm();
-                  }
-                }}
-                className="mt-3 h-11 w-full rounded-xl border border-border-soft/60 bg-surface-subtle px-3 text-sm font-medium text-text-primary outline-none transition duration-fast focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              />
+              request.inputType === 'month' ? (
+                // A native <input type="month"> renders localized month names from the
+                // browser's CLDR data; in browsers lacking Uzbek data it falls back to
+                // "M01…M12", so pick month + year with our own localized dropdowns instead.
+                <MonthPickerField value={value} onChange={setValue} t={t} />
+              ) : (
+                <input
+                  ref={inputRef}
+                  autoFocus
+                  type={request.inputType ?? 'text'}
+                  min={request.min}
+                  value={value}
+                  placeholder={request.placeholder}
+                  onChange={event => setValue(event.target.value)}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleConfirm();
+                    }
+                  }}
+                  className="mt-3 h-11 w-full rounded-xl border border-border-soft/60 bg-surface-subtle px-3 text-sm font-medium text-text-primary outline-none transition duration-fast focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                />
+              )
             ) : null}
           </div>
         </div>

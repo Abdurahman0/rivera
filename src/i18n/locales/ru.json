@@ -391,6 +391,13 @@
       "noPieceworkData": "Нет сдельных данных для этого сотрудника",
       "total": "Итого",
       "pieceworkBadge": "сдельно"
+    },
+    "payroll": {
+      "breakdown": "Состав",
+      "piecework": "Сдельно",
+      "fixed": "Фиксировано",
+      "days": "{{count}} дн.",
+      "totalPayout": "Итого к выплате"
     }
   },
   "products": {
@@ -2202,7 +2209,7 @@
       "calculateMonth": "Рассчитать месяц",
       "openKiosk": "Открыть киоск посещаемости",
       "runBackupNow": "Сделать резервную копию",
-      "promptMonth": "Месяц зарплаты (YYYY-MM)"
+      "promptMonth": "За какой месяц рассчитать?"
     }
   },
   "approvals": {
@@ -2255,6 +2262,16 @@
   },
   "errors": {
     "insufficientMaterialStock": "Недостаточно материалов на складе",
-    "insufficientFinishedGoodsStock": "Недостаточно готовой продукции на складе"
+    "insufficientFinishedGoodsStock": "Недостаточно готовой продукции на складе",
+    "payrollUnlockOnlyApproved": "Разблокировать можно только утверждённый расчёт",
+    "payrollPayOnlyApproved": "Отметить выплаченным можно только утверждённый расчёт",
+    "payrollApproveOnlyDraft": "Утвердить можно только черновик или разблокированный расчёт",
+    "monthRequired": "Нужно выбрать месяц",
+    "approvalAlreadyReviewed": "Этот запрос уже рассмотрен",
+    "quantityDateRequired": "Нужно указать количество и дату",
+    "reasonRequired": "Нужно указать причину",
+    "invalidDevice": "Неверное или незарегистрированное устройство",
+    "invalidRefreshToken": "Сессия истекла — войдите заново",
+    "directChangeNotAllowed": "Прямое изменение запрещено — используйте специальное действие"
   }
 }

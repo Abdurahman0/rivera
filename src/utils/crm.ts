@@ -84,6 +84,18 @@ type Translator = (key: string, options?: Record<string, unknown>) => string;
 const BACKEND_ERROR_TRANSLATIONS: Record<string, string> = {
   'insufficient material stock': 'errors.insufficientMaterialStock',
   'insufficient finished goods stock': 'errors.insufficientFinishedGoodsStock',
+  'only approved payroll can be unlocked': 'errors.payrollUnlockOnlyApproved',
+  'only approved payroll can be marked as paid': 'errors.payrollPayOnlyApproved',
+  'only draft or unlocked payroll can be approved': 'errors.payrollApproveOnlyDraft',
+  'month is required': 'errors.monthRequired',
+  'approval request is already reviewed': 'errors.approvalAlreadyReviewed',
+  'quantity and date are required': 'errors.quantityDateRequired',
+  'reason is required': 'errors.reasonRequired',
+  'invalid device': 'errors.invalidDevice',
+  'invalid refresh token': 'errors.invalidRefreshToken',
+  'direct create is not allowed': 'errors.directChangeNotAllowed',
+  'direct update is not allowed; use a dedicated action': 'errors.directChangeNotAllowed',
+  'direct archive is not allowed; use a dedicated action': 'errors.directChangeNotAllowed',
 };
 
 export function translateBackendMessage(t: Translator, message: string) {

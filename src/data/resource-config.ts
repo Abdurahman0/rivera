@@ -24,7 +24,7 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'order_date', label: f('orderDate'), type: 'date', required: true, table: true },
       { name: 'due_date', label: f('dueDate'), type: 'date', nullable: true, table: true },
       { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
-      { name: 'total_amount_uzs', label: f('totalAmount'), readOnly: true, table: true },
+      { name: 'total_amount_uzs', label: f('totalAmount'), type: 'money', readOnly: true, table: true },
       { name: 'status', label: f('status'), type: 'select', required: true, table: true, options: options([['draft', 'admin.options.orderStatus.draft'], ['confirmed', 'admin.options.orderStatus.confirmed'], ['completed', 'admin.options.orderStatus.completed'], ['cancelled', 'admin.options.orderStatus.cancelled']]) },
       { name: 'note', label: f('note'), type: 'textarea' },
     ],
@@ -137,15 +137,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name' }, required: true, table: true }, { name: 'operation_type', label: f('operation'), lookup: { resource: resources.operationTypes, label: 'name' }, required: true, table: true },
       { name: 'date', label: f('date'), type: 'date', required: true, table: true }, { name: 'quantity_done', label: f('quantity'), type: 'number', required: true, table: true }, { name: 'amount', label: f('amount'), readOnly: true, table: true },
       { name: 'note', label: f('note'), type: 'textarea' },
-    ],
-  },
-  payrolls: {
-    resource: resources.monthlyPayrolls, title: title('payrolls'), description: description('payrolls'), readOnly: true,
-    fields: [
-      { name: 'employee', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name' }, table: true }, { name: 'month', label: f('month'), table: true },
-      { name: 'salary_type', label: f('salaryType'), table: true, options: options([['piece_rate', 'admin.options.salaryType.piece_rate'], ['fixed_daily', 'admin.options.salaryType.fixed_daily']]) },
-      { name: 'final_amount', label: f('finalAmount'), table: true },
-      { name: 'status', label: f('status'), table: true, options: options([['draft', 'admin.options.payrollStatus.draft'], ['approved', 'admin.options.payrollStatus.approved'], ['paid', 'admin.options.payrollStatus.paid'], ['unlocked', 'admin.options.payrollStatus.unlocked']]) },
     ],
   },
   cashAccounts: {

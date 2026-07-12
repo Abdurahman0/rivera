@@ -19,7 +19,8 @@ export interface ResourceField {
   name: string;
   /** Translation key (resolved via t()), not raw display text. */
   label: string;
-  type?: 'text' | 'number' | 'date' | 'time' | 'datetime-local' | 'textarea' | 'select' | 'checkbox' | 'json' | 'file' | 'password';
+  /** `month` renders "Iyul 2026" from an ISO date; `money` renders a thousands-separated UZS amount. */
+  type?: 'text' | 'number' | 'date' | 'time' | 'datetime-local' | 'textarea' | 'select' | 'checkbox' | 'json' | 'file' | 'password' | 'month' | 'money';
   required?: boolean;
   nullable?: boolean;
   readOnly?: boolean;
@@ -101,6 +102,14 @@ function cellValue(t: TFunction, row: ResourceRow, field: ResourceField, lookups
   if (matchingOption) return t(matchingOption.label);
   if (field.type === 'date' && row[field.name]) return formatDisplayDate(String(row[field.name]), t);
   if (field.type === 'datetime-local' && row[field.name]) return formatDisplayDateTime(String(row[field.name]), t);
+  if (field.type === 'month' && row[field.name]) {
+    const [year, month] = String(row[field.name]).split('-').map(Number);
+    if (year && month) return `${t(`common.months.${month - 1}`, { defaultValue: String(month) })} ${year}`;
+  }
+  if (field.type === 'money' && row[field.name] !== null && row[field.name] !== undefined && row[field.name] !== '') {
+    const amount = Number(row[field.name]);
+    if (!Number.isNaN(amount)) return `${amount.toLocaleString()} so'm`;
+  }
   return rawDisplayValue(t, row[field.name]);
 }
 
@@ -359,7 +368,7 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
                     : field.type === 'date' || field.type === 'datetime-local' ? <DatePicker name={field.name} required={field.required} defaultValue={currentValue} type={field.type} />
                     : field.type === 'textarea' || field.type === 'json' ? <textarea name={field.name} required={field.required} defaultValue={currentValue} className={`${baseClass} min-h-28 py-3 font-${field.type === 'json' ? 'mono' : 'sans'}`} />
                     : field.type === 'checkbox' ? <input name={field.name} type="checkbox" defaultChecked={Boolean(fieldValue(editing === 'new' ? null : editing, field))} className="h-5 w-5" />
-                    : <input name={field.name} type={field.type || 'text'} required={field.required} step={field.step} defaultValue={currentValue} className={baseClass} />}
+                    : <input name={field.name} type={field.type === 'money' ? 'number' : field.type || 'text'} required={field.required} step={field.step} defaultValue={currentValue} className={baseClass} />}
                 </label>;
               })}
             </div>
