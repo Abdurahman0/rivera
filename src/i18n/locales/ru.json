@@ -76,6 +76,10 @@
     "light": "Светлая",
     "dark": "Темная"
   },
+  "profile": {
+    "menuLabel": "Меню профиля",
+    "superadmin": "Суперадмин"
+  },
   "customize": {
     "button": "Настройка",
     "title": "Настройка",
@@ -317,7 +321,10 @@
     },
     "attendance": {
       "allEmployees": "Все сотрудники",
-      "unknownEmployee": "Неизвестный сотрудник"
+      "unknownEmployee": "Неизвестный сотрудник",
+      "hoursMinutes": "{{hours}} ч {{minutes}} мин",
+      "totalInRange": "Всего за период",
+      "hoursColumn": "Отработано"
     },
     "piecework": {
       "title": "Сдельная заработная плата",

@@ -566,3 +566,36 @@
     }
   }
 }
+
+/* Theme toggle: circular reveal expanding from the click point (View Transitions API).
+   --theme-toggle-x/-y/-radius are set in JS right before document.startViewTransition(). */
+@keyframes theme-wave-reveal {
+  from {
+    clip-path: circle(0px at var(--theme-toggle-x, 50%) var(--theme-toggle-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--theme-toggle-radius, 150%) at var(--theme-toggle-x, 50%) var(--theme-toggle-y, 50%));
+  }
+}
+
+::view-transition-group(root) {
+  animation-duration: 620ms;
+}
+
+::view-transition-old(root) {
+  animation: none;
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  animation: theme-wave-reveal 620ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}

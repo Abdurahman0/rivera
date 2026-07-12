@@ -365,6 +365,7 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     workDate: row.work_date,
     checkIn: row.first_check_in_at,
     checkOut: row.last_check_out_at,
+    workedMinutes: row.worked_minutes,
   }));
 
   const operationTypeOptions = data.operationTypes.map(row => ({ id: row.id, name: row.name }));

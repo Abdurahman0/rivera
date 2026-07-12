@@ -1,4 +1,5 @@
 import { forwardRef, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   FiArchive,
@@ -113,7 +114,7 @@ import { actions, api, ApiError, hasSession, login, logout, onSessionExpired, re
 import { EMPTY_DATA, loadAppData, type AppData } from '../api/data';
 import type { ApiCurrentUser } from '../api/types';
 import { PermissionsProvider } from '../components/PermissionsProvider';
-import { canViewNavPage, ENTITY_KIND_BACKEND_PAGE, hasPagePermission } from '../lib/permissions';
+import { canViewNavPage } from '../lib/permissions';
 import { BUILT_IN_CLIENT_STATUSES, loadCustomClientStatuses } from '../utils/clientStatuses';
 
 const DashboardPage = lazy(() => import('../pages/CrmPages').then(module => ({ default: module.DashboardPage })));
@@ -178,6 +179,93 @@ function isWithinDateRange(value: string | undefined, range: DashboardDateRange 
   return date >= range.startDate && date <= range.endDate;
 }
 
+function userInitials(user: ApiCurrentUser | null) {
+  const name = user?.full_name || user?.username || '';
+  const initials = name.trim().split(/\s+/).map(word => word[0]).slice(0, 2).join('').toUpperCase();
+  return initials || '?';
+}
+
+/** Profile summary block reused inline in the mobile sidebar (always expanded there,
+ *  since it already sits inside a slide-out overlay — a second popover would nest awkwardly). */
+function ProfileSummary({ user }: { user: ApiCurrentUser | null }) {
+  const { t } = useTranslation();
+  const name = user?.full_name || user?.username || '—';
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-surface-card/70 p-3 ring-1 ring-border-soft/40">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-sm font-extrabold text-primary">{userInitials(user)}</span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-extrabold text-text-primary">{name}</p>
+        <p className="truncate text-xs text-text-muted">{user?.email || user?.username || ''}</p>
+      </div>
+      {user?.is_superadmin ? (
+        <span className="shrink-0 rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">{t('profile.superadmin')}</span>
+      ) : null}
+    </div>
+  );
+}
+
+/** Desktop header's profile dropdown — replaces the old bare logout icon with an avatar
+ *  that opens to show who's signed in, plus logout inside instead of alongside it. */
+function ProfileMenu({ user, onLogout }: { user: ApiCurrentUser | null; onLogout: () => void }) {
+  const { t } = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const name = user?.full_name || user?.username || '—';
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handlePointerDown(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) setIsOpen(false);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsOpen(false);
+    }
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        className="inline-flex h-10 items-center gap-2 rounded-xl bg-surface-card pl-2 pr-3 text-sm font-bold text-text-primary shadow-sm ring-1 ring-border-soft/45 transition hover:bg-primary/10"
+        onClick={() => setIsOpen(current => !current)}
+        aria-label={t('profile.menuLabel')}
+      >
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/15 text-xs font-extrabold text-primary">{userInitials(user)}</span>
+        <span className="hidden max-w-[130px] truncate min-[1180px]:inline">{name}</span>
+      </button>
+      {isOpen ? (
+        <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-64 rounded-2xl border border-border-soft/60 bg-surface-card p-2 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl">
+          <div className="flex items-center gap-3 rounded-xl p-2.5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-sm font-extrabold text-primary">{userInitials(user)}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-extrabold text-text-primary">{name}</p>
+              <p className="truncate text-xs text-text-muted">{user?.email || user?.username || ''}</p>
+            </div>
+          </div>
+          {user?.is_superadmin ? (
+            <span className="mx-2.5 mb-1 mt-0.5 inline-flex items-center rounded-lg bg-primary/10 px-2 py-1 text-[11px] font-bold text-primary">{t('profile.superadmin')}</span>
+          ) : null}
+          <div className="my-1.5 border-t border-border-soft/40" />
+          <button
+            type="button"
+            className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-sm font-bold text-danger transition hover:bg-danger-bg"
+            onClick={() => { setIsOpen(false); onLogout(); }}
+          >
+            <FiLogOut className="h-4 w-4" />
+            {t('common.logout')}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function App() {
   const { t, i18n } = useTranslation();
   const { alert, prompt } = useDialog();
@@ -187,6 +275,26 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeDesign, setActiveDesign] = useState<DesignVariant>(getStoredDesignVariant);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(getInitialTheme);
+  /** Circular reveal from the click point, via the View Transitions API. Falls back to a
+   *  plain instant swap when the browser doesn't support it or the user prefers less motion. */
+  const handleThemeToggle = useCallback((event?: { clientX?: number; clientY?: number }) => {
+    const next = themeMode === 'dark' ? 'light' : 'dark';
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const startViewTransition = document.startViewTransition?.bind(document);
+    if (prefersReducedMotion || !startViewTransition || typeof event?.clientX !== 'number') {
+      setThemeMode(next);
+      return;
+    }
+    const x = event.clientX;
+    const y = event.clientY ?? 0;
+    const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    document.documentElement.style.setProperty('--theme-toggle-x', `${x}px`);
+    document.documentElement.style.setProperty('--theme-toggle-y', `${y}px`);
+    document.documentElement.style.setProperty('--theme-toggle-radius', `${endRadius}px`);
+    startViewTransition(() => {
+      flushSync(() => setThemeMode(next));
+    });
+  }, [themeMode]);
   const [backgroundAccent, setBackgroundAccent] = useState(initAccentOnLoad);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [modal, setModal] = useState<ModalState | null>(null);
@@ -380,33 +488,6 @@ function App() {
     setSidebarOpen(false);
   }
 
-  function currentCreateKind(): EntityKind | null {
-    if (activePage === 'dashboard' || activePage === 'approvals' || activePage === 'system') return null;
-    return activePage === 'staff'
-      ? 'staff'
-      : activePage === 'materials'
-        ? 'material'
-        : activePage === 'production'
-          ? 'batch'
-          : activePage === 'warehouse'
-            ? 'stockMovement'
-            : activePage === 'finance'
-              ? 'payment'
-      : activePage === 'products'
-        ? 'product'
-        : activePage === 'orders'
-          ? 'order'
-          : 'client';
-  }
-
-  const createKindForCurrentPage = currentCreateKind();
-  const canCreateOnCurrentPage = Boolean(createKindForCurrentPage) && hasPagePermission(currentUser, ENTITY_KIND_BACKEND_PAGE[createKindForCurrentPage!], 'manage');
-
-  function openCreateModal() {
-    if (!createKindForCurrentPage || !canCreateOnCurrentPage) return;
-    setModal({ kind: createKindForCurrentPage, mode: 'create' });
-  }
-
   const entityResource: Record<EntityKind, string> = {
     client: resources.clients,
     staff: resources.employees,
@@ -537,7 +618,7 @@ function App() {
                 <FiSettings className="h-4 w-4" />
                 {t('customize.button')}
               </button>
-              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => setThemeMode(current => current === 'dark' ? 'light' : 'dark')}>
+              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={handleThemeToggle}>
                 {themeMode === 'dark' ? <FiMoon className="h-4 w-4" /> : <FiSun className="h-4 w-4" />}
                 {t('theme.toggle')}
               </button>
@@ -549,17 +630,12 @@ function App() {
                 <FiBell className="h-4 w-4" />
                 {t('common.notifications')}
               </button>
-              {canCreateOnCurrentPage ? (
-                <button className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary-strong" onClick={openCreateModal}>
-                  <FiPlus className="h-4 w-4" />
-                  {t('common.create')}
-                </button>
-              ) : null}
-              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-danger transition hover:bg-danger-bg" onClick={() => { dataLoadId.current += 1; void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}>
-                <FiLogOut className="h-4 w-4" />
-                {t('common.logout')}
-              </button>
             </div>
+            <ProfileSummary user={currentUser} />
+            <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-danger transition hover:bg-danger-bg" onClick={() => { dataLoadId.current += 1; void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}>
+              <FiLogOut className="h-4 w-4" />
+              {t('common.logout')}
+            </button>
           </section>
         </div>
 
@@ -593,18 +669,12 @@ function App() {
           <div className="hidden items-center justify-end gap-2 min-[960px]:flex">
             <LanguageSwitch onLanguageChange={handleLanguageChange} />
             <IconButton label={t('customize.button')} onClick={() => setIsCustomizeOpen(true)}><FiSettings /></IconButton>
-            <IconButton label={t('theme.toggle')} onClick={() => setThemeMode(current => current === 'dark' ? 'light' : 'dark')}>
+            <IconButton label={t('theme.toggle')} onClick={handleThemeToggle}>
               {themeMode === 'dark' ? <FiMoon /> : <FiSun />}
             </IconButton>
             <IconButton label={t('common.refresh')} onClick={() => void refreshData()} disabled={isLoadingData}><FiRefreshCcw className={isLoadingData ? 'animate-spin' : ''} /></IconButton>
             <IconButton label={t('common.notifications')} onClick={() => void alert(t('common.noNotifications'))}><FiBell /></IconButton>
-            {canCreateOnCurrentPage ? (
-              <button className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary-strong" onClick={openCreateModal}>
-                <FiPlus className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('common.create')}</span>
-              </button>
-            ) : null}
-            <IconButton label={t('common.logout')} onClick={() => { dataLoadId.current += 1; void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}><FiLogOut /></IconButton>
+            <ProfileMenu user={currentUser} onLogout={() => { dataLoadId.current += 1; void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }} />
           </div>
           {isLoadingData ? (
             <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden" aria-hidden="true">

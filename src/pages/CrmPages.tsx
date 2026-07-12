@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSettings, FiShoppingBag, FiTag, FiTool, FiUserX, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, ProductionRecord, StaffMember, StatusTone, StockMovement } from '../types/crm';
@@ -975,6 +976,12 @@ export function StaffPage({ staff, attendanceLog, pieceworkRecords, formatMoney,
  *  and by date range. Replaces the earlier 5-tab layout (overview stats, raw event log,
  *  schedules, devices) which buried this behind unnecessary sub-navigation; schedules and
  *  devices are config, not something checked daily, so they moved to Tizim > System. */
+function formatWorkedHours(t: TFunction, minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return t('staff.attendance.hoursMinutes', { hours, minutes: mins });
+}
+
 function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMember[]; attendanceLog: AttendanceLogEntry[]; canManage: boolean }) {
   const { t } = useTranslation();
   const [enrolling, setEnrolling] = useState(false);
@@ -982,11 +989,27 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
   const [dateRange, setDateRange] = useState<DashboardDateRange | null>(null);
   const employeeNames = useMemo(() => new Map(staff.map(member => [String(member.id), member.name])), [staff]);
 
-  const rows = useMemo(() => attendanceLog
+  const inRange = useMemo(() => attendanceLog
+    .filter(entry => !dateRange || (entry.workDate >= dateRange.startDate && entry.workDate <= dateRange.endDate)),
+  [attendanceLog, dateRange]);
+
+  // Per-employee totals for the selected date range — always covers everyone, independent
+  // of the employee dropdown below (which only narrows the day-by-day detail table).
+  const totalsByEmployee = useMemo(() => {
+    const totals = new Map<string, number>();
+    inRange.forEach(entry => {
+      const key = String(entry.employeeId);
+      totals.set(key, (totals.get(key) ?? 0) + entry.workedMinutes);
+    });
+    return [...totals.entries()]
+      .map(([employeeId, minutes]) => ({ employeeId, name: employeeNames.get(employeeId) ?? t('staff.attendance.unknownEmployee'), minutes }))
+      .sort((a, b) => b.minutes - a.minutes);
+  }, [inRange, employeeNames, t]);
+
+  const rows = useMemo(() => inRange
     .filter(entry => employeeFilter === 'all' || String(entry.employeeId) === employeeFilter)
-    .filter(entry => !dateRange || (entry.workDate >= dateRange.startDate && entry.workDate <= dateRange.endDate))
     .sort((a, b) => b.workDate.localeCompare(a.workDate) || (employeeNames.get(String(a.employeeId)) ?? '').localeCompare(employeeNames.get(String(b.employeeId)) ?? '')),
-  [attendanceLog, employeeFilter, dateRange, employeeNames]);
+  [inRange, employeeFilter, employeeNames]);
 
   return (
     <div className="grid gap-4">
@@ -1002,16 +1025,33 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
               options={[{ value: 'all', label: t('staff.attendance.allEmployees') }, ...staff.map(member => ({ value: String(member.id), label: member.name }))]}
             />
           </div>
+          <DashboardPresetDropdown value={dateRange} onChange={setDateRange} />
           <DashboardCustomRangePicker value={dateRange} onChange={setDateRange} />
         </div>
       </div>
+
+      {totalsByEmployee.length > 0 ? (
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {totalsByEmployee.map(item => (
+            <div key={item.employeeId} className="app-card--nova flex items-center justify-between gap-3 p-3.5">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-text-primary">{item.name}</p>
+                <p className="text-xs text-text-muted">{t('staff.attendance.totalInRange')}</p>
+              </div>
+              <span className="shrink-0 rounded-lg bg-primary/10 px-2.5 py-1.5 text-sm font-extrabold text-primary">{formatWorkedHours(t, item.minutes)}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       <DataTable
-        columns={[t('staff.columns.staff'), t('admin.fields.workDate'), t('admin.fields.firstCheckIn'), t('admin.fields.lastCheckOut')]}
+        columns={[t('staff.columns.staff'), t('admin.fields.workDate'), t('admin.fields.firstCheckIn'), t('admin.fields.lastCheckOut'), t('staff.attendance.hoursColumn')]}
         rows={rows.map(entry => [
           employeeNames.get(String(entry.employeeId)) ?? t('staff.attendance.unknownEmployee'),
           formatDisplayDate(entry.workDate, t),
           formatDisplayDateTime(entry.checkIn, t),
           formatDisplayDateTime(entry.checkOut, t),
+          formatWorkedHours(t, entry.workedMinutes),
         ])}
       />
       {rows.length === 0 ? <p className="py-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p> : null}

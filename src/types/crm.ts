@@ -15,6 +15,7 @@ export interface AttendanceLogEntry {
   workDate: string;
   checkIn: string | null;
   checkOut: string | null;
+  workedMinutes: number;
 }
 
 export interface Material {
