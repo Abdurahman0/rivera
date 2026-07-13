@@ -224,7 +224,7 @@ export const resources = {
   leaveRequests: 'leave-requests', workSchedules: 'work-schedules', employeeFaceEncodings: 'employee-face-encodings',
   attendanceDevices: 'attendance-devices', attendanceEvents: 'attendance-events', attendanceRecords: 'attendance-records', operationTypes: 'operation-types',
   dailyWorkEntries: 'daily-work-entries', monthlyPayrolls: 'monthly-payrolls',
-  cashAccounts: 'cash-accounts', cashTransactions: 'cash-transactions', expenses: 'expenses', invoices: 'invoices', dashboard: 'dashboard',
+  cashAccounts: 'cash-accounts', cashTransactions: 'cash-transactions', expenses: 'expenses', dashboard: 'dashboard',
 } as const;
 
 export const actions = {
