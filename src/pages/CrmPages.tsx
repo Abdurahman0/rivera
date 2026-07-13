@@ -167,31 +167,51 @@ function DashboardPresetDropdown({ value, onChange }: { value: DashboardDateRang
   // on a Monday), and matchingDashboardPreset would otherwise snap the label to the first
   // colliding preset. We only re-derive when the range changes to one the remembered preset
   // no longer produces (e.g. a custom range picked from the calendar alongside this control).
-  const [preset, setPreset] = useState<DashboardRangePreset | 'allTime' | null>(() => (value ? matchingDashboardPreset(value) : 'allTime'));
+  const [preset, setPreset] = useState<DashboardRangePreset | null>(() => (value ? matchingDashboardPreset(value) : null));
 
   useEffect(() => {
     setPreset(prev => {
-      if (prev && prev !== 'allTime' && value && sameDashboardRange(dashboardRangePreset(prev), value)) return prev;
-      return value ? matchingDashboardPreset(value) : 'allTime';
+      if (prev && value && sameDashboardRange(dashboardRangePreset(prev), value)) return prev;
+      return value ? matchingDashboardPreset(value) : null;
     });
   }, [value]);
 
-  const options = [
-    { value: 'allTime', label: t('dashboard.filters.allTime') },
-    ...DASHBOARD_RANGE_PRESETS.map(item => ({ value: item, label: t(`dashboard.filters.${item}`) })),
-  ];
-
   return (
     <div className="w-[168px]">
+      {/* "Barcha vaqt" is not a pickable option — it's just what the empty (no filter)
+          state reads as; clearing happens via the ✕ button in DateRangeControls. */}
       <Dropdown
-        value={preset ?? 'allTime'}
+        required
+        value={preset ?? ''}
+        placeholder={t('dashboard.filters.allTime')}
         onChange={selected => {
-          setPreset(selected as DashboardRangePreset | 'allTime');
-          onChange(selected === 'allTime' ? null : dashboardRangePreset(selected as DashboardRangePreset));
+          setPreset(selected as DashboardRangePreset);
+          onChange(dashboardRangePreset(selected as DashboardRangePreset));
         }}
-        options={options}
+        options={DASHBOARD_RANGE_PRESETS.map(item => ({ value: item, label: t(`dashboard.filters.${item}`) }))}
       />
     </div>
+  );
+}
+
+/** The standard date-filter row: preset dropdown + custom calendar, plus a clear button
+ *  that appears only while a range is active. No filter = all time. */
+function DateRangeControls({ value, onChange }: { value: DashboardDateRange | null; onChange: (range: DashboardDateRange | null) => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <DashboardPresetDropdown value={value} onChange={onChange} />
+      <DashboardCustomRangePicker value={value} onChange={onChange} />
+      {value ? (
+        <button
+          type="button"
+          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-danger-bg px-3 text-xs font-bold text-danger transition hover:bg-danger/15"
+          onClick={() => onChange(null)}
+        >
+          <FiX className="h-3.5 w-3.5" /> {t('common.clearFilter')}
+        </button>
+      ) : null}
+    </>
   );
 }
 
@@ -350,8 +370,7 @@ export function DashboardPage({ clients, priorityClients, products, materials, s
     <div className="grid gap-5">
       <PageHeader eyebrow={t('dashboard.eyebrow')} title={t('dashboard.title')} description={t('dashboard.description')} />
       <div className="flex justify-end gap-2.5">
-        <DashboardPresetDropdown value={dateRange} onChange={onDateRangeChange} />
-        <DashboardCustomRangePicker value={dateRange} onChange={onDateRangeChange} />
+        <DateRangeControls value={dateRange} onChange={onDateRangeChange} />
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard icon={<FiBriefcase />} label={t('dashboard.metrics.pipeline')} value={formatMoney(pipelineValue)} caption={t('dashboard.metrics.pipelineCaption', { count: ordersInPeriod })} tone="success" />
@@ -1001,9 +1020,8 @@ const WEEKDAYS: Record<'uz' | 'ru', string[]> = {
 function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMember[]; attendanceLog: AttendanceLogEntry[]; canManage: boolean }) {
   const { t } = useTranslation();
   const [enrolling, setEnrolling] = useState(false);
-  // Defaults to the current month so "how many hours this month" is visible
-  // immediately — no filter clicks needed. Still fully adjustable via the dropdowns below.
-  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
+  // No filter by default (all time); pick a preset or a custom range to narrow the view.
+  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(null);
   const [detailEmployeeId, setDetailEmployeeId] = useState<string | null>(null);
   const employeeNames = useMemo(() => new Map(staff.map(member => [String(member.id), member.name])), [staff]);
 
@@ -1049,8 +1067,7 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
           <button className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => setEnrolling(true)}>{t('faceEnroll.buttonLabel')}</button>
         ) : <span />}
         <div className="flex flex-wrap items-center gap-2.5">
-          <DashboardPresetDropdown value={dateRange} onChange={setDateRange} />
-          <DashboardCustomRangePicker value={dateRange} onChange={setDateRange} />
+          <DateRangeControls value={dateRange} onChange={setDateRange} />
         </div>
       </div>
       <p className="m-0 text-xs font-semibold text-text-muted">{t('staff.attendance.rowHint')}</p>
@@ -1147,8 +1164,7 @@ function EmployeeAttendanceDetail({ member, attendanceLog, dateRange, onDateRang
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <DashboardPresetDropdown value={dateRange} onChange={onDateRangeChange} />
-          <DashboardCustomRangePicker value={dateRange} onChange={onDateRangeChange} />
+          <DateRangeControls value={dateRange} onChange={onDateRangeChange} />
         </div>
       </div>
 
@@ -2305,9 +2321,8 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
   const [subTab, setSubTab] = useState<'summary' | 'operationTypes' | 'payroll' | 'workEntries'>('summary');
   const [bulkOpen, setBulkOpen] = useState(false);
   const [workEntriesReload, setWorkEntriesReload] = useState(0);
-  // Daily / weekly / monthly view of piecework — defaults to the current month,
-  // since the monthly total is what the salary derives from.
-  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
+  // Daily / weekly / monthly view of piecework — unfiltered (all time) by default.
+  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(null);
 
   const recordsInRange = useMemo(() => pieceworkRecords
     .filter(record => !dateRange || (record.week >= dateRange.startDate && record.week <= dateRange.endDate)),
@@ -2371,8 +2386,7 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
       ) : (
       <>
       <div className="flex flex-wrap items-center justify-end gap-2.5">
-        <DashboardPresetDropdown value={dateRange} onChange={setDateRange} />
-        <DashboardCustomRangePicker value={dateRange} onChange={setDateRange} />
+        <DateRangeControls value={dateRange} onChange={setDateRange} />
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard icon={<FiDollarSign />} label={t('staff.piecework.metrics.totalPayout')} value={formatMoney(grandTotal)} caption={rangeLabel} tone="success" />
@@ -2595,8 +2609,8 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
   const canManage = useHasPermission('clients', 'manage');
   const [activeTab, setActiveTab] = useState<'revenue' | 'expenses'>('revenue');
   // Metrics, the revenue table and the expenses list all follow this range;
-  // defaults to the current month so the cards read as "this month's money".
-  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
+  // no filter by default (all time).
+  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(null);
   const inRange = (date: string) => !dateRange || (date >= dateRange.startDate && date <= dateRange.endDate);
   const revenueInRange = revenueEntries.filter(e => inRange(e.date));
   const expensesInRange = expenseEntries.filter(e => inRange(e.date));
@@ -2619,8 +2633,7 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
     <div className="grid gap-5">
       <PageHeader eyebrow={t('finance.eyebrow')} title={t('finance.title')} description={t('finance.description')} createLabel={canManage && activeTab === 'revenue' ? t('common.create') : undefined} onCreate={canManage && activeTab === 'revenue' ? onCreate : undefined} onExport={() => exportResource(exportResourceMap[activeTab])} />
       <div className="flex flex-wrap items-center justify-end gap-2.5">
-        <DashboardPresetDropdown value={dateRange} onChange={setDateRange} />
-        <DashboardCustomRangePicker value={dateRange} onChange={setDateRange} />
+        <DateRangeControls value={dateRange} onChange={setDateRange} />
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl bg-success/8 p-5 ring-1 ring-success/20">
@@ -2651,7 +2664,7 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
         <>
           <DataTable
             columns={[t('finance.columns.date'), t('finance.columns.client'), t('finance.columns.order'), t('finance.columns.amount')]}
-            rows={revenueInRange.map(e => [formatDisplayDate(e.date, t), e.client, translateMovementLabel(t, e.order), <span className="font-bold text-success">{formatMoney(e.amount)}</span>])}
+            rows={revenueInRange.map(e => [formatDisplayDate(e.date, t), translateMovementLabel(t, e.client), translateMovementLabel(t, e.order), <span className="font-bold text-success">{formatMoney(e.amount)}</span>])}
           />
           {revenueInRange.length === 0 ? <p className="py-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p> : null}
         </>
@@ -2926,8 +2939,7 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
       {activeTab === 'consumption' && (
         <div className="grid gap-5">
           <div className="flex flex-wrap items-center gap-2.5">
-            <DashboardPresetDropdown value={consumptionRange} onChange={setConsumptionRange} />
-            <DashboardCustomRangePicker value={consumptionRange} onChange={setConsumptionRange} />
+            <DateRangeControls value={consumptionRange} onChange={setConsumptionRange} />
             <p className="m-0 text-sm text-text-muted">{t('production.consumption.subtitle')}</p>
           </div>
           {consumptionList.length === 0 ? (

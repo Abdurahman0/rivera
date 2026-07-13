@@ -346,7 +346,7 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
   const revenueEntries: FinanceEntry[] = data.payments.map((row, index) => ({
     id: index + 1,
     date: row.payment_date,
-    client: clientNames.get(row.client) || row.client,
+    client: clientNames.get(row.client) || '__deleted__',
     order: `__method__${row.payment_method}`,
     amount: number(row.amount_uzs),
   }));

@@ -165,14 +165,6 @@ function toIsoDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-function monthStartIso(date = new Date()) {
-  return toIsoDate(new Date(date.getFullYear(), date.getMonth(), 1));
-}
-
-function currentMonthRange(): DashboardDateRange {
-  return { startDate: monthStartIso(), endDate: toIsoDate(new Date()) };
-}
-
 function isWithinDateRange(value: string | undefined, range: DashboardDateRange | null) {
   if (!range) return true;
   if (!value) return false;
@@ -305,7 +297,8 @@ function App() {
   const [appData, setAppData] = useState<AppData>(EMPTY_DATA);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [currentUser, setCurrentUser] = useState<ApiCurrentUser | null>(null);
-  const [dashboardDateRange, setDashboardDateRange] = useState<DashboardDateRange | null>(currentMonthRange);
+  // No range = all time; the user opts into a period via the dashboard's date filter.
+  const [dashboardDateRange, setDashboardDateRange] = useState<DashboardDateRange | null>(null);
   const dataLoadId = useRef(0);
   // Tracks whether this pageview ever had a genuinely working session, so a token
   // that's already dead on first load redirects to login silently instead of

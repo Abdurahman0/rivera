@@ -64,7 +64,8 @@
       "9": "Oktabr",
       "10": "Noyabr",
       "11": "Dekabr"
-    }
+    },
+    "clearFilter": "Tozalash"
   },
   "deleteDialog": {
     "eyebrow": "Tasdiqlash",
