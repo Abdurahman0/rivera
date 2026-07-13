@@ -139,40 +139,12 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
-  cashAccounts: {
-    resource: resources.cashAccounts, title: title('cashAccounts'), description: description('cashAccounts'),
-    fields: [
-      { name: 'name', label: f('name'), required: true, table: true }, { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true, table: true },
-      { name: 'balance', label: f('balance'), readOnly: true, table: true }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true },
-    ],
-  },
-  cashTransactions: {
-    resource: resources.cashTransactions, title: title('cashTransactions'), description: description('cashTransactions'), allowEdit: false, allowArchive: false,
-    fields: [
-      { name: 'account', label: f('cashAccount'), lookup: { resource: resources.cashAccounts, label: 'name' }, required: true, table: true },
-      { name: 'transaction_type', label: f('type'), type: 'select', required: true, table: true, options: options([['in', 'admin.options.cashTxType.in'], ['out', 'admin.options.cashTxType.out']]) },
-      { name: 'amount', label: f('amount'), type: 'money', step: '0.01', required: true, table: true }, { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
-      { name: 'exchange_rate', label: f('exchangeRate'), type: 'number', step: '0.0001', nullable: true }, { name: 'date', label: f('date'), type: 'date', required: true, table: true },
-      { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
-    ],
-  },
   expenses: {
     resource: resources.expenses, title: title('expenses'), description: description('expenses'), allowEdit: false, allowArchive: false,
     fields: [
       { name: 'category', label: f('category'), required: true, table: true }, { name: 'amount', label: f('amount'), type: 'money', step: '0.01', required: true, table: true },
       { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true }, { name: 'exchange_rate', label: f('exchangeRate'), type: 'number', step: '0.0001', nullable: true },
       { name: 'date', label: f('date'), type: 'date', required: true, table: true }, { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
-    ],
-  },
-  invoices: {
-    resource: resources.invoices, title: title('invoices'), description: description('invoices'),
-    fields: [
-      { name: 'client', label: f('client'), lookup: { resource: resources.clients, label: 'full_name' }, nullable: true, table: true },
-      { name: 'invoice_number', label: f('invoiceNumber'), required: true, table: true }, { name: 'date', label: f('date'), type: 'date', required: true, table: true },
-      { name: 'due_date', label: f('dueDate'), type: 'date', nullable: true, table: true }, { name: 'total_amount', label: f('totalAmount'), type: 'money', step: '0.01', required: true, table: true },
-      { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
-      { name: 'status', label: f('status'), type: 'select', required: true, table: true, options: options([['draft', 'admin.options.invoiceStatus.draft'], ['sent', 'admin.options.invoiceStatus.sent'], ['paid', 'admin.options.invoiceStatus.paid'], ['cancelled', 'admin.options.invoiceStatus.cancelled']]) },
-      { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
 };

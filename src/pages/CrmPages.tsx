@@ -2476,13 +2476,11 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
   const { t } = useTranslation();
   const exportResource = useResourceExport();
   const canManage = useHasPermission('clients', 'manage');
-  const [activeTab, setActiveTab] = useState<'revenue' | 'expenses' | 'cashAccounts' | 'cashTransactions' | 'invoices'>('revenue');
+  const [activeTab, setActiveTab] = useState<'revenue' | 'expenses'>('revenue');
   const revenue = revenueEntries.reduce((sum, e) => sum + e.amount, 0);
   const expenses = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
   const profit = revenue - expenses;
-  const exportResourceMap = {
-    revenue: resources.clientPayments, expenses: resources.expenses, cashAccounts: resources.cashAccounts, cashTransactions: resources.cashTransactions, invoices: resources.invoices,
-  } as const;
+  const exportResourceMap = { revenue: resources.clientPayments, expenses: resources.expenses } as const;
 
   return (
     <div className="grid gap-5">
@@ -2508,9 +2506,6 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
         tabs={[
           { id: 'revenue', label: t('finance.revenueTable'), icon: <FiCheckCircle className="h-4 w-4" /> },
           { id: 'expenses', label: t('admin.resources.expenses.title'), icon: <FiArchive className="h-4 w-4" /> },
-          { id: 'cashAccounts', label: t('admin.resources.cashAccounts.title'), icon: <FiDollarSign className="h-4 w-4" /> },
-          { id: 'cashTransactions', label: t('admin.resources.cashTransactions.title'), icon: <FiCpu className="h-4 w-4" /> },
-          { id: 'invoices', label: t('admin.resources.invoices.title'), icon: <FiPackage className="h-4 w-4" /> },
         ]}
         activeTab={activeTab}
         onChange={id => setActiveTab(id as typeof activeTab)}
@@ -2520,14 +2515,8 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
           columns={[t('finance.columns.date'), t('finance.columns.client'), t('finance.columns.order'), t('finance.columns.amount')]}
           rows={revenueEntries.map(e => [formatDisplayDate(e.date, t), e.client, translateMovementLabel(t, e.order), <span className="font-bold text-success">{formatMoney(e.amount)}</span>])}
         />
-      ) : activeTab === 'expenses' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.expenses, readOnly: !canManage }} />
-      ) : activeTab === 'cashAccounts' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.cashAccounts, readOnly: !canManage }} />
-      ) : activeTab === 'cashTransactions' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.cashTransactions, readOnly: !canManage }} />
       ) : (
-        <ApiResourceManager config={{ ...operationsConfigs.invoices, readOnly: !canManage }} />
+        <ApiResourceManager config={{ ...operationsConfigs.expenses, readOnly: !canManage }} />
       )}
     </div>
   );
