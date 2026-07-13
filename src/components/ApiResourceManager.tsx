@@ -191,10 +191,13 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
   }, [config]);
 
   const filteredRows = useMemo(() => {
+    // The archived toggle switches the view entirely: unchecked shows only live rows
+    // (the backend already excludes archived), checked shows only the archive.
+    const scoped = includeArchived ? rows.filter(row => Boolean(row.is_archived)) : rows;
     const needle = query.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter(row => JSON.stringify(row).toLowerCase().includes(needle));
-  }, [query, rows]);
+    if (!needle) return scoped;
+    return scoped.filter(row => JSON.stringify(row).toLowerCase().includes(needle));
+  }, [query, rows, includeArchived]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

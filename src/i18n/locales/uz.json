@@ -2143,7 +2143,7 @@
       "exportXlsx": "Excel eksport",
       "refresh": "Yangilash",
       "create": "Yaratish",
-      "includeArchived": "Arxivlanganlarni ko'rsatish",
+      "includeArchived": "Faqat arxivlanganlar",
       "searchPlaceholder": "{{title}} ichida qidirish",
       "noRecords": "Yozuvlar yo'q",
       "recordsCount": "{{count}} ta yozuv",

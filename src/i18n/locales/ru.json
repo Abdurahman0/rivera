@@ -2138,7 +2138,7 @@
       "exportXlsx": "Экспорт в Excel",
       "refresh": "Обновить",
       "create": "Создать",
-      "includeArchived": "Показать архивные",
+      "includeArchived": "Только архивные",
       "searchPlaceholder": "Поиск: {{title}}",
       "noRecords": "Нет записей",
       "recordsCount": "Записей: {{count}}",
