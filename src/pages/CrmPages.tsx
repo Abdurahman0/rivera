@@ -1899,19 +1899,12 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
   const canManage = useHasPermission('materials', 'manage');
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'materials' | 'suppliers' | 'stock'>('materials');
-  const [viewingPurchasesFor, setViewingPurchasesFor] = useState<Material | null>(null);
   const [addingStockFor, setAddingStockFor] = useState<Material | null>(null);
   const lowStockCount = materials.filter(m => m.stock <= m.minStock).length;
   const totalValue = materials.reduce((sum, m) => sum + m.stock * m.price, 0);
   const filtered = materials.filter(m =>
     `${m.name} ${m.supplier}`.toLowerCase().includes(query.toLowerCase())
   );
-  const purchasesConfig = useMemo(() => {
-    if (!viewingPurchasesFor) return null;
-    const base = operationsConfigs.materialPurchases;
-    return { ...base, readOnly: !canManage, fields: base.fields.map(field => (field.name === 'material' ? { ...field, readOnly: true, table: false } : field)) };
-  }, [viewingPurchasesFor, canManage]);
-
   return (
     <div className="grid gap-5">
       <PageHeader eyebrow={t('materials.eyebrow')} title={t('materials.title')} description={t('materials.description')} createLabel={canManage && activeTab === 'materials' ? t('materials.create') : undefined} onCreate={canManage && activeTab === 'materials' ? onCreate : undefined} onExport={() => exportResource(activeTab === 'suppliers' ? resources.suppliers : activeTab === 'stock' ? resources.materialStocks : resources.materials)} />
@@ -1972,7 +1965,6 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
             <StatusBadge tone={materialStatusTone(mat.statusKey)}>{statusLabel(t, mat.statusKey)}</StatusBadge>,
             <div className="flex items-center gap-2">
               {canManage ? <button className="rounded-lg bg-success-bg px-2.5 py-1.5 text-xs font-bold text-success transition hover:bg-success/15" onClick={() => setAddingStockFor(mat)}>+ {t('materials.addStock')}</button> : null}
-              <button className="rounded-lg bg-surface-subtle px-2.5 py-1.5 text-xs font-bold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => setViewingPurchasesFor(mat)}>{t('materials.purchases')}</button>
               <RowActions onView={() => openModal({ kind: 'material', mode: 'view', item: mat })} onEdit={canManage ? () => openModal({ kind: 'material', mode: 'edit', item: mat }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'material', mode: 'view', item: mat }) : undefined} />
             </div>,
           ];
@@ -1980,16 +1972,6 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
       />
         </>
       )}
-      {viewingPurchasesFor && purchasesConfig ? (
-        <ScopedResourceModal
-          title={viewingPurchasesFor.name}
-          subtitle={t('admin.resources.materialPurchases.title')}
-          config={purchasesConfig}
-          extraParams={{ material: String(viewingPurchasesFor.id) }}
-          fixedValues={{ material: String(viewingPurchasesFor.id) }}
-          onClose={() => setViewingPurchasesFor(null)}
-        />
-      ) : null}
       {addingStockFor ? <AddMaterialStockModal material={addingStockFor} formatMoney={formatMoney} onClose={() => setAddingStockFor(null)} /> : null}
     </div>
   );

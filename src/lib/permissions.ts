@@ -22,7 +22,7 @@ export const NAV_PAGE_BACKEND_PAGES: Record<PageId, string[]> = {
 /** Backend page each Operations/System admin-panel resource belongs to. */
 export const RESOURCE_BACKEND_PAGE: Record<string, string> = {
   clientOrders: 'clients', deliveries: 'clients', payments: 'clients', returns: 'clients',
-  suppliers: 'materials', materialPurchases: 'materials',
+  suppliers: 'materials',
   materialStocks: 'inventory', defectiveStocks: 'inventory', defectiveTransactions: 'inventory',
   batchItems: 'production', materialUsages: 'production',
   schedules: 'employees',

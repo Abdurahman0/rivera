@@ -20,7 +20,6 @@ export const APPROVAL_ACTION_TARGETS: Record<string, {
   leave_request: { resource: resources.leaveRequests, textFields: ['reason'], dateField: 'start_date' },
   cash_transaction: { resource: resources.cashTransactions, textFields: ['note'], dateField: 'date' },
   expense: { resource: resources.expenses, textFields: ['category', 'note'], dateField: 'date' },
-  material_purchase: { resource: resources.materialPurchases, materialField: 'material', quantityField: 'quantity', dateField: 'purchase_date' },
   production_material_issue: { resource: resources.productionMaterialUsages, materialField: 'material', quantityField: 'norm_quantity', dateField: 'delivered_date' },
   production_warehouse_delivery: { resource: resources.finishedGoodsTransactions, productField: 'product', quantityField: 'quantity', dateField: 'date' },
   material_transaction: { resource: resources.materialTransactions, materialField: 'material', quantityField: 'quantity', dateField: 'date' },

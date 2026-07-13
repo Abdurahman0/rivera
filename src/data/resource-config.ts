@@ -85,16 +85,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
     resource: resources.suppliers, title: title('suppliers'), description: description('suppliers'),
     fields: [{ name: 'name', label: f('name'), required: true, table: true }, { name: 'phone', label: f('phone'), table: true }, { name: 'address', label: f('address'), type: 'textarea' }, { name: 'note', label: f('note'), type: 'textarea' }],
   },
-  materialPurchases: {
-    resource: resources.materialPurchases, title: title('materialPurchases'), description: description('materialPurchases'), allowEdit: false, allowArchive: false,
-    fields: [
-      { name: 'supplier', label: f('supplier'), lookup: { resource: resources.suppliers, label: 'name' }, required: true, table: true },
-      { name: 'material', label: f('material'), lookup: { resource: resources.materials, label: 'name', secondary: 'code' }, required: true, table: true },
-      { name: 'quantity', label: f('quantity'), type: 'number', step: '0.0001', required: true, table: true }, { name: 'unit_price', label: f('unitPrice'), type: 'number', step: '0.01', required: true },
-      { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true }, { name: 'exchange_rate', label: f('exchangeRate'), type: 'number', step: '0.0001', nullable: true },
-      { name: 'purchase_date', label: f('purchaseDate'), type: 'date', required: true, table: true }, { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
-    ],
-  },
   materialStocks: {
     resource: resources.materialStocks, title: title('materialStocks'), description: description('materialStocks'), readOnly: true,
     fields: [{ name: 'material', label: f('material'), lookup: { resource: resources.materials, label: 'name', secondary: 'code' }, table: true }, { name: 'quantity', label: f('quantity'), table: true }, { name: 'total_value', label: f('totalValue'), table: true }],
