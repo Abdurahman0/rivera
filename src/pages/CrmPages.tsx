@@ -2649,17 +2649,14 @@ export function ProductionPage({ batches, products, materials, formatMoney, onCr
           {batches.map(batch => {
             const product = products.find(p => p.id === batch.productId);
             const recipe = product?.recipe ?? [];
-            const materialRows = recipe.map(item => {
-              // Actual consumption follows what was delivered, not the plan: the backend
-              // auto-issues norm×delivered on each approved delivery, so prefer the recorded
-              // out_production quantity and fall back to norm×delivered when none exists yet.
-              const issued = batch.materialIssues.find(issue => String(issue.materialId) === String(item.materialId));
-              return {
-                ...item,
-                consumed: issued ? issued.quantity : item.qtyPerUnit * batch.producedQty,
-                plannedUsed: item.qtyPerUnit * batch.plannedQty,
-              };
-            });
+            const materialRows = recipe.map(item => ({
+              ...item,
+              // Consumed tracks actual delivered output (norm × delivered), so a batch that
+              // delivered nothing has consumed nothing. This is per produced unit — legacy
+              // full-norm issue rows from an older flow must not inflate it.
+              consumed: item.qtyPerUnit * batch.producedQty,
+              plannedUsed: item.qtyPerUnit * batch.plannedQty,
+            }));
             const materialsOpen = Boolean(openBatchMaterials[String(batch.id)]);
 
             return (
