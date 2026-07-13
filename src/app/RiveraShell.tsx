@@ -390,11 +390,11 @@ function App() {
 
   const dashboardClients = clients.filter(client => isWithinDateRange(String(client.api?.created_at ?? client.lastContact), dashboardDateRange));
   const dashboardOrders = orders.filter(order => isWithinDateRange(order.orderDate, dashboardDateRange));
-  const orderMonths = [...new Set(dashboardOrders.map(order => order.orderDate.slice(0, 7)))].sort().slice(-6);
-  const revenueData = orderMonths.map(month => {
-    const rows = dashboardOrders.filter(order => order.orderDate.startsWith(month));
-    return { month, revenue: rows.reduce((sum, row) => sum + row.totalAmount, 0), orders: rows.length };
-  });
+  const revenueData = (appData.revenueSeries?.points ?? []).map(point => ({
+    month: appData.revenueSeries?.granularity === 'day' ? point.period.slice(5) : point.period.slice(0, 7),
+    revenue: Number(point.revenue) || 0,
+    orders: point.orders,
+  }));
 
   const totalStock = appData.summary?.warehouse.finished_goods_total_units ?? products.reduce((sum, product) => sum + product.stock, 0);
   const lowStockCount = appData.summary?.warehouse.low_stock_materials_count ?? products.filter(product => product.stock <= product.minStock).length;

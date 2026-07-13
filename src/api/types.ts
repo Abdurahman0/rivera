@@ -272,6 +272,20 @@ export interface ApiDashboardSummary {
   estimated_profit_in_period?: number | string;
 }
 
+export interface ApiDashboardTimeseriesPoint {
+  period: string;
+  revenue: number | string;
+  expenses: number | string;
+  orders: number;
+}
+
+export interface ApiDashboardTimeseries {
+  granularity: 'day' | 'month';
+  date_from: string;
+  date_to: string;
+  points: ApiDashboardTimeseriesPoint[];
+}
+
 export interface ApiApproval extends ApiBaseModel {
   content_type: number;
   object_id: string;

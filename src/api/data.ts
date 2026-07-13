@@ -11,6 +11,7 @@ import type {
   ApiClientPayment,
   ApiDailyWorkEntry,
   ApiDashboardSummary,
+  ApiDashboardTimeseries,
   ApiEmployee,
   ApiExpense,
   ApiFinishedGoodsStock,
@@ -28,6 +29,7 @@ import type {
 
 export interface AppData extends FrontendData {
   summary: ApiDashboardSummary | null;
+  revenueSeries: ApiDashboardTimeseries | null;
   approvals: ApiApproval[];
   topClientIds: string[];
 }
@@ -38,6 +40,7 @@ export const EMPTY_DATA: AppData = {
   attendanceLog: [],
   approvals: [],
   topClientIds: [],
+  revenueSeries: null,
   operationTypeOptions: [],
   finishedVariants: [],
 };
@@ -128,6 +131,17 @@ async function allowedSummary(range?: DashboardDateRange | null) {
   }
 }
 
+async function allowedTimeseries(range?: DashboardDateRange | null) {
+  try {
+    return await actions.dashboardTimeseries<ApiDashboardTimeseries>(
+      range ? { date_from: range.startDate, date_to: range.endDate } : undefined,
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 403) return null;
+    throw error;
+  }
+}
+
 async function allowedTopClients() {
   try {
     return await actions.topClients<Array<{ client: string }>>(10);
@@ -149,12 +163,13 @@ export async function loadAppData(page: PageId, dashboardRange?: DashboardDateRa
   const shouldLoadApprovals = page === 'approvals';
   const shouldLoadTopClients = page === 'dashboard';
 
-  const [operational, summary, approvals, topClients] = await Promise.all([
+  const [operational, summary, approvals, topClients, revenueSeries] = await Promise.all([
     loadOperationalData(page),
     shouldLoadSummary ? allowedSummary(page === 'dashboard' ? dashboardRange : null) : Promise.resolve(null),
     shouldLoadApprovals ? allowedList<ApiApproval>(resources.approvals) : Promise.resolve([]),
     shouldLoadTopClients ? allowedTopClients() : Promise.resolve([]),
+    page === 'dashboard' ? allowedTimeseries(dashboardRange) : Promise.resolve(null),
   ]);
 
-  return { ...adaptOperationalData(operational), summary, approvals, topClientIds: topClients.map(row => row.client) };
+  return { ...adaptOperationalData(operational), summary, revenueSeries, approvals, topClientIds: topClients.map(row => row.client) };
 }

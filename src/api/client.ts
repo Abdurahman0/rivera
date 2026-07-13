@@ -238,6 +238,13 @@ export const actions = {
     const qs = query.toString();
     return api.get<T>(`/dashboard/summary/${qs ? `?${qs}` : ''}`);
   },
+  dashboardTimeseries: <T>(range?: { date_from?: string; date_to?: string }) => {
+    const query = new URLSearchParams();
+    if (range?.date_from) query.set('date_from', range.date_from);
+    if (range?.date_to) query.set('date_to', range.date_to);
+    const qs = query.toString();
+    return api.get<T>(`/dashboard/timeseries/${qs ? `?${qs}` : ''}`);
+  },
   topClients: <T>(limit = 10) => api.get<T>(`/dashboard/top_clients/?limit=${limit}`),
   authMe: <T>() => api.get<T>('/auth/me/'),
   deviceAttendanceCheck: <T>(payload: FormData | Record<string, unknown>) => api.post<T>('/attendance-events/check/', payload),
