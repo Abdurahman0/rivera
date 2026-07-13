@@ -2178,10 +2178,122 @@ function PayrollTab({ staff, formatMoney }: { staff: StaffMember[]; formatMoney:
   );
 }
 
+/** Bulk piecework entry: one employee, several work types at once. Each row carries its
+ *  own optional date; rows without one fall back to the common date — so a week's mixed
+ *  work can be entered in a single sitting instead of one form per (work type, day). */
+function BulkWorkEntryModal({ staff, formatMoney, onClose, onSaved }: { staff: StaffMember[]; formatMoney: (value: number) => string; onClose: () => void; onSaved: (count: number) => void }) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [operationTypes, setOperationTypes] = useState<Array<{ id: string; name: string; price: number }>>([]);
+  const [employeeId, setEmployeeId] = useState('');
+  const [commonDate, setCommonDate] = useState(() => isoDate(new Date()));
+  const [rows, setRows] = useState<Array<{ key: number; opType: string; qty: string; date: string }>>([{ key: 1, opType: '', qty: '', date: '' }]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    void api.list<ApiRecord>(resources.operationTypes).then(list =>
+      setOperationTypes(list.map(row => ({ id: String(row.id), name: String(row.name), price: Number(row.price_per_unit) || 0 }))),
+    ).catch(() => setOperationTypes([]));
+  }, []);
+
+  const priceOf = (opType: string) => operationTypes.find(op => op.id === opType)?.price ?? 0;
+  const rowTotal = (row: { opType: string; qty: string }) => priceOf(row.opType) * (Number(row.qty) || 0);
+  const grandTotal = rows.reduce((sum, row) => sum + rowTotal(row), 0);
+  const updateRow = (key: number, patch: Partial<{ opType: string; qty: string; date: string }>) =>
+    setRows(current => current.map(row => (row.key === key ? { ...row, ...patch } : row)));
+
+  async function save() {
+    const validRows = rows.filter(row => row.opType && Number(row.qty) > 0);
+    if (!employeeId || validRows.length === 0 || !commonDate) {
+      toast(t('admin.ui.requiredFieldsMissing'), 'danger');
+      return;
+    }
+    setSaving(true);
+    try {
+      for (const row of validRows) {
+        await api.create(resources.dailyWorkEntries, {
+          employee: employeeId,
+          operation_type: row.opType,
+          date: row.date || commonDate,
+          quantity_done: Number(row.qty),
+        });
+      }
+      toast(t('staff.bulkWork.savedCount', { count: validRows.length }), 'success');
+      onSaved(validRows.length);
+    } catch (error) {
+      toast(apiErrorMessage(error, t), 'danger');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <section role="dialog" aria-modal="true" className="grid max-h-[90vh] w-full max-w-[760px] grid-rows-[auto_1fr_auto] overflow-hidden rounded-[28px] bg-surface-card shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+        <div className="flex items-start justify-between gap-4 border-b border-border-soft/30 p-6">
+          <div className="min-w-0">
+            <h3 className="m-0 font-display text-xl font-extrabold text-text-primary">{t('staff.bulkWork.title')}</h3>
+            <p className="mt-1 text-sm text-text-muted">{t('staff.bulkWork.subtitle')}</p>
+          </div>
+          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-subtle text-text-secondary transition hover:bg-surface-muted hover:text-text-primary" onClick={onClose} aria-label={t('common.close')}>
+            <FiX className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid content-start gap-4 overflow-y-auto p-6">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+              {t('admin.fields.employee')}
+              <Dropdown value={employeeId} onChange={setEmployeeId} options={staff.map(member => ({ value: String(member.id), label: member.name }))} placeholder={t('admin.ui.selectPlaceholder')} />
+            </label>
+            <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
+              {t('staff.bulkWork.commonDate')}
+              <DatePicker value={commonDate} onChange={setCommonDate} />
+            </label>
+          </div>
+          <div className="grid gap-2.5">
+            {rows.map(row => (
+              <div key={row.key} className="grid gap-2 rounded-2xl bg-surface-subtle/50 p-3 ring-1 ring-border-soft/30 sm:grid-cols-[1fr_110px_170px_auto] sm:items-center">
+                <Dropdown value={row.opType} onChange={value => updateRow(row.key, { opType: value })} options={operationTypes.map(op => ({ value: op.id, label: `${op.name} · ${op.price.toLocaleString()} so'm` }))} placeholder={t('admin.fields.operation')} />
+                <input type="number" min="1" value={row.qty} onChange={event => updateRow(row.key, { qty: event.target.value })} placeholder={t('admin.fields.quantity')} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50" />
+                <DatePicker value={row.date} onChange={value => updateRow(row.key, { date: value })} />
+                <div className="flex items-center justify-end gap-2">
+                  <span className="whitespace-nowrap text-xs font-extrabold text-primary">{rowTotal(row) > 0 ? formatMoney(rowTotal(row)) : '—'}</span>
+                  {rows.length > 1 ? (
+                    <button type="button" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-danger-bg text-danger transition hover:bg-danger/15" onClick={() => setRows(current => current.filter(item => item.key !== row.key))} aria-label={t('common.delete')}>
+                      <FiX className="h-3.5 w-3.5" />
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div>
+            <button type="button" className="rounded-lg bg-primary/10 px-3 py-2 text-xs font-bold text-text-accent transition hover:bg-primary/20" onClick={() => setRows(current => [...current, { key: Math.max(...current.map(item => item.key)) + 1, opType: '', qty: '', date: '' }])}>
+              + {t('staff.bulkWork.addRow')}
+            </button>
+          </div>
+          <p className="m-0 text-xs text-text-muted">{t('staff.bulkWork.dateHint')}</p>
+        </div>
+        <div className="flex items-center justify-between gap-3 border-t border-border-soft/30 p-5">
+          <span className="text-sm font-bold text-text-secondary">{t('staff.bulkWork.total')}: <span className="text-lg font-extrabold text-primary">{formatMoney(grandTotal)}</span></span>
+          <div className="flex gap-2">
+            <button className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-surface-subtle px-5 text-sm font-semibold text-text-secondary transition hover:bg-surface-muted hover:text-text-primary" onClick={onClose}>{t('common.cancel')}</button>
+            <button disabled={saving} className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60" onClick={() => void save()}>
+              {saving ? t('common.loading') : t('common.save')}
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMember[]; pieceworkRecords: PieceworkRecord[]; formatMoney: (value: number) => string }) {
   const { t } = useTranslation();
   const canManage = useHasPermission('payroll', 'manage');
   const [subTab, setSubTab] = useState<'summary' | 'operationTypes' | 'payroll' | 'workEntries'>('summary');
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [workEntriesReload, setWorkEntriesReload] = useState(0);
   // Daily / weekly / monthly view of piecework — defaults to the current month,
   // since the monthly total is what the salary derives from.
   const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
@@ -2227,7 +2339,24 @@ function PieceworkTab({ staff, pieceworkRecords, formatMoney }: { staff: StaffMe
       ) : subTab === 'payroll' ? (
         <PayrollTab staff={staff} formatMoney={formatMoney} />
       ) : subTab === 'workEntries' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.workEntries, readOnly: !canManage }} />
+        <div className="grid gap-3">
+          {canManage ? (
+            <div className="flex justify-end">
+              <button className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90" onClick={() => setBulkOpen(true)}>
+                <FiCheckCircle className="h-4 w-4" /> {t('staff.bulkWork.open')}
+              </button>
+            </div>
+          ) : null}
+          <ApiResourceManager key={workEntriesReload} config={{ ...operationsConfigs.workEntries, readOnly: !canManage }} />
+          {bulkOpen ? (
+            <BulkWorkEntryModal
+              staff={staff}
+              formatMoney={formatMoney}
+              onClose={() => setBulkOpen(false)}
+              onSaved={() => { setBulkOpen(false); setWorkEntriesReload(value => value + 1); }}
+            />
+          ) : null}
+        </div>
       ) : (
       <>
       <div className="flex flex-wrap items-center justify-end gap-2.5">
@@ -2454,24 +2583,44 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
   const exportResource = useResourceExport();
   const canManage = useHasPermission('clients', 'manage');
   const [activeTab, setActiveTab] = useState<'revenue' | 'expenses'>('revenue');
-  const revenue = revenueEntries.reduce((sum, e) => sum + e.amount, 0);
-  const expenses = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
+  // Metrics, the revenue table and the expenses list all follow this range;
+  // defaults to the current month so the cards read as "this month's money".
+  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(() => dashboardRangePreset('thisMonth'));
+  const inRange = (date: string) => !dateRange || (date >= dateRange.startDate && date <= dateRange.endDate);
+  const revenueInRange = revenueEntries.filter(e => inRange(e.date));
+  const expensesInRange = expenseEntries.filter(e => inRange(e.date));
+  const revenue = revenueInRange.reduce((sum, e) => sum + e.amount, 0);
+  const expenses = expensesInRange.reduce((sum, e) => sum + e.amount, 0);
   const profit = revenue - expenses;
+  const activePreset = matchingDashboardPreset(dateRange);
+  const rangeLabel = activePreset
+    ? t(`dashboard.filters.${activePreset}`)
+    : dateRange
+      ? `${formatDisplayDate(dateRange.startDate, t)} – ${formatDisplayDate(dateRange.endDate, t)}`
+      : t('dashboard.filters.allTime');
+  const expensesRangeParams = useMemo(
+    () => (dateRange ? { date__gte: dateRange.startDate, date__lte: dateRange.endDate } : undefined),
+    [dateRange],
+  );
   const exportResourceMap = { revenue: resources.clientPayments, expenses: resources.expenses } as const;
 
   return (
     <div className="grid gap-5">
       <PageHeader eyebrow={t('finance.eyebrow')} title={t('finance.title')} description={t('finance.description')} createLabel={canManage && activeTab === 'revenue' ? t('common.create') : undefined} onCreate={canManage && activeTab === 'revenue' ? onCreate : undefined} onExport={() => exportResource(exportResourceMap[activeTab])} />
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
+        <DashboardPresetDropdown value={dateRange} onChange={setDateRange} />
+        <DashboardCustomRangePicker value={dateRange} onChange={setDateRange} />
+      </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl bg-success/8 p-5 ring-1 ring-success/20">
           <p className="text-xs font-bold uppercase tracking-wide text-success/70">{t('finance.metrics.revenue')}</p>
           <p className="mt-2 text-2xl font-extrabold text-success">{formatMoney(revenue)}</p>
-          <p className="mt-0.5 text-xs text-success/60">{t('finance.metrics.revenueCaption')}</p>
+          <p className="mt-0.5 text-xs text-success/60">{rangeLabel}</p>
         </div>
         <div className="rounded-2xl bg-warning/8 p-5 ring-1 ring-warning/20">
           <p className="text-xs font-bold uppercase tracking-wide text-warning/70">{t('finance.metrics.expenses')}</p>
           <p className="mt-2 text-2xl font-extrabold text-warning">{formatMoney(expenses)}</p>
-          <p className="mt-0.5 text-xs text-warning/60">{t('finance.metrics.expensesCaption')}</p>
+          <p className="mt-0.5 text-xs text-warning/60">{rangeLabel}</p>
         </div>
         <div className={['rounded-2xl p-5 ring-1', profit >= 0 ? 'bg-primary/8 ring-primary/20' : 'bg-danger/8 ring-danger/20'].join(' ')}>
           <p className={['text-xs font-bold uppercase tracking-wide', profit >= 0 ? 'text-primary/70' : 'text-danger/70'].join(' ')}>{t('finance.metrics.profit')}</p>
@@ -2488,12 +2637,15 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
         onChange={id => setActiveTab(id as typeof activeTab)}
       />
       {activeTab === 'revenue' ? (
-        <DataTable
-          columns={[t('finance.columns.date'), t('finance.columns.client'), t('finance.columns.order'), t('finance.columns.amount')]}
-          rows={revenueEntries.map(e => [formatDisplayDate(e.date, t), e.client, translateMovementLabel(t, e.order), <span className="font-bold text-success">{formatMoney(e.amount)}</span>])}
-        />
+        <>
+          <DataTable
+            columns={[t('finance.columns.date'), t('finance.columns.client'), t('finance.columns.order'), t('finance.columns.amount')]}
+            rows={revenueInRange.map(e => [formatDisplayDate(e.date, t), e.client, translateMovementLabel(t, e.order), <span className="font-bold text-success">{formatMoney(e.amount)}</span>])}
+          />
+          {revenueInRange.length === 0 ? <p className="py-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p> : null}
+        </>
       ) : (
-        <ApiResourceManager config={{ ...operationsConfigs.expenses, readOnly: !canManage }} />
+        <ApiResourceManager config={{ ...operationsConfigs.expenses, readOnly: !canManage }} extraParams={expensesRangeParams} />
       )}
     </div>
   );

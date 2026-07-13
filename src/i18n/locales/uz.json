@@ -398,6 +398,16 @@
       "fixed": "Belgilangan",
       "days": "{{count}} kun",
       "totalPayout": "Jami to'lov"
+    },
+    "bulkWork": {
+      "open": "Bir nechta ish kiritish",
+      "title": "Ish yozuvlarini kiritish",
+      "subtitle": "Bitta xodimga bir vaqtda bir nechta ish turini kiriting — summa har bir ish turining narxidan avtomatik hisoblanadi.",
+      "commonDate": "Umumiy sana",
+      "addRow": "Ish turi qo'shish",
+      "total": "Jami",
+      "savedCount": "{{count}} ta yozuv saqlandi",
+      "dateHint": "Qatordagi sana bo'sh qolsa, umumiy sana ishlatiladi. Har qatorga alohida kun tanlash ham mumkin."
     }
   },
   "products": {
