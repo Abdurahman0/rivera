@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FiClock, FiDatabase, FiEdit2, FiEye, FiLock, FiPlus, FiSettings, FiUsers, FiX } from 'react-icons/fi';
+import { FiClock, FiDatabase, FiEdit2, FiEye, FiLock, FiPlus, FiUsers, FiX } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { actions, api, resources } from '../api/client';
 import type { ApiRecord } from '../api/types';
@@ -17,7 +17,6 @@ import { RESOURCE_BACKEND_PAGE } from '../lib/permissions';
 // and are still reachable via the API, just not surfaced here.
 const systemGroups = [
   { id: 'access', label: 'admin.page.systemGroups.access', icon: FiUsers, resources: ['users'] },
-  { id: 'configuration', label: 'admin.resources.backups.title', icon: FiSettings, resources: ['backups'] },
   { id: 'attendanceConfig', label: 'admin.page.systemGroups.attendanceConfig', icon: FiClock, resources: ['schedules', 'devices'] },
   { id: 'audit', label: 'admin.page.systemGroups.audit', icon: FiDatabase, resources: ['audit'] },
 ] as const;
@@ -49,7 +48,7 @@ function ResourceNavigation({ groups, activeGroup, selected, setActiveGroup, set
 }
 
 /** Pages a user can be granted access to; labels come from admin.options.page.*. */
-const PERMISSION_PAGES = ['dashboard', 'clients', 'products', 'materials', 'inventory', 'production', 'employees', 'attendance', 'payroll', 'finance', 'approvals', 'audit', 'backups', 'users'] as const;
+const PERMISSION_PAGES = ['dashboard', 'clients', 'products', 'materials', 'inventory', 'production', 'employees', 'attendance', 'payroll', 'finance', 'approvals', 'audit', 'users'] as const;
 type GrantLevel = 'view' | 'manage' | null;
 
 /** Users + permissions in one place: the create/edit drawer carries a per-page
@@ -344,7 +343,7 @@ export function SystemPage() {
   const config: ResourceConfig | undefined = systemConfigs[selected]
     ? { ...systemConfigs[selected], readOnly: systemConfigs[selected].readOnly || !canManageSelected }
     : undefined;
-  const headerActions = selected === 'backups' && canManageSelected ? [{ label: 'admin.page.runBackupNow', run: actions.runBackup }] : undefined;
+  const headerActions = undefined;
 
   if (!config) return null;
 

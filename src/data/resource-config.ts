@@ -176,10 +176,6 @@ export const systemConfigs: Record<string, ResourceConfig> = {
     resource: resources.attendanceDevices, title: title('devices'), description: description('devices'),
     fields: [{ name: 'name', label: f('name'), required: true, table: true }, { name: 'token', label: f('deviceToken'), required: true, table: true }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true }, { name: 'last_seen_at', label: f('lastSeen'), readOnly: true, table: true }],
   },
-  backups: {
-    resource: resources.backups, title: title('backups'), description: description('backups'), readOnly: true,
-    fields: [{ name: 'trigger', label: f('trigger'), table: true }, { name: 'status', label: f('status'), table: true }, { name: 'started_at', label: f('started'), table: true }, { name: 'finished_at', label: f('finished'), table: true }, { name: 'message', label: f('message'), table: true }],
-  },
   audit: {
     resource: resources.auditLogs, title: title('audit'), description: description('audit'), readOnly: true,
     fields: [{ name: 'created_at', label: f('time'), table: true }, { name: 'user', label: f('user'), lookup: { resource: resources.users, label: 'username' }, table: true }, { name: 'page', label: f('page'), table: true }, { name: 'action', label: f('action'), table: true }, { name: 'object_type', label: f('object'), table: true }, { name: 'payload', label: 'admin.fields.metadata', type: 'json' }],

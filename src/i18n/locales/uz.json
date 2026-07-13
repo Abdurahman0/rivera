@@ -1959,10 +1959,6 @@
         "title": "Foydalanuvchilar",
         "description": "Tizimga kirish hisoblari va superadmin holati."
       },
-      "backups": {
-        "title": "Zaxira nusxalar",
-        "description": "Baza/media/muhit zaxira nusxalash tarixi."
-      },
       "audit": {
         "title": "Audit jurnali",
         "description": "Yaratish/tahrirlash/arxivlash/tasdiqlash faoliyati."
@@ -2033,7 +2029,6 @@
         "payroll": "Ish haqi",
         "approvals": "Tasdiqlar",
         "audit": "Audit",
-        "backups": "Zaxira nusxalar",
         "users": "Foydalanuvchilar",
         "finance": "Moliya"
       },
@@ -2167,7 +2162,6 @@
       "unlock": "Qulfdan chiqarish",
       "calculateMonth": "Oyni hisoblash",
       "openKiosk": "Davomat kioskini ochish",
-      "runBackupNow": "Zaxira nusxa olish",
       "promptMonth": "Qaysi oy uchun hisoblansin?"
     }
   },

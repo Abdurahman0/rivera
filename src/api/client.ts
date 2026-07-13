@@ -214,7 +214,7 @@ export const api = {
 // place makes permissions/admin screens able to use the same typed client.
 export const resources = {
   users: 'users', permissions: 'permissions', approvals: 'approvals', auditLogs: 'audit-logs',
-  backups: 'backups', clients: 'clients', clientOrders: 'client-orders', clientOrderItems: 'client-order-items', clientDeliveries: 'client-deliveries', clientPayments: 'client-payments',
+ clients: 'clients', clientOrders: 'client-orders', clientOrderItems: 'client-order-items', clientDeliveries: 'client-deliveries', clientPayments: 'client-payments',
   clientReturns: 'client-returns', clientDebtAdjustments: 'client-debt-adjustments', materials: 'materials', productCategories: 'product-categories',
   products: 'products', productMaterialNorms: 'product-material-norms', materialStocks: 'material-stocks', materialTransactions: 'material-transactions',
   defectiveMaterialStocks: 'defective-material-stocks', defectiveMaterialTransactions: 'defective-material-transactions', finishedGoodsStocks: 'finished-goods-stocks',
@@ -229,7 +229,6 @@ export const resources = {
 export const actions = {
   approve: (id: string) => api.post(`/approvals/${id}/approve/`),
   reject: (id: string, reason: string) => api.post(`/approvals/${id}/reject/`, { reason }),
-  runBackup: () => api.post('/backups/run_now/'),
   dashboardSummary: <T>(range?: { date_from?: string; date_to?: string }) => {
     const query = new URLSearchParams();
     if (range?.date_from) query.set('date_from', range.date_from);
