@@ -168,7 +168,7 @@ export const systemConfigs: Record<string, ResourceConfig> = {
     resource: resources.permissions, title: title('permissions'), description: description('permissions'),
     fields: [
       { name: 'user', label: f('user'), lookup: { resource: resources.users, label: 'username', secondary: 'full_name' }, required: true, table: true },
-      { name: 'page', label: f('page'), type: 'select', required: true, table: true, options: options(['dashboard', 'clients', 'products', 'materials', 'inventory', 'production', 'employees', 'attendance', 'payroll', 'finance', 'approvals', 'audit', 'security_logs', 'backups', 'settings', 'users'].map(value => [value, `admin.options.page.${value}`])) },
+      { name: 'page', label: f('page'), type: 'select', required: true, table: true, options: options(['dashboard', 'clients', 'products', 'materials', 'inventory', 'production', 'employees', 'attendance', 'payroll', 'finance', 'approvals', 'audit', 'backups', 'settings', 'users'].map(value => [value, `admin.options.page.${value}`])) },
       { name: 'level', label: f('level'), type: 'select', required: true, table: true, options: options([['view', 'admin.options.permissionLevel.view'], ['manage', 'admin.options.permissionLevel.manage']]) }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true },
     ],
   },
@@ -196,16 +196,4 @@ export const systemConfigs: Record<string, ResourceConfig> = {
     resource: resources.auditLogs, title: title('audit'), description: description('audit'), readOnly: true,
     fields: [{ name: 'created_at', label: f('time'), table: true }, { name: 'user', label: f('user'), lookup: { resource: resources.users, label: 'username' }, table: true }, { name: 'page', label: f('page'), table: true }, { name: 'action', label: f('action'), table: true }, { name: 'object_type', label: f('object'), table: true }, { name: 'payload', label: 'admin.fields.metadata', type: 'json' }],
   },
-  exports: {
-    resource: resources.exportLogs, title: title('exports'), description: description('exports'), readOnly: true,
-    fields: [{ name: 'created_at', label: f('time'), table: true }, { name: 'user', label: f('user'), lookup: { resource: resources.users, label: 'username' }, table: true }, { name: 'page', label: f('page'), table: true }, { name: 'row_count', label: f('rows'), table: true }],
-  },
-  security: {
-    resource: resources.securityLogs, title: title('security'), description: description('security'), readOnly: true,
-    fields: [{ name: 'created_at', label: f('time'), table: true }, { name: 'user', label: f('user'), lookup: { resource: resources.users, label: 'username' }, table: true }, { name: 'event', label: f('event'), table: true }, { name: 'method', label: f('method'), table: true }, { name: 'path', label: f('path'), table: true }, { name: 'status_code', label: f('status'), table: true }, { name: 'metadata', label: f('metadata'), type: 'json' }],
-  },
-  stockLogs: { resource: resources.stockLogs, title: title('stockLogs'), description: description('stockLogs'), readOnly: true, fields: [{ name: 'created_at', label: f('time'), table: true }, { name: 'event', label: f('event'), table: true }, { name: 'object_type', label: f('object'), table: true }, { name: 'object_id', label: f('id'), table: true }, { name: 'quantity', label: f('quantity'), table: true }] },
-  payrollLogs: { resource: resources.payrollLogs, title: title('payrollLogs'), description: description('payrollLogs'), readOnly: true, fields: [{ name: 'created_at', label: f('time'), table: true }, { name: 'event', label: f('event'), table: true }, { name: 'employee_id', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name', secondary: 'employee_code' }, table: true }, { name: 'payroll_id', label: 'admin.resources.payrolls.title', lookup: { resource: resources.monthlyPayrolls, label: 'month' }, table: true }, { name: 'metadata', label: f('metadata'), type: 'json' }] },
-  attendanceLogs: { resource: resources.attendanceLogs, title: title('attendanceLogs'), description: description('attendanceLogs'), readOnly: true, fields: [{ name: 'created_at', label: f('time'), table: true }, { name: 'event', label: f('event'), table: true }, { name: 'employee_id', label: f('employee'), lookup: { resource: resources.employees, label: 'full_name', secondary: 'employee_code' }, table: true }, { name: 'device_id', label: f('device'), lookup: { resource: resources.attendanceDevices, label: 'name' }, table: true }, { name: 'metadata', label: f('metadata'), type: 'json' }] },
-  backupLogs: { resource: resources.backupLogs, title: title('backupLogs'), description: description('backupLogs'), readOnly: true, fields: [{ name: 'created_at', label: f('time'), table: true }, { name: 'event', label: f('event'), table: true }, { name: 'status', label: f('status'), table: true }, { name: 'message', label: f('message'), table: true }, { name: 'metadata', label: f('metadata'), type: 'json' }] },
 };

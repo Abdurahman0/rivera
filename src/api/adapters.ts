@@ -232,10 +232,26 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     };
   });
 
+  // Attendance % compares hours actually worked this month against the expected hours:
+  // every non-Sunday from the 1st (or the hire date, if hired this month) through today
+  // counts as an 8-hour day. Counting "days with a record" would always read ~100%,
+  // since records only exist for days the employee showed up.
+  const now = new Date();
+  const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const expectedMinutesFor = (hireDate: string) => {
+    const startDay = hireDate?.startsWith(monthPrefix) ? Number(hireDate.slice(8, 10)) || 1 : 1;
+    let minutes = 0;
+    for (let day = startDay; day <= now.getDate(); day++) {
+      if (new Date(now.getFullYear(), now.getMonth(), day).getDay() !== 0) minutes += 480;
+    }
+    return minutes;
+  };
+
   const staff: StaffMember[] = data.employees.map(row => {
     const records = attendanceByEmployee.get(row.id) || [];
-    const present = records.filter(record => record.status === 'present' || record.status === 'late').length;
-    const attendance = records.length ? Math.round((present / records.length) * 100) : 0;
+    const workedThisMonth = records.filter(record => record.work_date.startsWith(monthPrefix)).reduce((sum, record) => sum + (record.worked_minutes || 0), 0);
+    const expectedMinutes = expectedMinutesFor(row.hire_date);
+    const attendance = expectedMinutes > 0 ? Math.min(100, Math.round((workedThisMonth / expectedMinutes) * 100)) : 0;
     const latest = [...records].sort((a, b) => b.work_date.localeCompare(a.work_date))[0];
     return {
       id: row.id,

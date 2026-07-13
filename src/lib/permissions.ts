@@ -31,8 +31,7 @@ export const RESOURCE_BACKEND_PAGE: Record<string, string> = {
   users: 'users', permissions: 'users',
   settings: 'settings',
   backups: 'backups',
-  audit: 'audit', exports: 'audit',
-  security: 'security_logs', stockLogs: 'security_logs', payrollLogs: 'security_logs', attendanceLogs: 'security_logs', backupLogs: 'security_logs',
+  audit: 'audit',
 };
 
 /** Backend page each entity-modal kind (create/edit) is governed by. */

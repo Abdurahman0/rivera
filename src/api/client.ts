@@ -213,8 +213,7 @@ export const api = {
 // Every router resource exposed by the backend. Keeping this registry in one
 // place makes permissions/admin screens able to use the same typed client.
 export const resources = {
-  users: 'users', permissions: 'permissions', approvals: 'approvals', auditLogs: 'audit-logs', exportLogs: 'export-logs',
-  securityLogs: 'security-logs', stockLogs: 'stock-logs', payrollLogs: 'payroll-logs', attendanceLogs: 'attendance-logs', backupLogs: 'backup-logs',
+  users: 'users', permissions: 'permissions', approvals: 'approvals', auditLogs: 'audit-logs',
   settings: 'settings', backups: 'backups', clients: 'clients', clientOrders: 'client-orders', clientOrderItems: 'client-order-items', clientDeliveries: 'client-deliveries', clientPayments: 'client-payments',
   clientReturns: 'client-returns', clientDebtAdjustments: 'client-debt-adjustments', materials: 'materials', productCategories: 'product-categories',
   products: 'products', productMaterialNorms: 'product-material-norms', materialStocks: 'material-stocks', materialTransactions: 'material-transactions',

@@ -1975,30 +1975,6 @@
         "title": "Audit jurnali",
         "description": "Yaratish/tahrirlash/arxivlash/tasdiqlash faoliyati."
       },
-      "exports": {
-        "title": "Eksport jurnali",
-        "description": "Kim, qaysi sahifani va necha qatorni eksport qilgani."
-      },
-      "security": {
-        "title": "Xavfsizlik jurnali",
-        "description": "Tizimga kirish va rad etilgan so'rovlar."
-      },
-      "stockLogs": {
-        "title": "Ombor jurnali",
-        "description": "Tasdiqlangan ombor o'zgarishlari tarixi."
-      },
-      "payrollLogs": {
-        "title": "Maosh jurnali",
-        "description": "Maosh holati o'zgarishlari tarixi."
-      },
-      "attendanceLogs": {
-        "title": "Davomat jurnali",
-        "description": "Davomat o'zgarishlari va qurilma faolligi."
-      },
-      "backupLogs": {
-        "title": "Zaxira jurnali",
-        "description": "Zaxira nusxalash bilan bog'liq voqealar."
-      },
       "clientOrders": {
         "title": "Buyurtmalar",
         "description": "Mijozlarning rasmiy buyurtmalari."
@@ -2065,7 +2041,6 @@
         "payroll": "Ish haqi",
         "approvals": "Tasdiqlar",
         "audit": "Audit",
-        "security_logs": "Xavfsizlik jurnali",
         "backups": "Zaxira nusxalar",
         "settings": "Sozlamalar",
         "users": "Foydalanuvchilar",
@@ -2185,8 +2160,7 @@
         "access": "Kirish huquqi",
         "configuration": "Sozlamalar",
         "attendanceConfig": "Davomat sozlamalari",
-        "audit": "Audit",
-        "security": "Xavfsizlik"
+        "audit": "Audit"
       },
       "operations": {
         "eyebrow": "To'liq backend operatsiyalari",
