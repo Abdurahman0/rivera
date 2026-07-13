@@ -1785,7 +1785,6 @@
       "totalValue": "Общая стоимость",
       "type": "Тип",
       "batch": "Партия",
-      "sourceTransaction": "Исходная операция",
       "normQuantity": "Норма количества",
       "defect": "Брак",
       "actualDelivered": "Фактически доставлено",

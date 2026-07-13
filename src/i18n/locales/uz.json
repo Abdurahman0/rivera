@@ -1790,7 +1790,6 @@
       "totalValue": "Umumiy qiymat",
       "type": "Turi",
       "batch": "Partiya",
-      "sourceTransaction": "Manba operatsiyasi",
       "normQuantity": "Norma miqdori",
       "defect": "Brak",
       "actualDelivered": "Haqiqatda yetkazildi",
