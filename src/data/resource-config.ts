@@ -164,14 +164,6 @@ export const systemConfigs: Record<string, ResourceConfig> = {
     resource: resources.users, title: title('users'), description: description('users'),
     fields: [{ name: 'username', label: f('username'), required: true, table: true }, { name: 'full_name', label: f('fullName'), required: true, table: true }, { name: 'phone', label: f('phone') }, { name: 'email', label: f('email'), type: 'text', table: true }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true }, { name: 'is_superadmin', label: f('superadmin'), type: 'checkbox', table: true }, { name: 'password', label: f('password'), type: 'password' }],
   },
-  permissions: {
-    resource: resources.permissions, title: title('permissions'), description: description('permissions'),
-    fields: [
-      { name: 'user', label: f('user'), lookup: { resource: resources.users, label: 'username', secondary: 'full_name' }, required: true, table: true },
-      { name: 'page', label: f('page'), type: 'select', required: true, table: true, options: options(['dashboard', 'clients', 'products', 'materials', 'inventory', 'production', 'employees', 'attendance', 'payroll', 'finance', 'approvals', 'audit', 'backups', 'settings', 'users'].map(value => [value, `admin.options.page.${value}`])) },
-      { name: 'level', label: f('level'), type: 'select', required: true, table: true, options: options([['view', 'admin.options.permissionLevel.view'], ['manage', 'admin.options.permissionLevel.manage']]) }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true },
-    ],
-  },
   settings: {
     resource: resources.settings, title: title('settings'), description: description('settings'),
     fields: [{ name: 'key', label: f('key'), required: true, table: true }, { name: 'value', label: f('valueJson'), type: 'json', required: true, table: true }, { name: 'description', label: f('description'), type: 'textarea', table: true }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true }],

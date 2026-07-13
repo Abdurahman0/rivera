@@ -93,6 +93,8 @@ const BACKEND_ERROR_TRANSLATIONS: Record<string, string> = {
   'reason is required': 'errors.reasonRequired',
   'invalid device': 'errors.invalidDevice',
   'invalid refresh token': 'errors.invalidRefreshToken',
+  'only a superadmin can manage permissions': 'errors.permissionOnlySuperadmin',
+  'superadmin permissions cannot be modified': 'errors.permissionSuperadminLocked',
   'direct create is not allowed': 'errors.directChangeNotAllowed',
   'direct update is not allowed; use a dedicated action': 'errors.directChangeNotAllowed',
   'direct archive is not allowed; use a dedicated action': 'errors.directChangeNotAllowed',

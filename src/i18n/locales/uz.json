@@ -1959,10 +1959,6 @@
         "title": "Foydalanuvchilar",
         "description": "Tizimga kirish hisoblari va superadmin holati."
       },
-      "permissions": {
-        "title": "Sahifa huquqlari",
-        "description": "Har bir foydalanuvchi uchun ko'rish/boshqarish huquqi."
-      },
       "settings": {
         "title": "Biznes sozlamalari",
         "description": "JSON ko'rinishidagi ilova sozlamalari."
@@ -2157,7 +2153,7 @@
         "finance": "Moliya"
       },
       "systemGroups": {
-        "access": "Kirish huquqi",
+        "access": "Foydalanuvchilar",
         "configuration": "Sozlamalar",
         "attendanceConfig": "Davomat sozlamalari",
         "audit": "Audit"
@@ -2241,6 +2237,20 @@
     "reasonRequired": "Sabab kiritilishi shart",
     "invalidDevice": "Qurilma noto'g'ri yoki ro'yxatdan o'tmagan",
     "invalidRefreshToken": "Sessiya muddati tugagan — qaytadan kiring",
-    "directChangeNotAllowed": "To'g'ridan-to'g'ri o'zgartirish mumkin emas — maxsus amaldan foydalaning"
+    "directChangeNotAllowed": "To'g'ridan-to'g'ri o'zgartirish mumkin emas — maxsus amaldan foydalaning",
+    "permissionOnlySuperadmin": "Huquqlarni faqat superadmin boshqara oladi",
+    "permissionSuperadminLocked": "Superadmin huquqlarini o'zgartirib bo'lmaydi"
+  },
+  "usersManager": {
+    "hint": "Foydalanuvchini bosib huquqlarini ko'ring; tahrirlashda huquqlar ro'yxatidan belgilanadi.",
+    "role": "Rol",
+    "superadmin": "Superadmin",
+    "regular": "Foydalanuvchi",
+    "newUser": "Yangi foydalanuvchi",
+    "passwordKeep": "Bo'sh qolsa parol o'zgarmaydi",
+    "permsTitle": "Sahifa huquqlari",
+    "permsHint": "Kerakli sahifalarni belgilang: Ko'rish — faqat ochib ko'radi, Boshqarish — qo'shadi/o'zgartiradi.",
+    "superadminAll": "Superadmin barcha sahifalarga to'liq huquqqa ega — alohida huquq belgilanmaydi va uni hech kim o'zgartira olmaydi.",
+    "onlySuper": "Huquqlarni faqat superadmin o'zgartira oladi."
   }
 }
