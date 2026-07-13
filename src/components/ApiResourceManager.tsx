@@ -31,6 +31,10 @@ export interface ResourceField {
   /** `autofill` derives other field values (e.g. price, color) from the selected lookup
    *  row — fired once when the user picks a value, never overwriting on initial mount. */
   lookup?: { resource: string; label: string; secondary?: string; autofill?: (row: ResourceRow) => Record<string, string> };
+  /** Recomputes sibling field values while the user types into this one (e.g. entering a
+   *  per-piece time norm fills the hourly/daily/monthly norms). The patched fields remain
+   *  plain inputs, so the user can still overwrite any derived value afterwards. */
+  derive?: (value: string) => Record<string, string>;
 }
 
 export interface ResourceConfig {
@@ -281,6 +285,15 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
     });
   }
 
+  function handleDerive(field: ResourceField, value: string) {
+    const form = formRef.current;
+    if (!field.derive || !form) return;
+    Object.entries(field.derive(value)).forEach(([targetName, targetValue]) => {
+      const element = form.elements.namedItem(targetName);
+      if (element instanceof HTMLInputElement) element.value = targetValue;
+    });
+  }
+
   async function runAction(label: string, operation: () => Promise<unknown>) {
     try {
       await operation();
@@ -368,7 +381,7 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
                     : field.type === 'date' || field.type === 'datetime-local' ? <DatePicker name={field.name} required={field.required} defaultValue={currentValue} type={field.type} />
                     : field.type === 'textarea' || field.type === 'json' ? <textarea name={field.name} required={field.required} defaultValue={currentValue} className={`${baseClass} min-h-28 py-3 font-${field.type === 'json' ? 'mono' : 'sans'}`} />
                     : field.type === 'checkbox' ? <input name={field.name} type="checkbox" defaultChecked={Boolean(fieldValue(editing === 'new' ? null : editing, field))} className="h-5 w-5" />
-                    : <input name={field.name} type={field.type === 'money' ? 'number' : field.type || 'text'} required={field.required} step={field.step} defaultValue={currentValue} className={baseClass} />}
+                    : <input name={field.name} type={field.type === 'money' ? 'number' : field.type || 'text'} required={field.required} step={field.step} defaultValue={currentValue} onChange={field.derive ? event => handleDerive(field, event.target.value) : undefined} className={baseClass} />}
                 </label>;
               })}
             </div>

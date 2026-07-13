@@ -15,6 +15,25 @@ const r = (key: 'title' | 'description') => (resourceKey: string) => `admin.reso
 const title = r('title');
 const description = r('description');
 
+// Piecework norms are a single rate viewed at four scales. The workday is 8 hours
+// (480 min — matches the backend payroll's minutes-per-day divisor) and a month is
+// 26 working days (same constant the payroll UI uses).
+const WORKDAY_MINUTES = 480;
+const WORKING_DAYS_PER_MONTH = 26;
+const roundNorm = (value: number) => String(Math.round(value * 100) / 100);
+
+function deriveNormsFromMinutes(minutesPerPiece: number): Record<string, string> {
+  if (!Number.isFinite(minutesPerPiece) || minutesPerPiece <= 0) return {};
+  const daily = WORKDAY_MINUTES / minutesPerPiece;
+  return { hourly_norm: roundNorm(60 / minutesPerPiece), daily_norm: roundNorm(daily), monthly_norm: roundNorm(daily * WORKING_DAYS_PER_MONTH) };
+}
+
+function deriveNormsFromHourly(piecesPerHour: number): Record<string, string> {
+  if (!Number.isFinite(piecesPerHour) || piecesPerHour <= 0) return {};
+  const daily = piecesPerHour * (WORKDAY_MINUTES / 60);
+  return { time_norm_minutes: roundNorm(60 / piecesPerHour), daily_norm: roundNorm(daily), monthly_norm: roundNorm(daily * WORKING_DAYS_PER_MONTH) };
+}
+
 export const operationsConfigs: Record<string, ResourceConfig> = {
   clientOrders: {
     resource: resources.clientOrders, title: title('clientOrders'), description: description('clientOrders'),
@@ -112,8 +131,13 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
   operationTypes: {
     resource: resources.operationTypes, title: title('operationTypes'), description: description('operationTypes'),
     fields: [
-      { name: 'name', label: f('name'), required: true, table: true }, { name: 'time_norm_minutes', label: f('timeNormMinutes'), type: 'number', step: '0.01', nullable: true, table: true },
-      { name: 'hourly_norm', label: f('hourlyNorm'), type: 'number', step: '0.01', nullable: true, table: true }, { name: 'daily_norm', label: f('dailyNorm'), type: 'number', step: '0.01', nullable: true }, { name: 'monthly_norm', label: f('monthlyNorm'), type: 'number', step: '0.01', nullable: true },
+      { name: 'name', label: f('name'), required: true, table: true },
+      // The four norms are one fact expressed four ways (8h day, 26 working days/month):
+      // typing the per-piece time or the hourly norm auto-fills the rest; the filled
+      // values stay editable, so the user can still fine-tune any of them by hand.
+      { name: 'time_norm_minutes', label: f('timeNormMinutes'), type: 'number', step: '0.01', nullable: true, table: true, derive: value => deriveNormsFromMinutes(Number(value)) },
+      { name: 'hourly_norm', label: f('hourlyNorm'), type: 'number', step: '0.01', nullable: true, table: true, derive: value => deriveNormsFromHourly(Number(value)) },
+      { name: 'daily_norm', label: f('dailyNorm'), type: 'number', step: '0.01', nullable: true }, { name: 'monthly_norm', label: f('monthlyNorm'), type: 'number', step: '0.01', nullable: true },
       { name: 'price_per_unit', label: f('pricePerUnit'), type: 'number', step: '0.01', required: true, table: true },
     ],
   },

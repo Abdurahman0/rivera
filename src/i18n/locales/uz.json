@@ -1944,7 +1944,7 @@
       },
       "operationTypes": {
         "title": "Ish turlari",
-        "description": "Ish turlari: har biriga narx va vaqt normasi (masalan, 1 dona = 3 daqiqa yoki soatiga 20 dona)."
+        "description": "Ish turlari: har biriga narx va vaqt normasi. '1 dona uchun vaqt' yoki 'Soatiga norma'ni kiritsangiz, qolgan normalar avtomatik hisoblanadi (8 soatlik kun, oyiga 26 ish kuni) — keyin xohlasangiz qo'lda o'zgartirishingiz mumkin."
       },
       "workEntries": {
         "title": "Kunlik ish yozuvlari",
