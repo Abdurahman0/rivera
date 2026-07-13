@@ -2137,8 +2137,12 @@ function PayrollTab({ staff, formatMoney }: { staff: StaffMember[]; formatMoney:
       <DataTable
         columns={[t('staff.columns.staff'), t('admin.fields.month'), t('staff.payroll.breakdown'), t('admin.fields.finalAmount'), t('admin.fields.status'), t('common.actions')]}
         rows={sorted.map(row => {
+          // Piecework earnings are added for BOTH salary types (a fixed-daily worker who
+          // also has work entries gets fixed + akkord), so the breakdown lists every
+          // non-zero component instead of assuming one per type.
           const isPiece = row.salary_type === 'piece_rate';
-          const base = isPiece ? Number(row.piece_rate_total || 0) : Number(row.fixed_rate_total || 0);
+          const pieceTotal = Number(row.piece_rate_total || 0);
+          const fixedTotal = Number(row.fixed_rate_total || 0);
           const bonus = Number(row.bonus_total || 0);
           const penalty = Number(row.penalty_total || 0);
           return [
@@ -2148,10 +2152,17 @@ function PayrollTab({ staff, formatMoney }: { staff: StaffMember[]; formatMoney:
             </span>,
             <span className="text-sm font-semibold text-text-primary">{monthLabel(row.month)}</span>,
             <span className="block min-w-[190px] text-xs">
-              <span className="block text-text-muted">
-                {isPiece ? t('staff.payroll.piecework') : t('staff.payroll.fixed')}: <span className="font-bold text-text-primary">{formatMoney(base)}</span>
-                <span className="ml-1 opacity-70">· {t('staff.payroll.days', { count: Number(row.worked_days || 0) })}</span>
-              </span>
+              {!isPiece || fixedTotal > 0 ? (
+                <span className="block text-text-muted">
+                  {t('staff.payroll.fixed')}: <span className="font-bold text-text-primary">{formatMoney(fixedTotal)}</span>
+                  <span className="ml-1 opacity-70">· {t('staff.payroll.days', { count: Number(row.worked_days || 0) })}</span>
+                </span>
+              ) : null}
+              {isPiece || pieceTotal > 0 ? (
+                <span className="block text-text-muted">
+                  {t('staff.payroll.piecework')}: <span className="font-bold text-text-primary">{formatMoney(pieceTotal)}</span>
+                </span>
+              ) : null}
               {bonus > 0 || penalty > 0 ? (
                 <span className="mt-0.5 block">
                   {bonus > 0 ? <span className="mr-2 font-bold text-success">+{formatMoney(bonus)}</span> : null}
