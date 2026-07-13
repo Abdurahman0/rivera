@@ -1999,21 +1999,9 @@
         "title": "Увольнения",
         "description": "История увольнений сотрудников."
       },
-      "cashAccounts": {
-        "title": "Кассовые счета",
-        "description": "Счета наличных средств (UZS/USD)."
-      },
-      "cashTransactions": {
-        "title": "Кассовые операции",
-        "description": "Приход/расход по кассе."
-      },
       "expenses": {
         "title": "Расходы",
         "description": "Расходы компании."
-      },
-      "invoices": {
-        "title": "Счета-фактуры",
-        "description": "Счета-фактуры, выставленные клиентам."
       },
       "orderItems": {
         "title": "Товары заказа",
@@ -2113,16 +2101,6 @@
         "draft": "Черновик",
         "confirmed": "Подтверждён",
         "completed": "Завершён",
-        "cancelled": "Отменён"
-      },
-      "cashTxType": {
-        "in": "Приход",
-        "out": "Расход"
-      },
-      "invoiceStatus": {
-        "draft": "Черновик",
-        "sent": "Отправлен",
-        "paid": "Оплачен",
         "cancelled": "Отменён"
       },
       "approvalAction": {

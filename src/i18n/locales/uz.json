@@ -2004,21 +2004,9 @@
         "title": "Ishdan bo'shatishlar",
         "description": "Xodimlarning ishdan bo'shatilish tarixi."
       },
-      "cashAccounts": {
-        "title": "Kassa hisoblari",
-        "description": "Naqd pul hisoblari (UZS/USD)."
-      },
-      "cashTransactions": {
-        "title": "Kassa tranzaksiyalari",
-        "description": "Kassadagi kirim/chiqim harakatlari."
-      },
       "expenses": {
         "title": "Xarajatlar",
         "description": "Kompaniya xarajatlari."
-      },
-      "invoices": {
-        "title": "Hisob-fakturalar",
-        "description": "Mijozlarga taqdim etilgan hisob-fakturalar."
       },
       "orderItems": {
         "title": "Buyurtma mahsulotlari",
@@ -2118,16 +2106,6 @@
         "draft": "Qoralama",
         "confirmed": "Tasdiqlangan",
         "completed": "Bajarilgan",
-        "cancelled": "Bekor qilingan"
-      },
-      "cashTxType": {
-        "in": "Kirim",
-        "out": "Chiqim"
-      },
-      "invoiceStatus": {
-        "draft": "Qoralama",
-        "sent": "Yuborilgan",
-        "paid": "To'langan",
         "cancelled": "Bekor qilingan"
       },
       "approvalAction": {
