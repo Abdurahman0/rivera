@@ -1578,7 +1578,6 @@ function detailRows(modal: ModalState, formatMoney: (value: number) => string, t
     return [
       { label: t('materials.columns.name'), value: item.name },
       { label: t('admin.fields.code'), value: item.sku },
-      { label: t('admin.fields.supplier'), value: item.supplier },
       { label: t('materials.columns.stock'), value: `${item.stock.toLocaleString()} ${unitLabel(item.unit, t)}` },
       { label: t('materials.columns.price'), value: formatMoney(item.price) },
       { label: t('materials.columns.status'), value: statusLabel(t, item.statusKey) },

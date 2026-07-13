@@ -81,10 +81,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
-  suppliers: {
-    resource: resources.suppliers, title: title('suppliers'), description: description('suppliers'),
-    fields: [{ name: 'name', label: f('name'), required: true, table: true }, { name: 'phone', label: f('phone'), table: true }, { name: 'address', label: f('address'), type: 'textarea' }, { name: 'note', label: f('note'), type: 'textarea' }],
-  },
   materialStocks: {
     resource: resources.materialStocks, title: title('materialStocks'), description: description('materialStocks'), readOnly: true,
     fields: [{ name: 'material', label: f('material'), lookup: { resource: resources.materials, label: 'name', secondary: 'code' }, table: true }, { name: 'quantity', label: f('quantity'), table: true }, { name: 'total_value', label: f('totalValue'), table: true }],

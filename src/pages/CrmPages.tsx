@@ -1898,28 +1898,25 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
   const exportResource = useResourceExport();
   const canManage = useHasPermission('materials', 'manage');
   const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'materials' | 'suppliers' | 'stock'>('materials');
+  const [activeTab, setActiveTab] = useState<'materials' | 'stock'>('materials');
   const [addingStockFor, setAddingStockFor] = useState<Material | null>(null);
   const lowStockCount = materials.filter(m => m.stock <= m.minStock).length;
   const totalValue = materials.reduce((sum, m) => sum + m.stock * m.price, 0);
   const filtered = materials.filter(m =>
-    `${m.name} ${m.supplier}`.toLowerCase().includes(query.toLowerCase())
+    m.name.toLowerCase().includes(query.toLowerCase())
   );
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('materials.eyebrow')} title={t('materials.title')} description={t('materials.description')} createLabel={canManage && activeTab === 'materials' ? t('materials.create') : undefined} onCreate={canManage && activeTab === 'materials' ? onCreate : undefined} onExport={() => exportResource(activeTab === 'suppliers' ? resources.suppliers : activeTab === 'stock' ? resources.materialStocks : resources.materials)} />
+      <PageHeader eyebrow={t('materials.eyebrow')} title={t('materials.title')} description={t('materials.description')} createLabel={canManage && activeTab === 'materials' ? t('materials.create') : undefined} onCreate={canManage && activeTab === 'materials' ? onCreate : undefined} onExport={() => exportResource(activeTab === 'stock' ? resources.materialStocks : resources.materials)} />
       <SegmentTabs
         tabs={[
           { id: 'materials', label: t('materials.title'), icon: <FiLayers className="h-4 w-4" /> },
-          { id: 'suppliers', label: t('admin.resources.suppliers.title'), icon: <FiBriefcase className="h-4 w-4" /> },
           { id: 'stock', label: t('admin.resources.materialStocks.title'), icon: <FiArchive className="h-4 w-4" /> },
         ]}
         activeTab={activeTab}
         onChange={id => setActiveTab(id as typeof activeTab)}
       />
-      {activeTab === 'suppliers' ? (
-        <ApiResourceManager config={{ ...operationsConfigs.suppliers, readOnly: !canManage }} />
-      ) : activeTab === 'stock' ? (
+      {activeTab === 'stock' ? (
         <MaterialStockGrid materials={materials} formatMoney={formatMoney} />
       ) : (
         <>
@@ -1953,7 +1950,6 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
           return [
             <span className="block min-w-0">
               <span className="block max-w-[220px] truncate text-sm font-bold text-text-primary">{mat.name}</span>
-              <span className="text-xs text-text-muted">{mat.supplier}</span>
             </span>,
             <span className="block min-w-[120px]">
               <span className={['block text-sm font-bold', mat.stock <= mat.minStock ? 'text-warning' : 'text-text-primary'].join(' ')}>{mat.stock.toLocaleString()} {unitLabel(mat.unit, t)}</span>
@@ -1983,7 +1979,7 @@ function MaterialStockGrid({ materials, formatMoney }: { materials: Material[]; 
 
   const rank = (m: Material) => (m.stock === 0 ? 0 : m.stock <= m.minStock ? 1 : 2);
   const filtered = materials
-    .filter(m => `${m.name} ${m.supplier}`.toLowerCase().includes(query.toLowerCase()))
+    .filter(m => m.name.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
   const totalValue = filtered.reduce((sum, m) => sum + m.stock * m.price, 0);
   const lowCount = filtered.filter(m => m.stock <= m.minStock).length;
@@ -2018,7 +2014,6 @@ function MaterialStockGrid({ materials, formatMoney }: { materials: Material[]; 
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-extrabold text-text-primary">{mat.name}</p>
-                    {mat.supplier ? <p className="mt-0.5 truncate text-xs text-text-muted">{mat.supplier}</p> : null}
                   </div>
                   <StatusBadge tone={tone}>{label}</StatusBadge>
                 </div>

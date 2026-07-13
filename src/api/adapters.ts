@@ -18,7 +18,6 @@ import type {
   ApiProductCategory,
   ApiProductMaterialNorm,
   ApiProductionBatch,
-  ApiSupplier,
 } from './types';
 import { categoryColor, loadCategoryColors } from '../utils/categoryColors';
 import type {
@@ -52,7 +51,6 @@ export interface OperationalApiData {
   deliveries: ApiClientDelivery[];
   payments: ApiClientPayment[];
   materials: ApiMaterial[];
-  suppliers: ApiSupplier[];
   materialStocks: ApiMaterialStock[];
   materialTransactions: ApiMaterialTransaction[];
   categories: ApiProductCategory[];
@@ -96,7 +94,6 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
   const batchNames = new Map(data.batches.map(row => [row.id, row.batch_number]));
   const batchById = new Map(data.batches.map(row => [row.id, row]));
   const materialById = new Map(data.materials.map(row => [row.id, row]));
-  const supplierNames = new Map(data.suppliers.map(row => [row.id, row.name]));
   const materialStock = new Map(data.materialStocks.map(row => [row.material, number(row.quantity)]));
   const finishedStock = new Map<string, number>();
   data.finishedStocks.forEach(row => finishedStock.set(row.product, (finishedStock.get(row.product) || 0) + row.quantity));
@@ -225,7 +222,6 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
       id: row.id,
       name: row.name,
       sku: row.code,
-      supplier: (row.supplier && supplierNames.get(row.supplier)) || '—',
       unit: materialUnit(row.unit),
       price: number(row.unit_price),
       stock,

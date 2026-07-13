@@ -22,7 +22,6 @@ export interface Material {
   id: EntityId;
   name: string;
   sku: string;
-  supplier: string;
   unit: 'm' | 'kg' | 'pcs';
   price: number;
   stock: number;

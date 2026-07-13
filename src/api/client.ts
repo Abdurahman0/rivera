@@ -216,7 +216,7 @@ export const resources = {
   users: 'users', permissions: 'permissions', approvals: 'approvals', auditLogs: 'audit-logs', exportLogs: 'export-logs',
   securityLogs: 'security-logs', stockLogs: 'stock-logs', payrollLogs: 'payroll-logs', attendanceLogs: 'attendance-logs', backupLogs: 'backup-logs',
   settings: 'settings', backups: 'backups', clients: 'clients', clientOrders: 'client-orders', clientOrderItems: 'client-order-items', clientDeliveries: 'client-deliveries', clientPayments: 'client-payments',
-  clientReturns: 'client-returns', clientDebtAdjustments: 'client-debt-adjustments', materials: 'materials', suppliers: 'suppliers', productCategories: 'product-categories',
+  clientReturns: 'client-returns', clientDebtAdjustments: 'client-debt-adjustments', materials: 'materials', productCategories: 'product-categories',
   products: 'products', productMaterialNorms: 'product-material-norms', materialStocks: 'material-stocks', materialTransactions: 'material-transactions',
   defectiveMaterialStocks: 'defective-material-stocks', defectiveMaterialTransactions: 'defective-material-transactions', finishedGoodsStocks: 'finished-goods-stocks',
   finishedGoodsTransactions: 'finished-goods-transactions', productionBatches: 'production-batches', productionBatchItems: 'production-batch-items',

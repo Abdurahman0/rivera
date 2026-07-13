@@ -24,7 +24,6 @@ import type {
   ApiProductCategory,
   ApiProductMaterialNorm,
   ApiProductionBatch,
-  ApiSupplier,
 } from './types';
 
 export interface AppData extends FrontendData {
@@ -52,7 +51,6 @@ const EMPTY_OPERATIONAL_DATA: OperationalApiData = {
   deliveries: [],
   payments: [],
   materials: [],
-  suppliers: [],
   materialStocks: [],
   materialTransactions: [],
   categories: [],
@@ -77,7 +75,6 @@ const operationalLoaders = {
   deliveries: () => allowedList<ApiClientDelivery>(resources.clientDeliveries),
   payments: () => allowedList<ApiClientPayment>(resources.clientPayments),
   materials: () => allowedList<ApiMaterial>(resources.materials),
-  suppliers: () => allowedList<ApiSupplier>(resources.suppliers),
   materialStocks: () => allowedList<ApiMaterialStock>(resources.materialStocks),
   materialTransactions: () => allowedList<ApiMaterialTransaction>(resources.materialTransactions),
   categories: () => allowedList<ApiProductCategory>(resources.productCategories),
@@ -95,14 +92,14 @@ const operationalLoaders = {
 
 const PAGE_OPERATIONAL_KEYS: Record<PageId, OperationalKey[]> = {
   dashboard: [
-    'clients', 'clientOrders', 'materials', 'suppliers', 'materialStocks', 'categories', 'products', 'deliveries', 'finishedStocks', 'employees', 'attendance',
+    'clients', 'clientOrders', 'materials', 'materialStocks', 'categories', 'products', 'deliveries', 'finishedStocks', 'employees', 'attendance',
   ],
   clients: ['clients'],
   orders: ['clients', 'clientOrders', 'orderItems', 'deliveries', 'payments', 'products', 'batches', 'employees', 'operationTypes', 'workEntries'],
   production: [
-    'products', 'categories', 'norms', 'materials', 'suppliers', 'materialStocks', 'materialTransactions', 'deliveries', 'finishedStocks', 'batches', 'employees', 'operationTypes', 'workEntries',
+    'products', 'categories', 'norms', 'materials', 'materialStocks', 'materialTransactions', 'deliveries', 'finishedStocks', 'batches', 'employees', 'operationTypes', 'workEntries',
   ],
-  materials: ['materials', 'suppliers', 'materialStocks'],
+  materials: ['materials', 'materialStocks'],
   products: ['products', 'categories', 'norms', 'materials', 'deliveries', 'finishedStocks'],
   warehouse: ['products', 'categories', 'deliveries', 'finishedStocks', 'materials', 'materialTransactions', 'finishedTransactions', 'batches'],
   staff: ['employees', 'attendance', 'batches', 'operationTypes', 'workEntries'],
