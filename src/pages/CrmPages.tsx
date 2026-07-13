@@ -2228,8 +2228,8 @@ function BulkWorkEntryModal({ staff, formatMoney, onClose, onSaved }: { staff: S
   }
 
   return (
-    <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <section role="dialog" aria-modal="true" className="grid max-h-[90vh] w-full max-w-[760px] grid-rows-[auto_1fr_auto] overflow-hidden rounded-[28px] bg-surface-card shadow-[0_40px_110px_-42px_rgba(15,23,42,0.62)] ring-1 ring-border-soft/55">
+    <div className="fixed inset-0 z-[190] flex justify-end bg-background-overlay/72 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
+      <aside role="dialog" aria-modal="true" className="grid h-full w-full max-w-[720px] grid-rows-[auto_1fr_auto] overflow-hidden bg-surface-card shadow-[-24px_0_60px_-30px_rgba(15,23,42,0.55)] ring-1 ring-border-soft/55">
         <div className="flex items-start justify-between gap-4 border-b border-border-soft/30 p-6">
           <div className="min-w-0">
             <h3 className="m-0 font-display text-xl font-extrabold text-text-primary">{t('staff.bulkWork.title')}</h3>
@@ -2283,7 +2283,7 @@ function BulkWorkEntryModal({ staff, formatMoney, onClose, onSaved }: { staff: S
             </button>
           </div>
         </div>
-      </section>
+      </aside>
     </div>
   );
 }
