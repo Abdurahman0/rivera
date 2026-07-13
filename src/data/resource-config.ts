@@ -34,6 +34,29 @@ function deriveNormsFromHourly(piecesPerHour: number): Record<string, string> {
   return { time_norm_minutes: roundNorm(60 / piecesPerHour), daily_norm: roundNorm(daily), monthly_norm: roundNorm(daily * WORKING_DAYS_PER_MONTH) };
 }
 
+// Audit rows arrive with raw backend identifiers (page keys, action slugs, model
+// class names); these enumerations map every value the backend can emit onto a
+// locale key so the log reads as plain language.
+const enumOptions = (domain: string, values: string[]): ResourceOption[] => values.map(value => ({ value, label: `admin.options.${domain}.${value}` }));
+const AUDIT_PAGES = ['dashboard', 'clients', 'products', 'materials', 'inventory', 'production', 'employees', 'attendance', 'payroll', 'finance', 'approvals', 'audit', 'users'];
+const AUDIT_ACTIONS = [
+  'create', 'update', 'archive', 'restore', 'approve', 'reject', 'approve_payroll', 'mark_payroll_paid', 'unlock_payroll',
+  'create_pending_material_purchase', 'create_pending_client_delivery', 'create_pending_client_return', 'create_pending_client_debt_adjustment',
+  'create_pending_material_transaction', 'create_pending_defective_material_transaction', 'create_pending_finished_goods_transaction',
+  'create_pending_cash_transaction', 'create_pending_expense', 'create_pending_leave_request',
+];
+const AUDIT_OBJECTS = [
+  'User', 'UserPagePermission', 'ApprovalRequest', 'AuditLog',
+  'Client', 'ClientOrder', 'ClientOrderItem', 'ClientDelivery', 'ClientPayment', 'ClientReturn', 'ClientDebtAdjustment',
+  'Material', 'MaterialStock', 'MaterialTransaction', 'DefectiveMaterialStock', 'DefectiveMaterialTransaction', 'Supplier',
+  'Product', 'ProductCategory', 'ProductMaterialNorm', 'FinishedGoodsStock', 'FinishedGoodsTransaction', 'WarehouseLocation',
+  'ProductionBatch', 'ProductionBatchItem', 'ProductionMaterialUsage',
+  'Employee', 'Department', 'EmployeeTermination', 'EmployeeFaceEncoding', 'WorkSchedule', 'LeaveRequest',
+  'AttendanceDevice', 'AttendanceEvent', 'AttendanceRecord',
+  'OperationType', 'DailyWorkEntry', 'MonthlyPayroll', 'SalaryAdjustment',
+  'Expense', 'CashAccount', 'CashTransaction',
+];
+
 export const operationsConfigs: Record<string, ResourceConfig> = {
   clientOrders: {
     resource: resources.clientOrders, title: title('clientOrders'), description: description('clientOrders'),
@@ -178,6 +201,11 @@ export const systemConfigs: Record<string, ResourceConfig> = {
   },
   audit: {
     resource: resources.auditLogs, title: title('audit'), description: description('audit'), readOnly: true,
-    fields: [{ name: 'created_at', label: f('time'), type: 'datetime-local', table: true }, { name: 'user', label: f('user'), lookup: { resource: resources.users, label: 'username' }, table: true }, { name: 'page', label: f('page'), table: true }, { name: 'action', label: f('action'), table: true }, { name: 'object_type', label: f('object'), table: true }, { name: 'payload', label: 'admin.fields.metadata', type: 'json' }],
+    fields: [
+      { name: 'created_at', label: f('time'), type: 'datetime-local', table: true }, { name: 'user', label: f('user'), lookup: { resource: resources.users, label: 'username' }, table: true },
+      { name: 'page', label: f('page'), options: enumOptions('page', AUDIT_PAGES), table: true }, { name: 'action', label: f('action'), options: enumOptions('auditAction', AUDIT_ACTIONS), table: true },
+      { name: 'object_type', label: f('objectType'), options: enumOptions('auditObject', AUDIT_OBJECTS), table: true }, { name: 'object_label', label: f('object'), table: true },
+      { name: 'description', label: f('description') },
+    ],
   },
 };
