@@ -157,13 +157,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'date', label: f('date'), type: 'date', required: true, table: true }, { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
-};
-
-export const systemConfigs: Record<string, ResourceConfig> = {
-  users: {
-    resource: resources.users, title: title('users'), description: description('users'),
-    fields: [{ name: 'username', label: f('username'), required: true, table: true }, { name: 'full_name', label: f('fullName'), required: true, table: true }, { name: 'phone', label: f('phone') }, { name: 'email', label: f('email'), type: 'text', table: true }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true }, { name: 'is_superadmin', label: f('superadmin'), type: 'checkbox', table: true }, { name: 'password', label: f('password'), type: 'password' }],
-  },
   schedules: {
     resource: resources.workSchedules, title: title('schedules'), description: description('schedules'),
     fields: [
@@ -171,6 +164,13 @@ export const systemConfigs: Record<string, ResourceConfig> = {
       { name: 'start_time', label: f('start'), type: 'time', required: true, table: true }, { name: 'end_time', label: f('end'), type: 'time', required: true, table: true }, { name: 'lunch_start', label: f('lunchStart'), type: 'time', nullable: true }, { name: 'lunch_end', label: f('lunchEnd'), type: 'time', nullable: true },
       { name: 'late_after_minutes', label: f('lateAfterMinutes'), type: 'number', required: true }, { name: 'effective_from', label: f('effectiveFrom'), type: 'date', required: true }, { name: 'effective_to', label: f('effectiveTo'), type: 'date', nullable: true }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true },
     ],
+  },
+};
+
+export const systemConfigs: Record<string, ResourceConfig> = {
+  users: {
+    resource: resources.users, title: title('users'), description: description('users'),
+    fields: [{ name: 'username', label: f('username'), required: true, table: true }, { name: 'full_name', label: f('fullName'), required: true, table: true }, { name: 'phone', label: f('phone') }, { name: 'email', label: f('email'), type: 'text', table: true }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true }, { name: 'is_superadmin', label: f('superadmin'), type: 'checkbox', table: true }, { name: 'password', label: f('password'), type: 'password' }],
   },
   devices: {
     resource: resources.attendanceDevices, title: title('devices'), description: description('devices'),

@@ -2139,7 +2139,6 @@
       },
       "systemGroups": {
         "access": "Пользователи",
-        "attendanceConfig": "Настройки посещаемости",
         "audit": "Аудит"
       },
       "operations": {

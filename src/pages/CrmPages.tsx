@@ -1020,6 +1020,7 @@ const WEEKDAYS: Record<'uz' | 'ru', string[]> = {
 function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMember[]; attendanceLog: AttendanceLogEntry[]; canManage: boolean }) {
   const { t } = useTranslation();
   const [enrolling, setEnrolling] = useState(false);
+  const [schedulesOpen, setSchedulesOpen] = useState(false);
   // No filter by default (all time); pick a preset or a custom range to narrow the view.
   const [dateRange, setDateRange] = useState<DashboardDateRange | null>(null);
   const [detailEmployeeId, setDetailEmployeeId] = useState<string | null>(null);
@@ -1064,7 +1065,10 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         {canManage ? (
-          <button className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => setEnrolling(true)}>{t('faceEnroll.buttonLabel')}</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground" onClick={() => setEnrolling(true)}>{t('faceEnroll.buttonLabel')}</button>
+            <button className="rounded-xl bg-surface-subtle px-3 py-2 text-xs font-bold text-text-secondary ring-1 ring-border-soft/40 transition hover:bg-primary/10 hover:text-text-primary" onClick={() => setSchedulesOpen(true)}>{t('admin.resources.schedules.title')}</button>
+          </div>
         ) : <span />}
         <div className="flex flex-wrap items-center gap-2.5">
           <DateRangeControls value={dateRange} onChange={setDateRange} />
@@ -1096,6 +1100,14 @@ function AttendanceLogView({ staff, attendanceLog, canManage }: { staff: StaffMe
       )}
       {(isSingleDay ? rangeRows.length : aggregated.length) === 0 ? <p className="py-6 text-center text-sm text-text-muted">{t('admin.ui.noRecords')}</p> : null}
       {enrolling ? <FaceEnrollDrawer onClose={() => setEnrolling(false)} onEnrolled={() => setEnrolling(false)} /> : null}
+      {schedulesOpen ? (
+        <ScopedResourceModal
+          title={t('admin.resources.schedules.title')}
+          subtitle={t('admin.resources.schedules.description')}
+          config={{ ...operationsConfigs.schedules, readOnly: !canManage }}
+          onClose={() => setSchedulesOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1809,8 +1821,8 @@ function ScopedResourceModal({ title, subtitle, config, extraParams, fixedValues
   title: string;
   subtitle?: string;
   config: ResourceConfig;
-  extraParams: Record<string, string>;
-  fixedValues: Record<string, unknown>;
+  extraParams?: Record<string, string>;
+  fixedValues?: Record<string, unknown>;
   onClose: () => void;
 }) {
   const { t } = useTranslation();

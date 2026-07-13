@@ -17,7 +17,7 @@ import { RESOURCE_BACKEND_PAGE } from '../lib/permissions';
 // and are still reachable via the API, just not surfaced here.
 const systemGroups = [
   { id: 'access', label: 'admin.page.systemGroups.access', icon: FiUsers, resources: ['users'] },
-  { id: 'attendanceConfig', label: 'admin.page.systemGroups.attendanceConfig', icon: FiClock, resources: ['schedules', 'devices'] },
+  { id: 'attendanceConfig', label: 'admin.resources.devices.title', icon: FiClock, resources: ['devices'] },
   { id: 'audit', label: 'admin.page.systemGroups.audit', icon: FiDatabase, resources: ['audit'] },
 ] as const;
 

@@ -2144,7 +2144,6 @@
       },
       "systemGroups": {
         "access": "Foydalanuvchilar",
-        "attendanceConfig": "Davomat sozlamalari",
         "audit": "Audit"
       },
       "operations": {
