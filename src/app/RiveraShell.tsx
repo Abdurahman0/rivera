@@ -402,6 +402,7 @@ function App() {
   const priorityClients = appData.topClientIds.map(id => clients.find(client => String(client.id) === id)).filter((client): client is Client => Boolean(client));
   const activeMeta = navItems.find(item => item.id === activePage) ?? navItems[0];
   const visibleNavItems = currentUser ? navItems.filter(item => canViewNavPage(currentUser, item.id)) : navItems;
+  const pendingApprovalsCount = approvals.filter(row => row.status === 'pending').length;
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -613,12 +614,17 @@ function App() {
                     <span className={['inline-flex h-9 min-w-9 items-center justify-center rounded-lg transition', isActive ? 'bg-primary/20 text-text-accent' : 'bg-background-elevated/90 text-text-secondary group-hover:bg-primary/10'].join(' ')}>
                       <Icon className="h-[17px] w-[17px]" />
                     </span>
-                    <span className="grid min-w-0 gap-[3px]">
+                    <span className="grid min-w-0 flex-1 gap-[3px]">
                       <span className="font-semibold">{t(`navigation.${item.id}.label`)}</span>
                       <small className="text-[11px] tracking-[0.02em] text-text-muted">
                         {t(`navigation.${item.id}.caption`)}
                       </small>
                     </span>
+                    {item.id === 'approvals' && pendingApprovalsCount > 0 ? (
+                      <span className="ml-auto inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-danger px-1.5 text-[11px] font-bold text-white shadow-sm">
+                        {pendingApprovalsCount > 99 ? '99+' : pendingApprovalsCount}
+                      </span>
+                    ) : null}
                   </span>
                 </button>
               );

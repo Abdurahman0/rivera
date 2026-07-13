@@ -68,6 +68,13 @@ export function ApprovalsPage({ approvals, materials, products, onApprove, onRej
   const canManage = useHasPermission('approvals', 'manage');
   const pending = approvals.filter(row => row.status === 'pending');
   const objectLabel = useApprovalObjectLabels(approvals, materials, products, t);
+  // Pending requests are the ones awaiting action, so they always sit on top;
+  // within each group the newest come first.
+  const sortedApprovals = [...approvals].sort((a, b) => {
+    const pendingDelta = Number(b.status === 'pending') - Number(a.status === 'pending');
+    if (pendingDelta !== 0) return pendingDelta;
+    return b.created_at.localeCompare(a.created_at);
+  });
   return (
     <div className="grid gap-5">
       <PageHeader eyebrow={t('approvals.eyebrow')} title={t('approvals.title')} description={t('approvals.description')} onExport={() => exportResource(resources.approvals)} />
@@ -78,7 +85,7 @@ export function ApprovalsPage({ approvals, materials, products, onApprove, onRej
       </div>
       <DataTable
         columns={[t('approvals.columns.page'), t('approvals.columns.action'), t('approvals.columns.object'), t('approvals.columns.created'), t('approvals.columns.status'), t('approvals.columns.actions')]}
-        rows={approvals.map(row => {
+        rows={sortedApprovals.map(row => {
           const label = objectLabel(row) ?? `#${row.object_id.slice(0, 8).toUpperCase()}`;
           return [
             optionLabel(t, 'page', row.page),

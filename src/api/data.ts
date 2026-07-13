@@ -108,9 +108,9 @@ const PAGE_OPERATIONAL_KEYS: Record<PageId, OperationalKey[]> = {
   system: [],
 };
 
-async function allowedList<T>(resource: string) {
+async function allowedList<T>(resource: string, params?: Record<string, string>) {
   try {
-    return await api.list<T>(resource);
+    return await api.list<T>(resource, params);
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) return [];
     throw error;
@@ -163,7 +163,9 @@ export async function loadAppData(page: PageId, dashboardRange?: DashboardDateRa
   const [operational, summary, approvals, topClients, revenueSeries] = await Promise.all([
     loadOperationalData(page),
     shouldLoadSummary ? allowedSummary(page === 'dashboard' ? dashboardRange : null) : Promise.resolve(null),
-    shouldLoadApprovals ? allowedList<ApiApproval>(resources.approvals) : Promise.resolve([]),
+    // The approvals page needs the whole history; every other page still fetches the
+    // pending ones so the sidebar can show the awaiting-review notification count.
+    shouldLoadApprovals ? allowedList<ApiApproval>(resources.approvals) : allowedList<ApiApproval>(resources.approvals, { status: 'pending' }),
     shouldLoadTopClients ? allowedTopClients() : Promise.resolve([]),
     page === 'dashboard' ? allowedTimeseries(dashboardRange) : Promise.resolve(null),
   ]);
