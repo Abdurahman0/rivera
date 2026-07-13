@@ -164,10 +164,6 @@ export const systemConfigs: Record<string, ResourceConfig> = {
     resource: resources.users, title: title('users'), description: description('users'),
     fields: [{ name: 'username', label: f('username'), required: true, table: true }, { name: 'full_name', label: f('fullName'), required: true, table: true }, { name: 'phone', label: f('phone') }, { name: 'email', label: f('email'), type: 'text', table: true }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true }, { name: 'is_superadmin', label: f('superadmin'), type: 'checkbox', table: true }, { name: 'password', label: f('password'), type: 'password' }],
   },
-  settings: {
-    resource: resources.settings, title: title('settings'), description: description('settings'),
-    fields: [{ name: 'key', label: f('key'), required: true, table: true }, { name: 'value', label: f('valueJson'), type: 'json', required: true, table: true }, { name: 'description', label: f('description'), type: 'textarea', table: true }, { name: 'is_active', label: f('active'), type: 'checkbox', table: true }],
-  },
   schedules: {
     resource: resources.workSchedules, title: title('schedules'), description: description('schedules'),
     fields: [

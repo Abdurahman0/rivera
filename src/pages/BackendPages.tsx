@@ -17,7 +17,7 @@ import { RESOURCE_BACKEND_PAGE } from '../lib/permissions';
 // and are still reachable via the API, just not surfaced here.
 const systemGroups = [
   { id: 'access', label: 'admin.page.systemGroups.access', icon: FiUsers, resources: ['users'] },
-  { id: 'configuration', label: 'admin.page.systemGroups.configuration', icon: FiSettings, resources: ['settings', 'backups'] },
+  { id: 'configuration', label: 'admin.resources.backups.title', icon: FiSettings, resources: ['backups'] },
   { id: 'attendanceConfig', label: 'admin.page.systemGroups.attendanceConfig', icon: FiClock, resources: ['schedules', 'devices'] },
   { id: 'audit', label: 'admin.page.systemGroups.audit', icon: FiDatabase, resources: ['audit'] },
 ] as const;
@@ -49,7 +49,7 @@ function ResourceNavigation({ groups, activeGroup, selected, setActiveGroup, set
 }
 
 /** Pages a user can be granted access to; labels come from admin.options.page.*. */
-const PERMISSION_PAGES = ['dashboard', 'clients', 'products', 'materials', 'inventory', 'production', 'employees', 'attendance', 'payroll', 'finance', 'approvals', 'audit', 'backups', 'settings', 'users'] as const;
+const PERMISSION_PAGES = ['dashboard', 'clients', 'products', 'materials', 'inventory', 'production', 'employees', 'attendance', 'payroll', 'finance', 'approvals', 'audit', 'backups', 'users'] as const;
 type GrantLevel = 'view' | 'manage' | null;
 
 /** Users + permissions in one place: the create/edit drawer carries a per-page

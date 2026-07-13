@@ -1959,10 +1959,6 @@
         "title": "Foydalanuvchilar",
         "description": "Tizimga kirish hisoblari va superadmin holati."
       },
-      "settings": {
-        "title": "Biznes sozlamalari",
-        "description": "JSON ko'rinishidagi ilova sozlamalari."
-      },
       "backups": {
         "title": "Zaxira nusxalar",
         "description": "Baza/media/muhit zaxira nusxalash tarixi."
@@ -2038,7 +2034,6 @@
         "approvals": "Tasdiqlar",
         "audit": "Audit",
         "backups": "Zaxira nusxalar",
-        "settings": "Sozlamalar",
         "users": "Foydalanuvchilar",
         "finance": "Moliya"
       },
@@ -2154,7 +2149,6 @@
       },
       "systemGroups": {
         "access": "Foydalanuvchilar",
-        "configuration": "Sozlamalar",
         "attendanceConfig": "Davomat sozlamalari",
         "audit": "Audit"
       },

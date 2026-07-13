@@ -214,7 +214,7 @@ export const api = {
 // place makes permissions/admin screens able to use the same typed client.
 export const resources = {
   users: 'users', permissions: 'permissions', approvals: 'approvals', auditLogs: 'audit-logs',
-  settings: 'settings', backups: 'backups', clients: 'clients', clientOrders: 'client-orders', clientOrderItems: 'client-order-items', clientDeliveries: 'client-deliveries', clientPayments: 'client-payments',
+  backups: 'backups', clients: 'clients', clientOrders: 'client-orders', clientOrderItems: 'client-order-items', clientDeliveries: 'client-deliveries', clientPayments: 'client-payments',
   clientReturns: 'client-returns', clientDebtAdjustments: 'client-debt-adjustments', materials: 'materials', productCategories: 'product-categories',
   products: 'products', productMaterialNorms: 'product-material-norms', materialStocks: 'material-stocks', materialTransactions: 'material-transactions',
   defectiveMaterialStocks: 'defective-material-stocks', defectiveMaterialTransactions: 'defective-material-transactions', finishedGoodsStocks: 'finished-goods-stocks',

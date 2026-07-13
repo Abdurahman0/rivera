@@ -29,7 +29,6 @@ export const RESOURCE_BACKEND_PAGE: Record<string, string> = {
   operationTypes: 'payroll', workEntries: 'payroll', payrolls: 'payroll',
   expenses: 'finance',
   users: 'users',
-  settings: 'settings',
   backups: 'backups',
   audit: 'audit',
 };
