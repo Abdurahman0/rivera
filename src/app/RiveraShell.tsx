@@ -22,6 +22,7 @@ import {
   FiPackage,
   FiPlus,
   FiRefreshCcw,
+  FiImage,
   FiSearch,
   FiSettings,
   FiShoppingBag,
@@ -503,13 +504,30 @@ function App() {
 
   async function saveEntity(target: ModalState, payload: Record<string, unknown>) {
     const cleanPayload = { ...payload };
+    // A file input with nothing chosen still lands in FormData as an empty File —
+    // drop those so an untouched image field never overwrites the stored one.
+    Object.entries(cleanPayload).forEach(([key, entry]) => {
+      if (entry instanceof File && !(entry.name && entry.size > 0)) delete cleanPayload[key];
+    });
+    const hasFile = Object.values(cleanPayload).some(entry => entry instanceof File);
+    // JSON can't carry a file; multipart can't carry null. Each payload uses the
+    // encoding that fits it (null-valued keys are omitted from multipart).
+    const encode = (data: Record<string, unknown>) => {
+      if (!hasFile) return data;
+      const form = new FormData();
+      Object.entries(data).forEach(([key, entry]) => {
+        if (entry === null || entry === undefined) return;
+        form.append(key, entry instanceof File ? entry : String(entry));
+      });
+      return form;
+    };
     if (target.kind === 'product' && !cleanPayload.category) cleanPayload.category = null;
     if (target.kind === 'staff' && !cleanPayload.daily_rate) cleanPayload.daily_rate = null;
     if ((target.kind === 'order' || target.kind === 'payment') && !cleanPayload.exchange_rate) cleanPayload.exchange_rate = null;
     if (target.kind === 'order' && !cleanPayload.due_date) cleanPayload.due_date = null;
     if (target.kind === 'stockMovement' && !cleanPayload.related_production_batch) cleanPayload.related_production_batch = null;
     if (target.mode === 'edit' && target.item) {
-      await api.update(entityResource[target.kind], target.item.id, cleanPayload);
+      await api.update(entityResource[target.kind], target.item.id, encode(cleanPayload));
     } else if (target.kind === 'order') {
       // The create form picks the first order line (product + qty) inline; the item is
       // created right after the order so the backend computes the total from it.
@@ -528,7 +546,7 @@ function App() {
         });
       }
     } else {
-      await api.create(entityResource[target.kind], cleanPayload);
+      await api.create(entityResource[target.kind], encode(cleanPayload));
     }
     await refreshData();
   }
@@ -1218,6 +1236,59 @@ function EntityModal({ modal, onClose, formatMoney, categories, clients, product
   );
 }
 
+/** Image picker for entity forms: a drop zone that also opens the file dialog on click.
+ *  The chosen file lands in a real `<input type="file">` (via DataTransfer) so the plain
+ *  FormData submit picks it up; a preview replaces the current image thumbnail. */
+function ImageDropField({ name, label, existingUrl }: { name: string; label: string; existingUrl?: string }) {
+  const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  const applyFiles = (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    if (inputRef.current) {
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      inputRef.current.files = transfer.files;
+    }
+    setFileName(file.name);
+    setPreview(URL.createObjectURL(file));
+  };
+  const shownImage = preview || existingUrl;
+  return (
+    <label className="grid gap-1.5 text-sm font-bold text-text-secondary sm:col-span-2">
+      {label}
+      <span
+        className={[
+          'flex min-h-24 cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed px-4 py-3 transition',
+          isDragOver ? 'border-primary bg-primary/10' : 'border-border-soft/70 bg-surface-card hover:border-primary/50 hover:bg-primary/5',
+        ].join(' ')}
+        onDragOver={event => { event.preventDefault(); setIsDragOver(true); }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={event => { event.preventDefault(); setIsDragOver(false); applyFiles(event.dataTransfer.files); }}
+      >
+        {shownImage ? (
+          <img src={shownImage} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-border-soft/50" />
+        ) : (
+          <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-text-muted">
+            <FiImage className="h-6 w-6" />
+          </span>
+        )}
+        <span className="grid min-w-0 gap-1">
+          <span className="text-sm font-semibold text-text-primary">{t('entityModal.imageDrop')}</span>
+          <span className="truncate text-xs font-medium text-text-muted">
+            {fileName || (existingUrl ? t('entityModal.imageCurrent') : t('entityModal.imageHint'))}
+          </span>
+        </span>
+        <input ref={inputRef} type="file" name={name} accept="image/*" className="hidden" onChange={event => applyFiles(event.target.files)} />
+      </span>
+    </label>
+  );
+}
+
 /** First order line inside the order create form: pick product + qty, the total previews
  *  live from the product's stored per-piece price. Isolated in its own component so typing
  *  here doesn't re-render (and reset) the surrounding uncontrolled form fields. */
@@ -1331,6 +1402,7 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
           {modal.kind === 'product' ? <>
             <FieldInput name="name" label={f('name')} fallback={(modal.item as Product | undefined)?.name} required />
             <FieldInput name="code" label={f('code')} fallback={(modal.item as Product | undefined)?.sku} />
+            <ImageDropField name="image" label={f('image')} existingUrl={raw.image ? String(raw.image) : undefined} />
             <SelectInput name="category" label={f('category')} options={categories.map(row => ({ value: String(row.id), label: row.name }))} />
             <FieldInput name="size_range" label={f('sizeRange')} />
             <FieldInput name="material_type" label={f('materialType')} />

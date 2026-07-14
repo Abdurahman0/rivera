@@ -120,6 +120,7 @@ export interface ApiProduct extends ApiBaseModel {
   category: ApiId | null;
   name: string;
   code: string;
+  image: string | null;
   size_range: string;
   material_type: string;
   color: string;

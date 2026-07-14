@@ -1880,7 +1880,8 @@
       "invoiceNumber": "Hisob-faktura raqami",
       "balance": "Balans",
       "order": "Buyurtma",
-      "objectType": "Obyekt turi"
+      "objectType": "Obyekt turi",
+      "image": "Rasm"
     },
     "resources": {
       "deliveries": {
@@ -2256,7 +2257,10 @@
       "stockMovement": "Material operatsiyasi"
     },
     "create": "Yaratish",
-    "edit": "Tahrirlash"
+    "edit": "Tahrirlash",
+    "imageDrop": "Rasmni shu yerga tashlang yoki bosib tanlang",
+    "imageHint": "PNG yoki JPG",
+    "imageCurrent": "Joriy rasm — almashtirish uchun yangisini tanlang"
   },
   "dialog": {
     "rejectReasonTitle": "Rad etish sababi",

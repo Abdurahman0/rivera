@@ -133,7 +133,7 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
       width: row.size_range,
       price,
       currency: 'UZS',
-      imageUrl: productPlaceholder(row.name),
+      imageUrl: row.image || productPlaceholder(row.name),
       gallery: [],
       status: 'Active',
       isActive: !row.is_archived,

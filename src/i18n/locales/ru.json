@@ -1875,7 +1875,8 @@
       "invoiceNumber": "Номер счёта",
       "balance": "Баланс",
       "order": "Заказ",
-      "objectType": "Тип объекта"
+      "objectType": "Тип объекта",
+      "image": "Изображение"
     },
     "resources": {
       "deliveries": {
@@ -2251,7 +2252,10 @@
       "stockMovement": "Операция с материалом"
     },
     "create": "Создать",
-    "edit": "Изменить"
+    "edit": "Изменить",
+    "imageDrop": "Перетащите изображение сюда или нажмите, чтобы выбрать",
+    "imageHint": "PNG или JPG",
+    "imageCurrent": "Текущее изображение — выберите новое, чтобы заменить"
   },
   "dialog": {
     "rejectReasonTitle": "Причина отклонения",
