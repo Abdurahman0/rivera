@@ -2264,7 +2264,9 @@ function BulkWorkEntryModal({ staff, formatMoney, onClose, onSaved }: { staff: S
   const { toast } = useToast();
   const [operationTypes, setOperationTypes] = useState<Array<{ id: string; name: string; price: number }>>([]);
   const [employeeId, setEmployeeId] = useState('');
+  const [dateMode, setDateMode] = useState<'single' | 'range'>('single');
   const [commonDate, setCommonDate] = useState(() => isoDate(new Date()));
+  const [commonRange, setCommonRange] = useState<DashboardDateRange | null>(null);
   const [rows, setRows] = useState<Array<{ key: number; opType: string; qty: string; date: string }>>([{ key: 1, opType: '', qty: '', date: '' }]);
   const [saving, setSaving] = useState(false);
 
@@ -2280,21 +2282,58 @@ function BulkWorkEntryModal({ staff, formatMoney, onClose, onSaved }: { staff: S
   const updateRow = (key: number, patch: Partial<{ opType: string; qty: string; date: string }>) =>
     setRows(current => current.map(row => (row.key === key ? { ...row, ...patch } : row)));
 
+  function rangeDays(range: DashboardDateRange): string[] {
+    const days: string[] = [];
+    const cursor = parseIsoDate(range.startDate);
+    const end = parseIsoDate(range.endDate);
+    if (!cursor || !end) return days;
+    while (cursor <= end) {
+      days.push(isoDate(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return days;
+  }
+
   async function save() {
     const validRows = rows.filter(row => row.opType && Number(row.qty) > 0);
-    if (!employeeId || validRows.length === 0 || !commonDate) {
+    if (!employeeId || validRows.length === 0 || (dateMode === 'single' ? !commonDate : !commonRange)) {
       toast(t('admin.ui.requiredFieldsMissing'), 'danger');
+      return;
+    }
+    const days = dateMode === 'range' && commonRange ? rangeDays(commonRange) : [];
+    if (dateMode === 'range' && days.length > 62) {
+      toast(t('staff.bulkWork.rangeTooLong'), 'danger');
       return;
     }
     setSaving(true);
     try {
       for (const row of validRows) {
-        await api.create(resources.dailyWorkEntries, {
-          employee: employeeId,
-          operation_type: row.opType,
-          date: row.date || commonDate,
-          quantity_done: Number(row.qty),
-        });
+        if (dateMode === 'range') {
+          // The typed quantity is the period total: spread it evenly across the days
+          // (remainder goes to the earliest days), so a range crossing a month boundary
+          // lands each day's share in the right month for payroll.
+          const total = Number(row.qty);
+          const base = Math.floor(total / days.length);
+          let remainder = total - base * days.length;
+          for (const day of days) {
+            const dayQuantity = base + (remainder > 0 ? 1 : 0);
+            if (remainder > 0) remainder -= 1;
+            if (dayQuantity <= 0) continue;
+            await api.create(resources.dailyWorkEntries, {
+              employee: employeeId,
+              operation_type: row.opType,
+              date: day,
+              quantity_done: dayQuantity,
+            });
+          }
+        } else {
+          await api.create(resources.dailyWorkEntries, {
+            employee: employeeId,
+            operation_type: row.opType,
+            date: row.date || commonDate,
+            quantity_done: Number(row.qty),
+          });
+        }
       }
       toast(t('staff.bulkWork.savedCount', { count: validRows.length }), 'success');
       onSaved(validRows.length);
@@ -2323,17 +2362,33 @@ function BulkWorkEntryModal({ staff, formatMoney, onClose, onSaved }: { staff: S
               {t('admin.fields.employee')}
               <Dropdown value={employeeId} onChange={setEmployeeId} options={staff.map(member => ({ value: String(member.id), label: member.name }))} placeholder={t('admin.ui.selectPlaceholder')} />
             </label>
-            <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
-              {t('staff.bulkWork.commonDate')}
-              <DatePicker value={commonDate} onChange={setCommonDate} />
-            </label>
+            <div className="grid gap-1.5 text-sm font-bold text-text-secondary">
+              <span className="flex items-center justify-between gap-2">
+                {t('staff.bulkWork.commonDate')}
+                <span className="inline-flex rounded-lg bg-surface-subtle p-0.5 ring-1 ring-border-soft/40">
+                  {(['single', 'range'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      type="button"
+                      className={['rounded-md px-2.5 py-1 text-[11px] font-bold transition', dateMode === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-text-secondary hover:text-text-primary'].join(' ')}
+                      onClick={() => setDateMode(mode)}
+                    >
+                      {t(mode === 'single' ? 'staff.bulkWork.singleDay' : 'staff.bulkWork.dateRange')}
+                    </button>
+                  ))}
+                </span>
+              </span>
+              {dateMode === 'single'
+                ? <DatePicker value={commonDate} onChange={setCommonDate} />
+                : <DashboardCustomRangePicker value={commonRange} onChange={setCommonRange} />}
+            </div>
           </div>
           <div className="grid gap-2.5">
             {rows.map(row => (
-              <div key={row.key} className="grid gap-2 rounded-2xl bg-surface-subtle/50 p-3 ring-1 ring-border-soft/30 sm:grid-cols-[1fr_110px_170px_auto] sm:items-center">
+              <div key={row.key} className={['grid gap-2 rounded-2xl bg-surface-subtle/50 p-3 ring-1 ring-border-soft/30 sm:items-center', dateMode === 'single' ? 'sm:grid-cols-[1fr_110px_170px_auto]' : 'sm:grid-cols-[1fr_110px_auto]'].join(' ')}>
                 <Dropdown value={row.opType} onChange={value => updateRow(row.key, { opType: value })} options={operationTypes.map(op => ({ value: op.id, label: `${op.name} · ${op.price.toLocaleString()} so'm` }))} placeholder={t('admin.fields.operation')} />
                 <input type="number" min="1" value={row.qty} onChange={event => updateRow(row.key, { qty: event.target.value })} placeholder={t('admin.fields.quantity')} className="h-11 w-full rounded-xl border border-border-soft bg-surface-card px-3 text-sm text-text-primary outline-none focus:border-primary/50" />
-                <DatePicker value={row.date} onChange={value => updateRow(row.key, { date: value })} />
+                {dateMode === 'single' ? <DatePicker value={row.date} onChange={value => updateRow(row.key, { date: value })} /> : null}
                 <div className="flex items-center justify-end gap-2">
                   <span className="whitespace-nowrap text-xs font-extrabold text-primary">{rowTotal(row) > 0 ? formatMoney(rowTotal(row)) : '—'}</span>
                   {rows.length > 1 ? (
@@ -2350,7 +2405,7 @@ function BulkWorkEntryModal({ staff, formatMoney, onClose, onSaved }: { staff: S
               + {t('staff.bulkWork.addRow')}
             </button>
           </div>
-          <p className="m-0 text-xs text-text-muted">{t('staff.bulkWork.dateHint')}</p>
+          <p className="m-0 text-xs text-text-muted">{dateMode === 'single' ? t('staff.bulkWork.dateHint') : t('staff.bulkWork.rangeHint')}</p>
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-border-soft/30 p-5">
           <span className="text-sm font-bold text-text-secondary">{t('staff.bulkWork.total')}: <span className="text-lg font-extrabold text-primary">{formatMoney(grandTotal)}</span></span>

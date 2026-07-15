@@ -404,7 +404,11 @@
       "addRow": "Ish turi qo'shish",
       "total": "Jami",
       "savedCount": "{{count}} ta yozuv saqlandi",
-      "dateHint": "Qatordagi sana bo'sh qolsa, umumiy sana ishlatiladi. Har qatorga alohida kun tanlash ham mumkin."
+      "dateHint": "Qatordagi sana bo'sh qolsa, umumiy sana ishlatiladi. Har qatorga alohida kun tanlash ham mumkin.",
+      "singleDay": "Bir kun",
+      "dateRange": "Kunlar oralig'i",
+      "rangeHint": "Miqdor — davr uchun jami: u tanlangan kunlarga teng taqsimlanadi va oylik hisob-kitobga to'g'ri tushadi.",
+      "rangeTooLong": "Oraliq juda uzun — 62 kundan oshmasin."
     }
   },
   "products": {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FiClock, FiDatabase, FiEdit2, FiEye, FiLock, FiPlus, FiUsers, FiX } from 'react-icons/fi';
+import { FiClock, FiDatabase, FiEdit2, FiEye, FiEyeOff, FiLock, FiPlus, FiUsers, FiX } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { actions, api, resources } from '../api/client';
 import type { ApiRecord } from '../api/types';
@@ -169,6 +169,7 @@ function UserDrawer({ mode, user, isSuper, permRows, activeLevels, onClose, onSa
   }));
   const [grants, setGrants] = useState<Record<string, GrantLevel>>(() => ({ ...activeLevels }));
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
@@ -233,7 +234,21 @@ function UserDrawer({ mode, user, isSuper, permRows, activeLevels, onClose, onSa
   const field = (label: string, key: 'username' | 'full_name' | 'phone' | 'email' | 'password', type = 'text', placeholder = '') => (
     <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
       {label}
-      <input className={inputClass} type={type} disabled={readOnly} value={form[key]} placeholder={placeholder} onChange={event => setForm(current => ({ ...current, [key]: event.target.value }))} />
+      {type === 'password' ? (
+        <span className="relative block">
+          <input className={`${inputClass} pr-11`} type={showPassword ? 'text' : 'password'} disabled={readOnly} value={form[key]} placeholder={placeholder} onChange={event => setForm(current => ({ ...current, [key]: event.target.value }))} />
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-subtle hover:text-text-primary"
+            onClick={() => setShowPassword(current => !current)}
+            aria-label={label}
+          >
+            {showPassword ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+          </button>
+        </span>
+      ) : (
+        <input className={inputClass} type={type} disabled={readOnly} value={form[key]} placeholder={placeholder} onChange={event => setForm(current => ({ ...current, [key]: event.target.value }))} />
+      )}
     </label>
   );
 
