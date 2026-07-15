@@ -669,7 +669,8 @@
       "description": "Описание",
       "amount": "Сумма"
     },
-    "expensesCaption": "Расходы текущего месяца"
+    "expensesCaption": "Расходы текущего месяца",
+    "paymentsCount": "{{count}} платеж(ей)"
   },
   "statuses": {
     "newLead": "Новый лид",

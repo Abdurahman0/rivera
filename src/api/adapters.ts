@@ -366,6 +366,7 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     date: row.payment_date,
     client: clientNames.get(row.client) || '__deleted__',
     order: `__method__${row.payment_method}`,
+    method: row.payment_method,
     amount: number(row.amount_uzs),
   }));
   const expenseEntries: FinanceEntry[] = data.expenses.map((row, index) => ({

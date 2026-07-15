@@ -669,7 +669,8 @@
       "description": "Tavsif",
       "amount": "Summa"
     },
-    "expensesCaption": "Joriy oy xarajatlari"
+    "expensesCaption": "Joriy oy xarajatlari",
+    "paymentsCount": "{{count}} ta to'lov"
   },
   "statuses": {
     "newLead": "Yangi lead",

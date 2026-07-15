@@ -2681,6 +2681,19 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
       />
       {activeTab === 'revenue' ? (
         <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {['cash', 'card', 'bank_transfer'].map(method => {
+              const rows = revenueInRange.filter(e => e.method === method);
+              const total = rows.reduce((sum, e) => sum + e.amount, 0);
+              return (
+                <div key={method} className="rounded-2xl bg-surface-card p-4 ring-1 ring-border-soft/40">
+                  <p className="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted">{optionLabel(t, 'paymentMethod', method)}</p>
+                  <p className="mt-1.5 text-xl font-extrabold text-text-primary">{formatMoney(total)}</p>
+                  <p className="mt-0.5 text-xs font-semibold text-text-muted">{t('finance.paymentsCount', { count: rows.length })}</p>
+                </div>
+              );
+            })}
+          </div>
           <DataTable
             columns={[t('finance.columns.date'), t('finance.columns.client'), t('finance.columns.order'), t('finance.columns.amount')]}
             rows={revenueInRange.map(e => [formatDisplayDate(e.date, t), translateMovementLabel(t, e.client), translateMovementLabel(t, e.order), <span className="font-bold text-success">{formatMoney(e.amount)}</span>])}

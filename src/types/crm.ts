@@ -167,6 +167,8 @@ export interface FinanceEntry {
   order?: string;
   category?: string;
   description?: string;
+  /** Raw backend payment method ('cash' | 'card' | 'bank_transfer' | legacy 'usd_cash') — revenue entries only. */
+  method?: string;
   amount: number;
 }
 
