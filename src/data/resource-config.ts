@@ -2,7 +2,6 @@ import { resources } from '../api/client';
 import type { ResourceConfig, ResourceOption } from '../components/ApiResourceManager';
 
 const options = (values: Array<[string, string]>): ResourceOption[] => values.map(([value, label]) => ({ value, label }));
-const currency = options([['UZS', 'UZS'], ['USD', 'USD']]);
 const statusField = {
   name: 'status' as const, label: 'admin.fields.status' as const, readOnly: true as const, table: true as const,
   options: options([
@@ -65,7 +64,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'order_number', label: f('orderNumber'), required: true, table: true },
       { name: 'order_date', label: f('orderDate'), type: 'date', required: true, table: true },
       { name: 'due_date', label: f('dueDate'), type: 'date', nullable: true, table: true },
-      { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
       { name: 'total_amount_uzs', label: f('totalAmount'), type: 'money', readOnly: true, table: true },
       { name: 'status', label: f('status'), type: 'select', required: true, table: true, options: options([['draft', 'admin.options.orderStatus.draft'], ['confirmed', 'admin.options.orderStatus.confirmed'], ['completed', 'admin.options.orderStatus.completed'], ['cancelled', 'admin.options.orderStatus.cancelled']]) },
       { name: 'note', label: f('note'), type: 'textarea' },
@@ -78,8 +76,7 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'order', label: f('order'), lookup: { resource: resources.clientOrders, label: 'order_number', secondary: 'order_date' }, nullable: true, table: true },
       { name: 'product', label: f('product'), lookup: { resource: resources.products, label: 'name', secondary: 'code' }, required: true, table: true },
       { name: 'size', label: f('size') }, { name: 'color', label: f('color') }, { name: 'quantity', label: f('quantity'), type: 'number', required: true, table: true },
-      { name: 'unit_price', label: f('unitPrice'), type: 'number', step: '0.01', required: true }, { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
-      { name: 'exchange_rate', label: f('exchangeRate'), type: 'number', step: '0.0001', nullable: true }, { name: 'delivery_date', label: f('deliveryDate'), type: 'date', required: true, table: true },
+      { name: 'unit_price', label: f('unitPrice'), type: 'number', step: '0.01', required: true }, { name: 'delivery_date', label: f('deliveryDate'), type: 'date', required: true, table: true },
       { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
@@ -88,9 +85,8 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
     fields: [
       { name: 'client', label: f('client'), lookup: { resource: resources.clients, label: 'full_name', secondary: 'phone' }, required: true, table: true },
       { name: 'order', label: f('order'), lookup: { resource: resources.clientOrders, label: 'order_number', secondary: 'order_date' }, nullable: true, table: true },
-      { name: 'payment_method', label: f('method'), type: 'select', required: true, table: true, options: options([['cash', 'admin.options.paymentMethod.cash'], ['card', 'admin.options.paymentMethod.card'], ['bank_transfer', 'admin.options.paymentMethod.bank_transfer'], ['usd_cash', 'admin.options.paymentMethod.usd_cash']]) },
+      { name: 'payment_method', label: f('method'), type: 'select', required: true, table: true, options: options([['cash', 'admin.options.paymentMethod.cash'], ['card', 'admin.options.paymentMethod.card'], ['bank_transfer', 'admin.options.paymentMethod.bank_transfer']]) },
       { name: 'amount', label: f('amount'), type: 'number', step: '0.01', required: true, table: true }, { name: 'amount_uzs', label: f('amountUzs'), readOnly: true },
-      { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true }, { name: 'exchange_rate', label: f('exchangeRate'), type: 'number', step: '0.0001', nullable: true },
       { name: 'payment_date', label: f('paymentDate'), type: 'date', required: true, table: true }, { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },
@@ -101,7 +97,7 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { name: 'order', label: f('order'), lookup: { resource: resources.clientOrders, label: 'order_number', secondary: 'order_date' }, nullable: true, table: true },
       { name: 'product', label: f('product'), lookup: { resource: resources.products, label: 'name', secondary: 'code' }, required: true, table: true },
       { name: 'size', label: f('size') }, { name: 'color', label: f('color') }, { name: 'quantity', label: f('quantity'), type: 'number', required: true, table: true },
-      { name: 'unit_price', label: f('unitPrice'), type: 'number', step: '0.01', required: true }, { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true },
+      { name: 'unit_price', label: f('unitPrice'), type: 'number', step: '0.01', required: true },
       { name: 'return_date', label: f('returnDate'), type: 'date', required: true, table: true },
       { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
     ],
@@ -176,7 +172,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
     resource: resources.expenses, title: title('expenses'), description: description('expenses'), allowEdit: false, allowArchive: false,
     fields: [
       { name: 'category', label: f('category'), required: true, table: true }, { name: 'amount', label: f('amount'), type: 'money', step: '0.01', required: true, table: true },
-      { name: 'currency', label: f('currency'), type: 'select', options: currency, required: true }, { name: 'exchange_rate', label: f('exchangeRate'), type: 'number', step: '0.0001', nullable: true },
       { name: 'date', label: f('date'), type: 'date', required: true, table: true }, { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
     ],
   },

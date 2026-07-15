@@ -522,7 +522,6 @@ function App() {
     };
     if (target.kind === 'product' && !cleanPayload.category) cleanPayload.category = null;
     if (target.kind === 'staff' && !cleanPayload.daily_rate) cleanPayload.daily_rate = null;
-    if ((target.kind === 'order' || target.kind === 'payment') && !cleanPayload.exchange_rate) cleanPayload.exchange_rate = null;
     if (target.kind === 'order' && !cleanPayload.due_date) cleanPayload.due_date = null;
     if (target.kind === 'stockMovement' && !cleanPayload.related_production_batch) cleanPayload.related_production_batch = null;
     if (target.mode === 'edit' && target.item) {
@@ -1342,10 +1341,6 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
     const raw = (modal.item?.api || {}) as Record<string, unknown>;
     const value = (name: string, fallback = '') => String(raw[name] ?? fallback);
     const today = new Date().toISOString().slice(0, 10);
-    const [orderCurrency, setOrderCurrency] = useState(value('currency', 'UZS') || 'UZS');
-    useEffect(() => {
-      if (modal.kind === 'order') setOrderCurrency(value('currency', 'UZS') || 'UZS');
-    }, [modal.item?.id, modal.kind, raw.currency]);
     const clientStatusOptions = useMemo(() => {
       const custom = loadCustomClientStatuses();
       const keys = Array.from(new Set([...BUILT_IN_CLIENT_STATUSES, ...custom.map(status => status.key)]));
@@ -1403,8 +1398,6 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
             <FieldInput name="color" label={f('color')} fallback={(modal.item as Product | undefined)?.color} />
             <FieldInput name="unit_price_with_tax_uzs" label={f('priceWithTaxUzs')} type="number" step="0.01" fallback="0" />
             <FieldInput name="unit_price_without_tax_uzs" label={f('priceWithoutTaxUzs')} type="number" step="0.01" fallback="0" />
-            <FieldInput name="unit_price_with_tax_usd" label={f('priceWithTaxUsd')} type="number" step="0.01" fallback="0" />
-            <FieldInput name="unit_price_without_tax_usd" label={f('priceWithoutTaxUsd')} type="number" step="0.01" fallback="0" />
             <FieldInput name="vat_percent" label={f('vatPercent')} type="number" step="0.01" fallback="12" />
           </> : null}
           {modal.kind === 'staff' ? <>
@@ -1426,8 +1419,6 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
             <FieldInput name="order_date" label={f('orderDate')} type="date" required fallback={today} />
             <FieldInput name="due_date" label={f('dueDate')} type="date" />
             <SelectInput name="status" label={f('status')} required fallback="draft" options={['draft', 'confirmed', 'completed', 'cancelled'].map(value => ({ value, label: optionLabel(t, 'orderStatus', value) }))} />
-            <SelectInput name="currency" label={f('currency')} required fallback="UZS" selectedValue={orderCurrency} onChange={setOrderCurrency} options={[{ value: 'UZS', label: 'UZS' }, { value: 'USD', label: 'USD' }]} />
-            {orderCurrency === 'USD' ? <FieldInput name="exchange_rate" label={f('exchangeRate')} type="number" step="0.0001" /> : null}
             <TextArea name="note" label={f('note')} />
           </> : null}
           {modal.kind === 'material' ? <>
@@ -1447,10 +1438,8 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
           </> : null}
           {modal.kind === 'payment' ? <>
             <SelectInput name="client" label={f('client')} required options={clients.map(row => ({ value: String(row.id), label: row.name }))} />
-            <SelectInput name="payment_method" label={f('method')} required fallback="cash" options={['cash', 'card', 'bank_transfer', 'usd_cash'].map(value => ({ value, label: optionLabel(t, 'paymentMethod', value) }))} />
+            <SelectInput name="payment_method" label={f('method')} required fallback="cash" options={['cash', 'card', 'bank_transfer'].map(value => ({ value, label: optionLabel(t, 'paymentMethod', value) }))} />
             <FieldInput name="amount" label={f('amount')} type="number" step="0.01" required />
-            <SelectInput name="currency" label={f('currency')} required fallback="UZS" options={[{ value: 'UZS', label: 'UZS' }, { value: 'USD', label: 'USD' }]} />
-            <FieldInput name="exchange_rate" label={f('exchangeRate')} type="number" step="0.0001" />
             <FieldInput name="payment_date" label={f('paymentDate')} type="date" required fallback={today} />
             <TextArea name="note" label={f('note')} />
           </> : null}
