@@ -1350,16 +1350,28 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
       });
     }, [modal.kind, modal.item?.id, t]);
     const inputClass = 'h-11 w-full rounded-xl border border-border-soft/60 bg-surface-card px-3 text-sm font-medium text-text-primary outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20';
-    const FieldInput = ({ name, label, type = 'text', required = false, fallback = '', step }: { name: string; label: string; type?: string; required?: boolean; fallback?: string; step?: string }) => {
+    const FieldInput = ({ name, label, type = 'text', required = false, fallback = '', step, onInput }: { name: string; label: string; type?: string; required?: boolean; fallback?: string; step?: string; onInput?: (event: React.ChangeEvent<HTMLInputElement>) => void }) => {
       // Backend decimals come as "70000.00" — trim pointless trailing zeros in number inputs.
       const raw = value(name, fallback);
       const defaultValue = type === 'number' ? trimTrailingZeros(raw) : raw;
       return (
         <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
           {label}
-          {type === 'date' ? <DatePicker name={name} required={required} defaultValue={defaultValue} /> : <input className={inputClass} name={name} type={type} required={required} defaultValue={defaultValue} step={step} />}
+          {type === 'date' ? <DatePicker name={name} required={required} defaultValue={defaultValue} /> : <input className={inputClass} name={name} type={type} required={required} defaultValue={defaultValue} step={step} onChange={onInput} />}
         </label>
       );
+    };
+    /** Typing the with-VAT price (or changing the VAT rate) refills the VAT-free price
+     *  from it; the field stays a normal input, so the user can still overwrite it. */
+    const deriveVatFreePrice = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const form = event.target.form;
+      if (!form) return;
+      const withTax = Number((form.elements.namedItem('unit_price_with_tax_uzs') as HTMLInputElement | null)?.value);
+      const vat = Number((form.elements.namedItem('vat_percent') as HTMLInputElement | null)?.value);
+      const target = form.elements.namedItem('unit_price_without_tax_uzs') as HTMLInputElement | null;
+      if (!target || !Number.isFinite(withTax) || withTax <= 0) return;
+      const divisor = 1 + (Number.isFinite(vat) && vat > 0 ? vat : 0) / 100;
+      target.value = String(Math.round((withTax / divisor) * 100) / 100);
     };
     const SelectInput = ({ name, label, options, required = false, fallback = '', selectedValue, onChange }: { name: string; label: string; options: Array<{ value: string; label: string }>; required?: boolean; fallback?: string; selectedValue?: string; onChange?: (value: string) => void }) => (
       <label className="grid gap-1.5 text-sm font-bold text-text-secondary">
@@ -1396,9 +1408,9 @@ const ApiEntityForm = forwardRef<HTMLFormElement, { modal: ModalState; categorie
             <FieldInput name="size_range" label={f('sizeRange')} />
             <FieldInput name="material_type" label={f('materialType')} />
             <FieldInput name="color" label={f('color')} fallback={(modal.item as Product | undefined)?.color} />
-            <FieldInput name="unit_price_with_tax_uzs" label={f('priceWithTaxUzs')} type="number" step="0.01" fallback="0" />
+            <FieldInput name="unit_price_with_tax_uzs" label={f('priceWithTaxUzs')} type="number" step="0.01" fallback="0" onInput={deriveVatFreePrice} />
             <FieldInput name="unit_price_without_tax_uzs" label={f('priceWithoutTaxUzs')} type="number" step="0.01" fallback="0" />
-            <FieldInput name="vat_percent" label={f('vatPercent')} type="number" step="0.01" fallback="12" />
+            <FieldInput name="vat_percent" label={f('vatPercent')} type="number" step="0.01" fallback="12" onInput={deriveVatFreePrice} />
           </> : null}
           {modal.kind === 'staff' ? <>
             <FieldInput name="full_name" label={f('fullName')} fallback={(modal.item as StaffMember | undefined)?.name} required />
