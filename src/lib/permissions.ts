@@ -23,7 +23,7 @@ export const NAV_PAGE_BACKEND_PAGES: Record<PageId, string[]> = {
 export const RESOURCE_BACKEND_PAGE: Record<string, string> = {
   clientOrders: 'clients', deliveries: 'clients', payments: 'clients', returns: 'clients',
   materialStocks: 'inventory', defectiveStocks: 'inventory', defectiveTransactions: 'inventory',
-  batchItems: 'production', materialUsages: 'production',
+  materialUsages: 'production',
   schedules: 'employees',
   devices: 'attendance',
   operationTypes: 'payroll', workEntries: 'payroll', payrolls: 'payroll',

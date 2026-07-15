@@ -542,7 +542,6 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete, openC
   const canManage = useHasPermission('clients', 'manage');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sourceFilter, setSourceFilter] = useState('all');
   const [sortMode, setSortMode] = useState('valueDesc');
   const [viewMode, setViewMode] = useState<'clients' | 'statuses'>('clients');
   const [customStatuses, setCustomStatuses] = useState<CustomClientStatus[]>(() => {
@@ -558,7 +557,6 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete, openC
     () => ['all', ...Array.from(new Set([...customStatuses.map(status => status.key), ...clients.map(client => client.statusKey)]))],
     [customStatuses, clients],
   );
-  const sourceOptions = useMemo(() => ['all', ...Array.from(new Set(clients.map(client => client.source)))], [clients]);
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: clients.length };
     clients.forEach(client => { counts[client.statusKey] = (counts[client.statusKey] ?? 0) + 1; });
@@ -577,14 +575,13 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete, openC
     return clients
       .filter(client => `${client.name} ${client.phone} ${client.status} ${client.fabric}`.toLowerCase().includes(normalizedQuery))
       .filter(client => statusFilter === 'all' || client.statusKey === statusFilter)
-      .filter(client => sourceFilter === 'all' || client.source === sourceFilter)
       .sort((first, second) => {
         if (sortMode === 'valueAsc') return first.value - second.value;
         if (sortMode === 'nameAsc') return first.name.localeCompare(second.name);
         if (sortMode === 'nameDesc') return second.name.localeCompare(first.name);
         return second.value - first.value;
       });
-  }, [clients, query, sortMode, sourceFilter, statusFilter]);
+  }, [clients, query, sortMode, statusFilter]);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
 
   useEffect(() => {
@@ -655,12 +652,9 @@ export function ClientsPage({ clients, formatMoney, openModal, openDelete, openC
             placeholder={t('clients.searchPlaceholder')}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
-            sourceFilter={sourceFilter}
-            setSourceFilter={setSourceFilter}
             sortMode={sortMode}
             setSortMode={setSortMode}
             statusOptions={statusOptions.map(value => ({ value, label: value === 'all' ? t('clients.filters.allStatuses') : resolveStatusDisplay(value).label }))}
-            sourceOptions={sourceOptions}
           />
           <DataTable
             columns={[t('clients.columns.client'), t('clients.columns.source'), t('clients.columns.status'), t('clients.columns.fabric'), t('clients.columns.value'), t('common.actions')]}
@@ -1642,7 +1636,24 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
   const exportResource = useResourceExport();
   const canManage = useHasPermission('products', 'manage');
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'bom'>('products');
+  const [productQuery, setProductQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [productSort, setProductSort] = useState('nameAsc');
   const totalRevenue = products.reduce((sum, product) => sum + product.revenue, 0);
+  const filteredProducts = useMemo(() => {
+    const normalizedQuery = productQuery.toLowerCase();
+    return products
+      .filter(product => `${product.name} ${product.sku} ${product.category}`.toLowerCase().includes(normalizedQuery))
+      .filter(product => categoryFilter === 'all' || String(product.categoryId) === categoryFilter)
+      .sort((first, second) => {
+        if (productSort === 'nameDesc') return second.name.localeCompare(first.name);
+        if (productSort === 'priceDesc') return second.price - first.price;
+        if (productSort === 'priceAsc') return first.price - second.price;
+        if (productSort === 'stockDesc') return second.stock - first.stock;
+        if (productSort === 'revenueDesc') return second.revenue - first.revenue;
+        return first.name.localeCompare(second.name);
+      });
+  }, [products, productQuery, categoryFilter, productSort]);
 
   return (
     <div className="grid gap-5">
@@ -1672,9 +1683,30 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
       />
 
       {activeTab === 'categories' && <CategoriesTable categories={categories} products={products} openModal={openModal} openDelete={openDelete} />}
+      {activeTab === 'products' && (
+        <ClientsFilterBar
+          query={productQuery}
+          setQuery={setProductQuery}
+          placeholder={t('products.searchPlaceholder')}
+          statusFilter={categoryFilter}
+          setStatusFilter={setCategoryFilter}
+          statusLabel={t('products.columns.category')}
+          statusOptions={[{ value: 'all', label: t('products.filters.allCategories') }, ...categories.map(category => ({ value: String(category.id), label: category.name }))]}
+          sortMode={productSort}
+          setSortMode={setProductSort}
+          sortOptions={[
+            { value: 'nameAsc', label: t('clients.filters.nameAsc') },
+            { value: 'nameDesc', label: t('clients.filters.nameDesc') },
+            { value: 'priceDesc', label: t('products.filters.priceDesc') },
+            { value: 'priceAsc', label: t('products.filters.priceAsc') },
+            { value: 'stockDesc', label: t('products.filters.stockDesc') },
+            { value: 'revenueDesc', label: t('products.filters.revenueDesc') },
+          ]}
+        />
+      )}
       {activeTab === 'products' && (<DataTable
         columns={[t('products.columns.product'), t('products.columns.sku'), t('products.columns.category'), t('products.columns.stock'), t('products.columns.revenue'), t('common.actions')]}
-        rows={products.map(product => [
+        rows={filteredProducts.map(product => [
           <span className="flex min-w-0 max-w-full items-center gap-3">
             <span className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-surface-muted ring-1 ring-border-soft/50">
               <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
@@ -1706,7 +1738,7 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
           formatMoney(product.revenue),
           <RowActions onView={() => openModal({ kind: 'product', mode: 'view', item: product })} onEdit={canManage ? () => openModal({ kind: 'product', mode: 'edit', item: product }) : undefined} onDelete={canManage ? () => openDelete({ kind: 'product', mode: 'view', item: product }) : undefined} />,
         ])}
-        onRowClick={(rowIndex) => openModal({ kind: 'product', mode: 'view', item: products[rowIndex] })}
+        onRowClick={(rowIndex) => openModal({ kind: 'product', mode: 'view', item: filteredProducts[rowIndex] })}
       />
       )}
       {activeTab === 'bom' && <BomView products={products} materials={materials} canManage={canManage} formatMoney={formatMoney} onChanged={onDataChanged} />}
@@ -2709,13 +2741,9 @@ export function FinancePage({ revenueEntries, expenseEntries, formatMoney, onCre
 
 function BatchDetailModal({ batch, canManage, onClose }: { batch: ProductionBatch; canManage: boolean; onClose: () => void }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'batchItems' | 'materialUsages'>('batchItems');
   const extraParams = useMemo(() => ({ batch: String(batch.id) }), [batch.id]);
   const fixedValues = useMemo(() => ({ batch: String(batch.id) }), [batch.id]);
-  const configs = useMemo(() => ({
-    batchItems: scopedFieldConfig(operationsConfigs.batchItems, canManage, 'batch'),
-    materialUsages: scopedFieldConfig(operationsConfigs.materialUsages, canManage, 'batch'),
-  }), [canManage]);
+  const usagesConfig = useMemo(() => scopedFieldConfig(operationsConfigs.materialUsages, canManage, 'batch'), [canManage]);
 
   return (
     <div className="fixed inset-0 z-[190] grid place-items-center bg-background-overlay/72 px-3 backdrop-blur-[3px]" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
@@ -2730,17 +2758,8 @@ function BatchDetailModal({ batch, canManage, onClose }: { batch: ProductionBatc
           </button>
         </div>
         <div className="overflow-y-auto p-6">
-          <SegmentTabs
-            tabs={[
-              { id: 'batchItems', label: t('admin.resources.batchItems.title'), icon: <FiLayers className="h-4 w-4" /> },
-              { id: 'materialUsages', label: t('admin.resources.materialUsages.title'), icon: <FiPackage className="h-4 w-4" /> },
-            ]}
-            activeTab={activeTab}
-            onChange={id => setActiveTab(id as typeof activeTab)}
-          />
-          <div className="mt-4">
-            <ApiResourceManager key={`${activeTab}-${batch.id}`} config={configs[activeTab]} extraParams={extraParams} fixedValues={fixedValues} />
-          </div>
+          <p className="mb-3 text-sm font-extrabold text-text-primary">{t('admin.resources.materialUsages.title')}</p>
+          <ApiResourceManager key={String(batch.id)} config={usagesConfig} extraParams={extraParams} fixedValues={fixedValues} />
         </div>
       </section>
     </div>

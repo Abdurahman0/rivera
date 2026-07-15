@@ -135,10 +135,6 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
       { ...statusField }, { name: 'note', label: f('note'), type: 'textarea', table: true },
     ],
   },
-  batchItems: {
-    resource: resources.productionBatchItems, title: title('batchItems'), description: description('batchItems'),
-    fields: [{ name: 'batch', label: f('batch'), lookup: { resource: resources.productionBatches, label: 'batch_number' }, required: true, table: true }, { name: 'size', label: f('size'), table: true }, { name: 'color', label: f('color'), table: true }, { name: 'planned_quantity', label: f('planned'), type: 'number', required: true, table: true }, { name: 'delivered_quantity', label: f('delivered'), type: 'number', required: true, table: true }],
-  },
   materialUsages: {
     resource: resources.productionMaterialUsages, title: title('materialUsages'), description: description('materialUsages'),
     fields: [

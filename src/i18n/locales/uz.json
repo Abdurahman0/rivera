@@ -259,10 +259,8 @@
     },
     "filters": {
       "status": "Status",
-      "source": "Manba",
       "sort": "Saralash",
       "allStatuses": "Barcha statuslar",
-      "allSources": "Barcha manbalar",
       "valueDesc": "Qiymat: yuqoridan",
       "valueAsc": "Qiymat: pastdan",
       "nameAsc": "Nomi: A-Z",
@@ -513,6 +511,14 @@
       "violet": "Siyohrang",
       "red": "Qizil",
       "green": "Yashil"
+    },
+    "searchPlaceholder": "Mahsulot nomi, kod yoki kategoriya...",
+    "filters": {
+      "allCategories": "Barcha kategoriyalar",
+      "priceDesc": "Narx: qimmatdan arzonga",
+      "priceAsc": "Narx: arzondan qimmatga",
+      "stockDesc": "Qoldiq: ko'pdan kamga",
+      "revenueDesc": "Daromad: yuqoridan pastga"
     }
   },
   "warehouse": {
@@ -1910,10 +1916,6 @@
       "defectiveTransactions": {
         "title": "Brak material operatsiyalari",
         "description": "Brak qoldiqqa o'tkazishni tasdiqlash talab qiluvchi amallar."
-      },
-      "batchItems": {
-        "title": "Ishlab chiqarish partiya tarkibi",
-        "description": "Partiya ichidagi o'lcham/rang taqsimoti."
       },
       "materialUsages": {
         "title": "Ishlab chiqarishda material sarfi",

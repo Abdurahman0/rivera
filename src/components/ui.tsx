@@ -290,24 +290,24 @@ export function ClientsFilterBar({
   placeholder,
   statusFilter,
   setStatusFilter,
-  sourceFilter,
-  setSourceFilter,
   sortMode,
   setSortMode,
   statusOptions,
-  sourceOptions,
+  sortOptions,
+  statusLabel,
 }: {
   query: string;
   setQuery: (query: string) => void;
   placeholder: string;
   statusFilter: string;
   setStatusFilter: (value: string) => void;
-  sourceFilter: string;
-  setSourceFilter: (value: string) => void;
   sortMode: string;
   setSortMode: (value: string) => void;
   statusOptions: Array<{ value: string; label: string }>;
-  sourceOptions: string[];
+  /** Overrides the default client sort options (e.g. product-specific sorts). */
+  sortOptions?: Array<{ value: string; label: string }>;
+  /** Overrides the status dropdown's label (e.g. "Kategoriya" on the products page). */
+  statusLabel?: string;
 }) {
   const { t } = useTranslation();
 
@@ -325,13 +325,12 @@ export function ClientsFilterBar({
           />
         </span>
       </label>
-      <SelectField label={t('clients.filters.status')} value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
-      <SelectField label={t('clients.filters.source')} value={sourceFilter} onChange={setSourceFilter} options={sourceOptions.map(value => ({ value, label: value === 'all' ? t('clients.filters.allSources') : value }))} />
+      <SelectField label={statusLabel ?? t('clients.filters.status')} value={statusFilter} onChange={setStatusFilter} options={statusOptions} />
       <SelectField
         label={t('clients.filters.sort')}
         value={sortMode}
         onChange={setSortMode}
-        options={[
+        options={sortOptions ?? [
           { value: 'valueDesc', label: t('clients.filters.valueDesc') },
           { value: 'valueAsc', label: t('clients.filters.valueAsc') },
           { value: 'nameAsc', label: t('clients.filters.nameAsc') },
