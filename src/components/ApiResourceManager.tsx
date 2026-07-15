@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FiArchive, FiDownload, FiEdit2, FiPlus, FiRefreshCcw, FiRotateCcw, FiSearch, FiX } from 'react-icons/fi';
+import { FiArchive, FiDownload, FiEdit2, FiEye, FiPlus, FiRefreshCcw, FiRotateCcw, FiSearch, FiX } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { api } from '../api/client';
@@ -145,6 +145,7 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
   const [includeArchived, setIncludeArchived] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<ResourceRow | 'new' | null>(null);
+  const [viewing, setViewing] = useState<ResourceRow | null>(null);
   const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
@@ -338,6 +339,7 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
                   ))}
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {actions.filter(action => !action.show || action.show(row)).map(action => <button key={action.label} className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${action.tone === 'danger' ? 'bg-danger-bg text-danger' : action.tone === 'warning' ? 'bg-warning-bg text-warning' : action.tone === 'success' ? 'bg-success-bg text-success' : 'bg-primary/10 text-primary'}`} onClick={() => void runAction(action.label, () => action.run(row))}>{t(action.label)}</button>)}
+                    <button className="rounded-lg bg-surface-muted p-2 text-text-secondary" title={t('admin.ui.view')} onClick={() => setViewing(row)}><FiEye /></button>
                     {!config.readOnly && config.allowEdit !== false && !row.is_archived ? <button className="rounded-lg bg-primary/10 p-2 text-primary" title={t('admin.ui.edit')} onClick={() => setEditing(row)}><FiEdit2 /></button> : null}
                     {row.is_archived ? <button className="rounded-lg bg-success-bg p-2 text-success" title={t('admin.ui.restore')} onClick={() => void restore(row)}><FiRotateCcw /></button> : null}
                     {!config.readOnly && config.allowArchive !== false && !row.is_archived ? <button className="rounded-lg bg-danger-bg p-2 text-danger" title={t('admin.ui.archive')} onClick={() => void archive(row)}><FiArchive /></button> : null}
@@ -357,6 +359,7 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
                       })}
                       <td className="px-4 py-3"><div className="flex flex-wrap gap-1.5">
                         {actions.filter(action => !action.show || action.show(row)).map(action => <button key={action.label} className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${action.tone === 'danger' ? 'bg-danger-bg text-danger' : action.tone === 'warning' ? 'bg-warning-bg text-warning' : action.tone === 'success' ? 'bg-success-bg text-success' : 'bg-primary/10 text-primary'}`} onClick={() => void runAction(action.label, () => action.run(row))}>{t(action.label)}</button>)}
+                        <button className="rounded-lg bg-surface-muted p-2 text-text-secondary" title={t('admin.ui.view')} onClick={() => setViewing(row)}><FiEye /></button>
                         {!config.readOnly && config.allowEdit !== false && !row.is_archived ? <button className="rounded-lg bg-primary/10 p-2 text-primary" title={t('admin.ui.edit')} onClick={() => setEditing(row)}><FiEdit2 /></button> : null}
                         {row.is_archived ? <button className="rounded-lg bg-success-bg p-2 text-success" title={t('admin.ui.restore')} onClick={() => void restore(row)}><FiRotateCcw /></button> : null}
                         {!config.readOnly && config.allowArchive !== false && !row.is_archived ? <button className="rounded-lg bg-danger-bg p-2 text-danger" title={t('admin.ui.archive')} onClick={() => void archive(row)}><FiArchive /></button> : null}
@@ -390,6 +393,24 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
             </div>
             <div className="flex gap-2"><button type="button" className="flex-1 rounded-xl bg-surface-muted px-4 py-3 text-sm font-bold text-text-secondary" onClick={() => setEditing(null)}>{t('admin.ui.cancel')}</button><button disabled={saving} className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground disabled:opacity-60">{saving ? t('admin.ui.saving') : t('admin.ui.save')}</button></div>
           </form>
+        </aside>
+      </div> : null}
+
+      {viewing ? <div className="fixed inset-0 z-[200] flex justify-end bg-background-overlay/70" onMouseDown={event => { if (event.target === event.currentTarget) setViewing(null); }}>
+        <aside className="h-full w-full max-w-[680px] overflow-y-auto bg-background-subtle p-5 shadow-xl">
+          <div className="mb-5 flex items-start justify-between gap-3"><div><p className="text-[11px] font-bold uppercase tracking-wide text-primary">{t('admin.ui.viewPanel')}</p><h3 className="text-2xl font-extrabold text-text-primary">{title}</h3></div><button className="rounded-xl bg-surface-muted p-3 text-text-secondary" onClick={() => setViewing(null)}><FiX /></button></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {config.fields.map(field => {
+              const value = cellValue(t, viewing, field, lookups);
+              const isLong = field.type === 'textarea' || field.type === 'json';
+              return (
+                <div key={field.name} className={`rounded-xl bg-surface-card p-4 ring-1 ring-border-soft/40 ${isLong ? 'sm:col-span-2' : ''}`}>
+                  <p className="m-0 text-[10px] font-bold uppercase tracking-[0.12em] text-text-muted">{t(field.label)}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm font-semibold text-text-primary [overflow-wrap:anywhere]">{value || '—'}</p>
+                </div>
+              );
+            })}
+          </div>
         </aside>
       </div> : null}
     </section>

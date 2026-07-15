@@ -136,7 +136,7 @@ export const operationsConfigs: Record<string, ResourceConfig> = {
     fields: [
       { name: 'material', label: f('material'), lookup: { resource: resources.materials, label: 'name' }, required: true, table: true }, { name: 'quantity', label: f('quantity'), type: 'number', step: '0.0001', required: true, table: true },
       { name: 'date', label: f('date'), type: 'date', required: true, table: true },
-      { ...statusField }, { name: 'note', label: f('note'), type: 'textarea' },
+      { ...statusField }, { name: 'note', label: f('note'), type: 'textarea', table: true },
     ],
   },
   batchItems: {

@@ -2195,7 +2195,9 @@
       "actionCompleted": "{{label}} bajarildi",
       "requestFailed": "So'rov bajarilmadi",
       "fieldRequired": "{{field}} maydoni to'ldirilishi shart",
-      "requiredFieldsMissing": "Barcha majburiy maydonlarni to'ldiring"
+      "requiredFieldsMissing": "Barcha majburiy maydonlarni to'ldiring",
+      "view": "Ko'rish",
+      "viewPanel": "Yozuvni ko'rish"
     },
     "page": {
       "operationsGroups": {

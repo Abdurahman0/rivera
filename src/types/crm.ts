@@ -136,7 +136,9 @@ export interface StockMovement {
   id: number;
   date: string;
   product: string;
+  /** Bare numeric amount as a string; the unit is translated at render time. */
   quantity: string;
+  unit: 'm' | 'kg' | 'pcs';
   supplier?: string;
   client?: string;
   employee: string;

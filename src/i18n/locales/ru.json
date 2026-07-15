@@ -2190,7 +2190,9 @@
       "actionCompleted": "{{label}} выполнено",
       "requestFailed": "Ошибка запроса",
       "fieldRequired": "Поле «{{field}}» обязательно",
-      "requiredFieldsMissing": "Заполните все обязательные поля"
+      "requiredFieldsMissing": "Заполните все обязательные поля",
+      "view": "Просмотр",
+      "viewPanel": "Просмотр записи"
     },
     "page": {
       "operationsGroups": {

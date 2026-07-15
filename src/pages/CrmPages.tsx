@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next';
 import { FiActivity, FiAlertTriangle, FiArchive, FiBriefcase, FiCalendar, FiCheckCircle, FiChevronRight, FiClock, FiCpu, FiDollarSign, FiEye, FiLayers, FiPackage, FiSearch, FiSettings, FiShoppingBag, FiTag, FiTool, FiUsers, FiSliders, FiX } from 'react-icons/fi';
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { AttendanceLogEntry, CategoryDatum, Client, DashboardDateRange, EntityId, FinanceEntry, FinishedVariant, Material, ModalState, Order, PieceworkRecord, Product, ProductCategory, ProductionBatch, StaffMember, StatusTone, StockMovement } from '../types/crm';
-import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, unitLabel } from '../utils/crm';
+import { apiErrorMessage, formatDisplayDate, formatDisplayDateTime, materialStatusTone, optionLabel, orderStatusTone, statusLabel, statusTone, trimTrailingZeros, unitLabel } from '../utils/crm';
 import { translateMovementLabel } from '../lib/enumLabels';
 import { BUILT_IN_CLIENT_STATUSES, hasStoredCustomClientStatuses, loadCustomClientStatuses, saveCustomClientStatuses, slugifyStatusKey, type CustomClientStatus } from '../utils/clientStatuses';
 import { ClientsFilterBar, DataTable, MetricCard, PageHeader, Panel, PremiumTooltip, PrimaryCell, RowActions, SegmentTabs, StatusBadge } from '../components/ui';
@@ -2613,7 +2613,7 @@ export function WarehousePage({ products, stockIn, stockOut, finishedVariants, t
               <StatusBadge tone={row.type === 'in' ? 'success' : 'warning'}>{row.type === 'in' ? t('warehouse.movementIn') : t('warehouse.movementOut')}</StatusBadge>
               <span className="text-xs font-semibold text-text-muted">{txTypeLabel(row)}</span>
             </span>,
-            <span className={['font-bold', row.type === 'in' ? 'text-success' : 'text-warning'].join(' ')}>{row.quantity}</span>,
+            <span className={['font-bold', row.type === 'in' ? 'text-success' : 'text-warning'].join(' ')}>{trimTrailingZeros(row.quantity)} {unitLabel(row.unit, t)}</span>,
             <StatusBadge tone={txStatusTone(row.status)}>{optionLabel(t, 'transactionStatus', row.status)}</StatusBadge>,
           ])}
         />
