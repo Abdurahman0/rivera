@@ -24,7 +24,7 @@ export function hexToRgba(hexColor: string, alpha: number): string {
 export function statusTone(statusKey: string): StatusTone {
   if (statusKey === 'won' || statusKey === 'contract' || statusKey === 'onTime' || statusKey === 'clear' || statusKey === 'active') return 'success';
   if (statusKey === 'followUp' || statusKey === 'sample' || statusKey === 'late' || statusKey === 'hasBalance' || statusKey === 'new') return 'warning';
-  if (statusKey === 'leftEarly' || statusKey === 'blocked') return 'danger';
+  if (statusKey === 'leftEarly' || statusKey === 'blocked' || statusKey === 'absent') return 'danger';
   if (statusKey === 'newLead' || statusKey === 'remote' || statusKey === 'vip') return 'info';
   if (statusKey === 'inactive') return 'neutral';
   return 'neutral';

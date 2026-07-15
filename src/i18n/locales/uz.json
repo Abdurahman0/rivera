@@ -407,7 +407,7 @@
       "dateHint": "Qatordagi sana bo'sh qolsa, umumiy sana ishlatiladi. Har qatorga alohida kun tanlash ham mumkin.",
       "singleDay": "Bir kun",
       "dateRange": "Kunlar oralig'i",
-      "rangeHint": "Miqdor — davr uchun jami: u tanlangan kunlarga teng taqsimlanadi va oylik hisob-kitobga to'g'ri tushadi.",
+      "rangeHint": "Miqdor — har bir kun uchun: oraliqdagi har kunga shu miqdorda alohida yozuv yaratiladi (jami = miqdor × kunlar soni) va har kun o'z oyining hisob-kitobiga tushadi.",
       "rangeTooLong": "Oraliq juda uzun — 62 kundan oshmasin."
     }
   },
@@ -709,7 +709,8 @@
     "new": "Yangi",
     "vip": "VIP",
     "blocked": "Bloklangan",
-    "inactive": "Nofaol"
+    "inactive": "Nofaol",
+    "absent": "Kelmagan"
   },
   "mock": {
     "months": [

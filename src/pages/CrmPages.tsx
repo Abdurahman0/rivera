@@ -2277,7 +2277,9 @@ function BulkWorkEntryModal({ staff, formatMoney, onClose, onSaved }: { staff: S
   }, []);
 
   const priceOf = (opType: string) => operationTypes.find(op => op.id === opType)?.price ?? 0;
-  const rowTotal = (row: { opType: string; qty: string }) => priceOf(row.opType) * (Number(row.qty) || 0);
+  // In range mode the typed quantity applies to EVERY day, so money previews scale by day count.
+  const dayMultiplier = dateMode === 'range' && commonRange ? Math.max(1, rangeDays(commonRange).length) : 1;
+  const rowTotal = (row: { opType: string; qty: string }) => priceOf(row.opType) * (Number(row.qty) || 0) * dayMultiplier;
   const grandTotal = rows.reduce((sum, row) => sum + rowTotal(row), 0);
   const updateRow = (key: number, patch: Partial<{ opType: string; qty: string; date: string }>) =>
     setRows(current => current.map(row => (row.key === key ? { ...row, ...patch } : row)));
@@ -2309,21 +2311,15 @@ function BulkWorkEntryModal({ staff, formatMoney, onClose, onSaved }: { staff: S
     try {
       for (const row of validRows) {
         if (dateMode === 'range') {
-          // The typed quantity is the period total: spread it evenly across the days
-          // (remainder goes to the earliest days), so a range crossing a month boundary
-          // lands each day's share in the right month for payroll.
-          const total = Number(row.qty);
-          const base = Math.floor(total / days.length);
-          let remainder = total - base * days.length;
+          // The typed quantity is PER DAY: every day in the range gets its own entry
+          // with that quantity, so the period total is qty × days and a range crossing
+          // a month boundary books each day into its own payroll month.
           for (const day of days) {
-            const dayQuantity = base + (remainder > 0 ? 1 : 0);
-            if (remainder > 0) remainder -= 1;
-            if (dayQuantity <= 0) continue;
             await api.create(resources.dailyWorkEntries, {
               employee: employeeId,
               operation_type: row.opType,
               date: day,
-              quantity_done: dayQuantity,
+              quantity_done: Number(row.qty),
             });
           }
         } else {

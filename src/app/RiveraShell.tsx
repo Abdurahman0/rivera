@@ -398,7 +398,7 @@ function App() {
   const pipelineValue = dashboardOrders.reduce((sum, order) => sum + order.totalAmount, 0);
   const newClientsInPeriod = appData.summary?.new_in_period ?? dashboardClients.length;
   const ordersInPeriod = dashboardOrders.length;
-  const onDutyCount = staff.filter(member => member.statusKey !== 'leftEarly').length;
+  const onDutyCount = staff.filter(member => member.statusKey === 'onTime' || member.statusKey === 'late').length;
   const priorityClients = appData.topClientIds.map(id => clients.find(client => String(client.id) === id)).filter((client): client is Client => Boolean(client));
   const activeMeta = navItems.find(item => item.id === activePage) ?? navItems[0];
   const visibleNavItems = currentUser ? navItems.filter(item => canViewNavPage(currentUser, item.id)) : navItems;

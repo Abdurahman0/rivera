@@ -247,12 +247,15 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
     return minutes;
   };
 
+  const todayIso = `${monthPrefix}-${String(now.getDate()).padStart(2, '0')}`;
   const staff: StaffMember[] = data.employees.map(row => {
     const records = attendanceByEmployee.get(row.id) || [];
     const workedThisMonth = records.filter(record => record.work_date.startsWith(monthPrefix)).reduce((sum, record) => sum + (record.worked_minutes || 0), 0);
     const expectedMinutes = expectedMinutesFor(row.hire_date);
     const attendance = expectedMinutes > 0 ? Math.min(100, Math.round((workedThisMonth / expectedMinutes) * 100)) : 0;
     const latest = [...records].sort((a, b) => b.work_date.localeCompare(a.work_date))[0];
+    // The status reflects TODAY only: no check-in recorded today (even mid-day) = absent.
+    const todayRecord = records.find(record => record.work_date === todayIso);
     return {
       id: row.id,
       name: row.full_name,
@@ -264,7 +267,7 @@ export function adaptOperationalData(data: OperationalApiData): FrontendData {
       arrival: dateTime(latest?.first_check_in_at),
       leaving: dateTime(latest?.last_check_out_at),
       status: row.status,
-      statusKey: latest?.status === 'late' ? 'late' : row.status === 'active' ? 'onTime' : 'leftEarly',
+      statusKey: todayRecord?.status === 'late' ? 'late' : todayRecord?.first_check_in_at ? 'onTime' : 'absent',
       attendance,
       api: row as unknown as Record<string, unknown>,
     };
