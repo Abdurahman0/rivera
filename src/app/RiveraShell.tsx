@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import {
   FiArchive,
   FiArrowRight,
-  FiBell,
   FiBriefcase,
   FiCheckCircle,
   FiChevronDown,
@@ -667,10 +666,6 @@ function App() {
                 <FiRefreshCcw className={['h-4 w-4', isLoadingData ? 'animate-spin' : ''].join(' ')} />
                 {t('common.refresh')}
               </button>
-              <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-text-secondary transition hover:bg-primary/10 hover:text-text-primary" onClick={() => void alert(t('common.noNotifications'))}>
-                <FiBell className="h-4 w-4" />
-                {t('common.notifications')}
-              </button>
             </div>
             <ProfileSummary user={currentUser} />
             <button className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-danger transition hover:bg-danger-bg" onClick={() => { dataLoadId.current += 1; void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }}>
@@ -714,7 +709,6 @@ function App() {
               {themeMode === 'dark' ? <FiMoon /> : <FiSun />}
             </IconButton>
             <IconButton label={t('common.refresh')} onClick={() => void refreshData()} disabled={isLoadingData}><FiRefreshCcw className={isLoadingData ? 'animate-spin' : ''} /></IconButton>
-            <IconButton label={t('common.notifications')} onClick={() => void alert(t('common.noNotifications'))}><FiBell /></IconButton>
             <ProfileMenu user={currentUser} onLogout={() => { dataLoadId.current += 1; void logout(); setAppData(EMPTY_DATA); setIsAuthenticated(false); }} />
           </div>
           {isLoadingData ? (
