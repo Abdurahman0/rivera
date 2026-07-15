@@ -204,9 +204,11 @@ function UserDrawer({ mode, user, isSuper, permRows, activeLevels, onClose, onSa
     }
     setSaving(true);
     try {
+      // Superadmin status is never editable from the UI — the single top role is
+      // assigned once at the backend, the drawer only manages regular accounts.
       const payload: Record<string, unknown> = {
         username: form.username.trim(), full_name: form.full_name.trim(), phone: form.phone, email: form.email,
-        is_active: form.is_active, is_superadmin: form.is_superadmin,
+        is_active: form.is_active,
       };
       if (form.password) payload.password = form.password;
       let userId: string;
@@ -261,11 +263,6 @@ function UserDrawer({ mode, user, isSuper, permRows, activeLevels, onClose, onSa
                 <label className="inline-flex items-center gap-2 text-sm font-bold text-text-secondary">
                   <input type="checkbox" className="h-4 w-4" checked={form.is_active} onChange={event => setForm(current => ({ ...current, is_active: event.target.checked }))} /> {t('admin.fields.active')}
                 </label>
-                {isSuper ? (
-                  <label className="inline-flex items-center gap-2 text-sm font-bold text-text-secondary">
-                    <input type="checkbox" className="h-4 w-4" checked={form.is_superadmin} onChange={event => setForm(current => ({ ...current, is_superadmin: event.target.checked }))} /> {t('usersManager.superadmin')}
-                  </label>
-                ) : null}
               </div>
             </div>
           ) : (
