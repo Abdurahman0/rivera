@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next';
 import { api } from '../api/client';
 import { useDialog } from './DialogProvider';
 import { useToast } from './ToastProvider';
-import { Dropdown, DatePicker } from './FormControls';
+import { Dropdown, DatePicker, TimePicker } from './FormControls';
 import { formatDisplayDate, formatDisplayDateTime, translateBackendMessage, trimTrailingZeros } from '../utils/crm';
 
 export type ResourceRow = Record<string, unknown> & { id: string | number; is_archived?: boolean };
@@ -106,6 +106,8 @@ function cellValue(t: TFunction, row: ResourceRow, field: ResourceField, lookups
   if (matchingOption) return t(matchingOption.label);
   if (field.type === 'date' && row[field.name]) return formatDisplayDate(String(row[field.name]), t);
   if (field.type === 'datetime-local' && row[field.name]) return formatDisplayDateTime(String(row[field.name]), t);
+  // Backend TimeFields serialize as "08:00:00" — the seconds are never meaningful here.
+  if (field.type === 'time' && row[field.name]) return String(row[field.name]).slice(0, 5);
   if (field.type === 'month' && row[field.name]) {
     const [year, month] = String(row[field.name]).split('-').map(Number);
     if (year && month) return `${t(`common.months.${month - 1}`, { defaultValue: String(month) })} ${year}`;
@@ -385,6 +387,7 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
                 return <label key={field.name} className={`grid gap-1.5 text-sm font-bold text-text-secondary ${field.type === 'textarea' || field.type === 'json' ? 'sm:col-span-2' : ''}`}>{t(field.label)}
                   {field.type === 'select' || field.lookup ? <Dropdown name={field.name} required={field.required} defaultValue={currentValue} onChange={field.lookup?.autofill ? value => handleLookupChange(field, value) : undefined} options={field.options?.map(option => ({ value: option.value, label: t(option.label) })) || [...(lookups[field.name]?.entries() || [])].map(([value, label]) => ({ value, label }))} />
                     : field.type === 'date' || field.type === 'datetime-local' ? <DatePicker name={field.name} required={field.required} defaultValue={currentValue} type={field.type} />
+                    : field.type === 'time' ? <TimePicker name={field.name} required={field.required} defaultValue={currentValue} />
                     : field.type === 'textarea' || field.type === 'json' ? <textarea name={field.name} required={field.required} defaultValue={currentValue} className={`${baseClass} min-h-28 py-3 font-${field.type === 'json' ? 'mono' : 'sans'}`} />
                     : field.type === 'checkbox' ? <input name={field.name} type="checkbox" defaultChecked={Boolean(fieldValue(editing === 'new' ? null : editing, field))} className="h-5 w-5" />
                     : <input name={field.name} type={field.type === 'money' ? 'number' : field.type || 'text'} required={field.required} step={field.step} defaultValue={currentValue} onChange={field.derive ? event => handleDerive(field, event.target.value) : undefined} className={baseClass} />}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FiCalendar, FiChevronDown, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiCalendar, FiChevronDown, FiChevronLeft, FiChevronRight, FiClock } from 'react-icons/fi';
 
 function useClickOutsideAndEscape(onClose: () => void) {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -259,6 +259,96 @@ export function DatePicker({
               );
             })}
           </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const TIME_COLUMN_LABELS: Record<'uz' | 'ru', { hours: string; minutes: string }> = {
+  uz: { hours: 'Soat', minutes: 'Daqiqa' },
+  ru: { hours: 'Часы', minutes: 'Минуты' },
+};
+
+/** Handmade time picker: hour + minute columns in a popover, "08:00" on the trigger.
+ *  Accepts backend "HH:MM:SS" values and always submits plain "HH:MM" through the
+ *  hidden native input, so seconds never leak into forms or displays. */
+export function TimePicker({
+  name,
+  defaultValue = '',
+  required,
+  className = '',
+}: {
+  name?: string;
+  defaultValue?: string;
+  required?: boolean;
+  className?: string;
+}) {
+  const { i18n } = useTranslation();
+  const lang = i18n.language.startsWith('ru') ? 'ru' : 'uz';
+  const labels = TIME_COLUMN_LABELS[lang];
+  const [current, setCurrent] = useState((defaultValue || '').slice(0, 5));
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useClickOutsideAndEscape(() => setIsOpen(false));
+  const [hourPart, minutePart] = current ? current.split(':') : ['', ''];
+
+  function commit(nextHour: string, nextMinute: string) {
+    setCurrent(`${nextHour || '00'}:${nextMinute || '00'}`);
+  }
+
+  const hours = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'));
+  const minutes = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, '0'));
+  // A stored minute that is not on the 5-minute grid (e.g. 08:37) still needs its row.
+  const minuteOptions = minutePart && !minutes.includes(minutePart) ? [...minutes, minutePart].sort() : minutes;
+
+  return (
+    <div ref={menuRef} className={['relative min-w-0', className].join(' ')}>
+      {name ? <input type="hidden" name={name} value={current} required={required} /> : null}
+      <button
+        type="button"
+        className={[
+          'flex h-11 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-border-soft bg-surface-card px-3 text-left text-sm outline-none transition duration-fast',
+          'hover:border-primary/35',
+          isOpen ? 'border-primary/50 ring-4 ring-primary/10' : '',
+        ].join(' ')}
+        onClick={() => setIsOpen(open => !open)}
+      >
+        <span className={current ? 'font-semibold text-text-primary' : 'text-text-muted'}>{current || '--:--'}</span>
+        <FiClock className="h-4 w-4 shrink-0 text-text-muted" />
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-[220px] rounded-2xl border border-border-soft/60 bg-surface-card p-3 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl">
+          <div className="grid grid-cols-2 gap-2">
+            {[{ title: labels.hours, values: hours, selected: hourPart, pick: (v: string) => commit(v, minutePart) },
+              { title: labels.minutes, values: minuteOptions, selected: minutePart, pick: (v: string) => commit(hourPart, v) }].map(column => (
+              <div key={column.title} className="min-w-0">
+                <p className="m-0 mb-1.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-text-muted">{column.title}</p>
+                <div className="max-h-[190px] overflow-y-auto rounded-xl bg-surface-subtle/60 p-1">
+                  {column.values.map(option => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={[
+                        'flex min-h-8 w-full items-center justify-center rounded-lg text-sm font-semibold transition',
+                        option === column.selected ? 'bg-primary text-primary-foreground' : 'text-text-secondary hover:bg-primary/10 hover:text-text-primary',
+                      ].join(' ')}
+                      onClick={() => column.pick(option)}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="mt-2 w-full rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition hover:opacity-90"
+            onClick={() => setIsOpen(false)}
+          >
+            OK
+          </button>
         </div>
       ) : null}
     </div>
