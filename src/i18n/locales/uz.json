@@ -2094,7 +2094,7 @@
         "production_material_issue": "Material chiqarish",
         "production_warehouse_delivery": "Omborga yetkazish",
         "material_transaction": "Material harakati",
-        "defective_material_transaction": "Nikoh materiali",
+        "defective_material_transaction": "Brak material operatsiyasi",
         "finished_goods_transaction": "Tayyor mahsulot harakati"
       },
       "payrollStatus": {

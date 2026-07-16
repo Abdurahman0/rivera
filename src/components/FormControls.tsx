@@ -52,15 +52,24 @@ export function Dropdown({
   const { t } = useTranslation();
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const menuRef = useClickOutsideAndEscape(() => setIsOpen(false));
   const current = value ?? internalValue;
   const selectedOption = options.find(option => option.value === current);
+  // Long lists (employees, materials...) get a search box pinned above the options.
+  const searchable = options.length > 7;
+  const needle = search.trim().toLowerCase();
+  const visibleOptions = searchable && needle ? options.filter(option => option.label.toLowerCase().includes(needle)) : options;
 
   function select(next: string) {
     if (value === undefined) setInternalValue(next);
     onChange?.(next);
     setIsOpen(false);
   }
+
+  useEffect(() => {
+    if (!isOpen) setSearch('');
+  }, [isOpen]);
 
   return (
     <div ref={menuRef} className={['relative min-w-0', className].join(' ')}>
@@ -83,13 +92,25 @@ export function Dropdown({
       </button>
 
       {isOpen ? (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-50 max-h-[260px] w-full min-w-[200px] overflow-y-auto rounded-2xl border border-border-soft/60 bg-surface-card p-1.5 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl" role="listbox">
-          {!required ? (
+        <div className="absolute left-0 top-[calc(100%+6px)] z-50 flex max-h-[300px] w-full min-w-[200px] flex-col rounded-2xl border border-border-soft/60 bg-surface-card p-1.5 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.58)] backdrop-blur-xl" role="listbox">
+          {searchable ? (
+            <input
+              autoFocus
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              placeholder={t('common.search')}
+              className="mb-1.5 h-9 w-full shrink-0 rounded-xl border border-border-soft bg-surface-subtle px-3 text-sm text-text-primary outline-none focus:border-primary/50"
+              onKeyDown={event => event.stopPropagation()}
+            />
+          ) : null}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+          {!required && !needle ? (
             <button type="button" className="flex min-h-9 w-full items-center rounded-xl px-3 text-left text-sm font-medium text-text-muted transition hover:bg-surface-subtle" onClick={() => select('')}>
               {placeholder ?? t('admin.ui.selectPlaceholder')}
             </button>
           ) : null}
-          {options.map(option => {
+          {visibleOptions.length === 0 ? <p className="m-0 px-3 py-2 text-sm text-text-muted">{t('admin.ui.noRecords')}</p> : null}
+          {visibleOptions.map(option => {
             const selected = option.value === current;
             return (
               <button
@@ -105,6 +126,7 @@ export function Dropdown({
               </button>
             );
           })}
+          </div>
         </div>
       ) : null}
     </div>

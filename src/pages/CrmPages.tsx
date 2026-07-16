@@ -1463,7 +1463,9 @@ function BomProductSection({ product, materials, canManage, formatMoney, onChang
   }
 
   return (
-    <section className="app-card--nova overflow-hidden">
+    // overflow-hidden clips the material dropdown's menu while the add row is open,
+    // so the card only clips its rounded corners when nothing floats above them.
+    <section className={['app-card--nova', adding ? '' : 'overflow-hidden'].join(' ')}>
       <button
         type="button"
         className={['flex w-full flex-col items-start gap-4 p-5 text-left transition hover:bg-primary/5 sm:flex-row sm:items-center', isOpen || adding ? 'border-b border-border-soft/30' : ''].join(' ')}

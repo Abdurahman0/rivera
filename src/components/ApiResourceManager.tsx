@@ -199,8 +199,13 @@ export function ApiResourceManager({ config, actions = [], headerActions, extraP
     const scoped = includeArchived ? rows.filter(row => Boolean(row.is_archived)) : rows;
     const needle = query.trim().toLowerCase();
     if (!needle) return scoped;
-    return scoped.filter(row => JSON.stringify(row).toLowerCase().includes(needle));
-  }, [query, rows, includeArchived]);
+    // Lookup columns store bare ids; searching must also match their resolved labels
+    // (e.g. an employee's name), not just the raw row JSON.
+    return scoped.filter(row => {
+      const lookupText = Object.keys(lookups).map(name => lookups[name]?.get(String(row[name])) ?? '').join(' ');
+      return `${JSON.stringify(row)} ${lookupText}`.toLowerCase().includes(needle);
+    });
+  }, [query, rows, includeArchived, lookups]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
