@@ -23,8 +23,8 @@ import { FaceEnrollDrawer } from '../components/FaceEnrollDrawer';
 function useResourceExport() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  return (resource: string) => {
-    void api.export(resource).catch(error => {
+  return (resource: string, range?: DashboardDateRange | null) => {
+    void api.export(resource, range ? { from: range.startDate, to: range.endDate } : {}).catch(error => {
       toast(apiErrorMessage(error, t), 'danger');
     });
   };
@@ -1641,6 +1641,8 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
   const [productQuery, setProductQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [productSort, setProductSort] = useState('nameAsc');
+  // Scopes the Excel export: the report shows the period's incoming/outgoing movement.
+  const [exportRange, setExportRange] = useState<DashboardDateRange | null>(null);
   const totalRevenue = products.reduce((sum, product) => sum + product.revenue, 0);
   const filteredProducts = useMemo(() => {
     const normalizedQuery = productQuery.toLowerCase();
@@ -1665,8 +1667,14 @@ export function ProductsPage({ products, categoryAnalytics, categories, material
         description={activeTab === 'categories' ? t('products.categoryDescription') : t('products.description')}
         createLabel={canManage ? (activeTab === 'categories' ? t('products.createCategory') : t('products.create')) : undefined}
         onCreate={canManage ? (activeTab === 'categories' ? () => openModal({ kind: 'category', mode: 'create' }) : () => openModal({ kind: 'product', mode: 'create' })) : undefined}
-        onExport={activeTab === 'categories' ? () => exportResource(resources.productCategories) : activeTab === 'products' ? () => exportResource(resources.products) : undefined}
+        onExport={activeTab === 'categories' ? () => exportResource(resources.productCategories) : activeTab === 'products' ? () => exportResource(resources.products, exportRange) : undefined}
       />
+      {activeTab === 'products' ? (
+        <div className="flex flex-wrap items-center justify-end gap-2.5">
+          <span className="text-xs font-bold text-text-muted">{t('common.exportPeriod')}</span>
+          <DateRangeControls value={exportRange} onChange={setExportRange} />
+        </div>
+      ) : null}
       {activeTab === 'products' ? (
         <div className="grid gap-4 md:grid-cols-3">
           <MetricCard icon={<FiPackage />} label={t('products.metrics.revenue')} value={formatMoney(totalRevenue)} caption={t('products.metrics.revenueCaption')} tone="success" />
@@ -1969,6 +1977,8 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'materials' | 'stock'>('materials');
   const [addingStockFor, setAddingStockFor] = useState<Material | null>(null);
+  // Scopes the Excel export: the report shows the period's incoming/outgoing movement.
+  const [exportRange, setExportRange] = useState<DashboardDateRange | null>(null);
   const lowStockCount = materials.filter(m => m.stock <= m.minStock).length;
   const totalValue = materials.reduce((sum, m) => sum + m.stock * m.price, 0);
   const filtered = materials.filter(m =>
@@ -1976,7 +1986,11 @@ export function MaterialsPage({ materials, formatMoney, onCreate, openModal, ope
   );
   return (
     <div className="grid gap-5">
-      <PageHeader eyebrow={t('materials.eyebrow')} title={t('materials.title')} description={t('materials.description')} createLabel={canManage && activeTab === 'materials' ? t('materials.create') : undefined} onCreate={canManage && activeTab === 'materials' ? onCreate : undefined} onExport={() => exportResource(activeTab === 'stock' ? resources.materialStocks : resources.materials)} />
+      <PageHeader eyebrow={t('materials.eyebrow')} title={t('materials.title')} description={t('materials.description')} createLabel={canManage && activeTab === 'materials' ? t('materials.create') : undefined} onCreate={canManage && activeTab === 'materials' ? onCreate : undefined} onExport={() => exportResource(activeTab === 'stock' ? resources.materialStocks : resources.materials, exportRange)} />
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
+        <span className="text-xs font-bold text-text-muted">{t('common.exportPeriod')}</span>
+        <DateRangeControls value={exportRange} onChange={setExportRange} />
+      </div>
       <SegmentTabs
         tabs={[
           { id: 'materials', label: t('materials.title'), icon: <FiLayers className="h-4 w-4" /> },

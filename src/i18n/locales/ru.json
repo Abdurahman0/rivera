@@ -63,7 +63,8 @@
       "10": "Ноябрь",
       "11": "Декабрь"
     },
-    "clearFilter": "Сбросить"
+    "clearFilter": "Сбросить",
+    "exportPeriod": "Период экспорта:"
   },
   "deleteDialog": {
     "eyebrow": "Подтверждение",

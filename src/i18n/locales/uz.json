@@ -63,7 +63,8 @@
       "10": "Noyabr",
       "11": "Dekabr"
     },
-    "clearFilter": "Tozalash"
+    "clearFilter": "Tozalash",
+    "exportPeriod": "Eksport davri:"
   },
   "deleteDialog": {
     "eyebrow": "Tasdiqlash",

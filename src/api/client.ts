@@ -172,8 +172,13 @@ export async function listAll<T>(resource: string, params: Record<string, string
   return rows;
 }
 
-export async function downloadExport(resource: string) {
-  const fetchFile = async (access: string | null) => fetch(`${API_BASE}/${resource}/export/`, {
+export async function downloadExport(resource: string, params: Record<string, string | undefined> = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) query.set(key, value);
+  });
+  const qs = query.toString();
+  const fetchFile = async (access: string | null) => fetch(`${API_BASE}/${resource}/export/${qs ? `?${qs}` : ''}`, {
     headers: access ? { Authorization: `Bearer ${access}` } : {},
   });
   let response = await fetchFile(getStored(ACCESS_KEY));
